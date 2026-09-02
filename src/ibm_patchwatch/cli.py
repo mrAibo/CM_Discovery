@@ -23,12 +23,25 @@ def _print_product(item: dict, *, details: bool = False) -> None:
     if not details:
         return
 
-    if item.get("code_release"):
-        print(f"    Code release: {item['code_release']}")
-    if item.get("special_build"):
-        print(f"    Special build: {item['special_build']}")
-    if item.get("build_token"):
-        print(f"    Build token: {item['build_token']}")
+    # Product-native maintenance/build metadata. These fields come from the
+    # authoritative local product tools/files and must not be lost merely
+    # because the compact one-line inventory only prints the base version.
+    detail_fields = (
+        ("build", "Build"),
+        ("fix_level", "Fix level"),
+        ("build_level", "Build level"),
+        ("build_number", "Build number"),
+        ("build_version", "Build version"),
+        ("build_date", "Build date"),
+        ("code_release", "Code release"),
+        ("special_build", "Special build"),
+        ("build_token", "Build token"),
+    )
+    for key, label in detail_fields:
+        value = item.get(key)
+        if value is not None and value != "":
+            print(f"    {label}: {value}")
+
     if item.get("im_internal_version"):
         print(f"    IM internal version: {item['im_internal_version']}")
     if item.get("im_version_matches") is False:
@@ -130,13 +143,13 @@ def build_parser() -> argparse.ArgumentParser:
     scan.add_argument("host", help="configured SSH alias or 'all'")
     scan.add_argument("--json", action="store_true")
     scan.add_argument("--pretty", action="store_true")
-    scan.add_argument("--details", action="store_true", help="show installed fixes and rollback history")
+    scan.add_argument("--details", action="store_true", help="show product build metadata, installed fixes and rollback history")
     scan.set_defaults(func=cmd_scan)
 
     inventory = sub.add_parser("inventory", help="show latest stored inventory")
     inventory.add_argument("--json", action="store_true")
     inventory.add_argument("--pretty", action="store_true")
-    inventory.add_argument("--details", action="store_true", help="show installed fixes and rollback history")
+    inventory.add_argument("--details", action="store_true", help="show product build metadata, installed fixes and rollback history")
     inventory.set_defaults(func=cmd_inventory)
     return parser
 
