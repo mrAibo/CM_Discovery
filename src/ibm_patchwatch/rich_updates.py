@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from typing import Iterable
-
-from .github_catalog import CatalogSnapshot, UpdateRow
+from .github_catalog import CatalogSnapshot
+from .update_report import HostUpdateReport
 
 
 def _link_text(label: str, url: str):
@@ -11,16 +10,27 @@ def _link_text(label: str, url: str):
     return Text(label, style=f"bold cyan link {url}")
 
 
-def render_update_table(snapshot: CatalogSnapshot, *, console=None) -> None:
-    """Render one update snapshot as a Rich table.
+def _links(download_url: str | None, details_url: str | None):
+    from rich.text import Text
 
-    Rich is imported lazily so the data/fetching layer remains dependency-free.
-    The central server is expected to have Rich installed, as requested.
-    """
+    text = Text()
+    if download_url:
+        text.append_text(_link_text("download", download_url))
+        if details_url and details_url != download_url:
+            text.append("  ")
+            text.append_text(_link_text("details", details_url))
+    elif details_url:
+        text.append_text(_link_text("details", details_url))
+    else:
+        text.append("-")
+    return text
+
+
+def render_update_table(snapshot: CatalogSnapshot, *, console=None) -> None:
+    """Render the global latest-level catalog without host comparison."""
     try:
         from rich.console import Console
         from rich.table import Table
-        from rich.text import Text
     except ModuleNotFoundError as exc:
         raise RuntimeError("Rich is required for table rendering: install package 'rich'") from exc
 
@@ -42,23 +52,60 @@ def render_update_table(snapshot: CatalogSnapshot, *, console=None) -> None:
     table.add_column("Download / Details", no_wrap=False)
 
     for row in snapshot.rows:
-        links = Text()
-        if row.download_url:
-            links.append_text(_link_text("download", row.download_url))
-            if row.details_url and row.details_url != row.download_url:
-                links.append("  ")
-                links.append_text(_link_text("details", row.details_url))
-        elif row.details_url:
-            links.append_text(_link_text("details", row.details_url))
-        else:
-            links.append("-")
-
         table.add_row(
             row.product_name,
             row.latest,
             row.maintenance,
             row.build or "-",
-            links,
+            _links(row.download_url, row.details_url),
+        )
+
+    console.print(table)
+
+
+def render_host_update_table(report: HostUpdateReport, *, console=None) -> None:
+    """Render the useful server view: installed levels versus catalog targets."""
+    try:
+        from rich.console import Console
+        from rich.table import Table
+        from rich.text import Text
+    except ModuleNotFoundError as exc:
+        raise RuntimeError("Rich is required for table rendering: install package 'rich'") from exc
+
+    console = console or Console()
+    table = Table(
+        title=f"IBM Patchwatch – updates for {report.host_alias} ({report.remote_hostname})",
+        caption=(
+            f"GitHub ref: {report.repository_ref}  revision: {report.revision}  "
+            f"catalog generated: {report.generated_at or 'unknown'}"
+        ),
+        header_style="bold",
+        show_lines=True,
+    )
+    table.add_column("Status", no_wrap=True)
+    table.add_column("Product", no_wrap=False)
+    table.add_column("Installed", no_wrap=False)
+    table.add_column("Target", no_wrap=False)
+    table.add_column("Maintenance", no_wrap=True)
+    table.add_column("Build / Fix ID", no_wrap=False)
+    table.add_column("Download / Details", no_wrap=False)
+
+    labels = {
+        "current": ("CURRENT", "green"),
+        "update_available": ("UPDATE", "bold yellow"),
+        "review_required": ("REVIEW", "bold magenta"),
+    }
+
+    for row in report.rows:
+        label, style = labels.get(row.status, (row.status.upper(), "red"))
+        table.add_row(
+            Text(label, style=style),
+            row.product_name,
+            row.installed,
+            row.target,
+            row.maintenance,
+            row.build or "-",
+            _links(row.download_url, row.details_url),
         )
 
     console.print(table)
