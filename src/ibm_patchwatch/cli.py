@@ -18,6 +18,35 @@ def _config(path: str) -> AppConfig:
         raise SystemExit(f"config error: {exc}") from exc
 
 
+def _print_product(item: dict, *, details: bool = False) -> None:
+    print(f"  {item.get('name', item.get('id')):<46} {product_version(item)}")
+    if not details:
+        return
+
+    if item.get("code_release"):
+        print(f"    Code release: {item['code_release']}")
+    if item.get("special_build"):
+        print(f"    Special build: {item['special_build']}")
+    if item.get("build_token"):
+        print(f"    Build token: {item['build_token']}")
+    if item.get("im_internal_version"):
+        print(f"    IM internal version: {item['im_internal_version']}")
+    if item.get("im_version_matches") is False:
+        print(f"    WARNING: Installation Manager reports {item.get('im_version')}")
+
+    fixes = item.get("installed_fixes")
+    if isinstance(fixes, list) and fixes:
+        print("    Installed fixes:")
+        for fix in fixes:
+            print(f"      - {fix}")
+
+    rollback = item.get("rollback_versions")
+    if isinstance(rollback, list) and rollback:
+        print("    Rollback levels (history, not additionally installed fixes):")
+        for version in rollback:
+            print(f"      - {version}")
+
+
 def cmd_scan(args: argparse.Namespace) -> int:
     cfg = _config(args.config)
     aliases = list(cfg.hosts) if args.host == "all" else [args.host]
@@ -52,7 +81,7 @@ def cmd_scan(args: argparse.Namespace) -> int:
         remote = (inventory.get("host") or {}).get("hostname", "?")
         print(f"{alias} ({host.environment}) -> {remote}  scan={scan_id}")
         for item in patch_targets(inventory):
-            print(f"  {item.get('name', item.get('id')):<46} {product_version(item)}")
+            _print_product(item, details=args.details)
 
     if args.json:
         print(json.dumps(outputs, ensure_ascii=False, indent=2 if args.pretty else None))
@@ -87,7 +116,7 @@ def cmd_inventory(args: argparse.Namespace) -> int:
         inventory = json.loads(row["inventory_json"])
         print(f"{row['host_alias']} ({row['environment']}) {row['remote_hostname'] or '?'}  {row['collected_at']}")
         for item in patch_targets(inventory):
-            print(f"  {item.get('name', item.get('id')):<46} {product_version(item)}")
+            _print_product(item, details=args.details)
     return 0
 
 
@@ -101,11 +130,13 @@ def build_parser() -> argparse.ArgumentParser:
     scan.add_argument("host", help="configured SSH alias or 'all'")
     scan.add_argument("--json", action="store_true")
     scan.add_argument("--pretty", action="store_true")
+    scan.add_argument("--details", action="store_true", help="show installed fixes and rollback history")
     scan.set_defaults(func=cmd_scan)
 
     inventory = sub.add_parser("inventory", help="show latest stored inventory")
     inventory.add_argument("--json", action="store_true")
     inventory.add_argument("--pretty", action="store_true")
+    inventory.add_argument("--details", action="store_true", help="show installed fixes and rollback history")
     inventory.set_defaults(func=cmd_inventory)
     return parser
 
