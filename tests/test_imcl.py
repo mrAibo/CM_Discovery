@@ -1,4 +1,4 @@
-from ibm_patchwatch.imcl import parse_packages
+from ibm_patchwatch.imcl import normalize_installation_manager, parse_packages
 
 
 def test_german_imcl_output():
@@ -19,3 +19,32 @@ def test_german_imcl_output():
     assert packages[0]["version"] == "9.0.5.25"
     assert packages[0]["installation_directory"] == "/opt/IBM/WebSphere/AppServer"
     assert packages[0]["rollback_versions"] == ["9.0.5.22 (9.0.5022.20241118_0055)"]
+
+
+def test_iccsap_fixes_are_correlated_to_product():
+    inventory = {
+        "products": [
+            {"id": "iccsap", "name": "IBM Content Collector for SAP Applications", "version": "4.0.0.4"}
+        ],
+        "installation_manager": {
+            "packages_raw": [
+                "[Paketgruppe]",
+                "Installationsverzeichnis: /opt/IBM/iccsap",
+                "[Paket]",
+                "Name: IBM Content Collector for SAP Applications (com.ibm.im.iccsap.offering)",
+                "Version: 4.0.0.4 (4.0.0.4)",
+                "Fixes:",
+                "GSKit update (com.ibm.im.iccsap.offering.GSKit_fix_20151218)",
+                "JRE update (com.ibm.im.iccsap.offering.JRE_fix_20230104)",
+                "JRE update (com.ibm.im.iccsap.offering.JRE_fix_20241212)",
+                "Rollbackversionen:",
+                "4.0.0.0 (4.0.0.0)",
+            ]
+        },
+    }
+    normalize_installation_manager(inventory)
+    product = inventory["products"][0]
+    assert product["im_package_id"] == "com.ibm.im.iccsap.offering"
+    assert product["im_version_matches"] is True
+    assert len(product["installed_fixes"]) == 3
+    assert product["rollback_versions"] == ["4.0.0.0 (4.0.0.0)"]
