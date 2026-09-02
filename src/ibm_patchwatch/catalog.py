@@ -20,16 +20,22 @@ def load_catalog(path: Path = DEFAULT_CATALOG) -> dict[str, Any]:
     return data
 
 
-def _age_hours(generated_at: str | None) -> float | None:
-    if not generated_at:
+def age_hours(timestamp: str | None) -> float | None:
+    """Return age of an ISO-8601 timestamp in hours."""
+    if not timestamp:
         return None
     try:
-        stamp = datetime.fromisoformat(generated_at.replace("Z", "+00:00"))
+        stamp = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
         if stamp.tzinfo is None:
             stamp = stamp.replace(tzinfo=timezone.utc)
         return max(0.0, (datetime.now(timezone.utc) - stamp.astimezone(timezone.utc)).total_seconds() / 3600.0)
     except ValueError:
         return None
+
+
+def entry_timestamp(entry: dict[str, Any], catalog: dict[str, Any]) -> str | None:
+    value = entry.get("refreshed_at") or catalog.get("generated_at")
+    return str(value) if value else None
 
 
 def _icn_ifix(build_level: object) -> int | None:
@@ -108,8 +114,8 @@ def fallback_result(
     available = entry.get("available") or {}
     status = compare_installed(product_id, installed, available)
 
-    generated_at = catalog.get("generated_at")
-    age = _age_hours(str(generated_at) if generated_at else None)
+    refreshed_at = entry_timestamp(entry, catalog)
+    age = age_hours(refreshed_at)
     stale = age is None or age > MAX_CATALOG_AGE_HOURS
 
     return {
@@ -123,9 +129,10 @@ def fallback_result(
         "ifx_audit": entry.get("ifx_audit"),
         "notes": list(entry.get("notes") or []),
         "source_mode": "catalog",
-        "catalog_generated_at": generated_at,
+        "catalog_generated_at": refreshed_at,
         "catalog_age_hours": age,
         "catalog_stale": stale,
+        "catalog_refresh_error": entry.get("refresh_error"),
         "live_error": f"{type(live_error).__name__}: {live_error}",
-        **({"error": f"IBM catalog is stale ({age!r} hours)"} if stale else {}),
+        **({"error": f"IBM catalog entry is stale ({age!r} hours)"} if stale else {}),
     }
