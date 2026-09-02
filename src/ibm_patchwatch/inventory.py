@@ -32,7 +32,24 @@ def patch_targets(inventory: dict[str, Any]) -> list[dict[str, Any]]:
 
 
 def product_version(item: dict[str, Any]) -> str:
+    """Return a human maintenance fingerprint, not merely the base version."""
     version = str(item.get("version", "?"))
+
+    if item.get("id") == "db2":
+        parts = [version]
+        if item.get("fix_pack") is not None:
+            parts.append(f"FP{item['fix_pack']}")
+        if item.get("special_build"):
+            parts.append(str(item["special_build"]))
+        if item.get("build_token"):
+            parts.append(str(item["build_token"]))
+        return " ".join(parts)
+
     if item.get("interim_fix") is not None:
         version += f" iFix {item['interim_fix']}"
+
+    fixes = item.get("installed_fixes")
+    if isinstance(fixes, list) and fixes:
+        version += f" +{len(fixes)} installed fixes"
+
     return version
