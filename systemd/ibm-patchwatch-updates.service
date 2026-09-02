@@ -1,0 +1,12 @@
+[Unit]
+Description=IBM Patchwatch GitHub update table refresh
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/bin/CM_Discovery
+ExecStart=%h/bin/CM_Discovery/.venv/bin/python scripts/github_update_table.py show
+
+# The rendered Rich table is written to the user journal. View it with:
+#   journalctl --user -u ibm-patchwatch-updates.service -n 100 --no-pager
