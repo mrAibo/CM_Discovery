@@ -2,6 +2,13 @@ name: Refresh IBM metadata catalog
 
 on:
   workflow_dispatch:
+  repository_dispatch:
+    types:
+      - refresh-ibm-catalog
+  release:
+    types:
+      - published
+      - edited
   schedule:
     - cron: "17 3 * * *"
   push:
