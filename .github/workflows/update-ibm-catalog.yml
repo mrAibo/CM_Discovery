@@ -4,6 +4,13 @@ on:
   workflow_dispatch:
   schedule:
     - cron: "17 3 * * *"
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/update-ibm-catalog.yml"
+      - "scripts/update_ibm_catalog.py"
+      - "src/ibm_patchwatch/providers/**"
 
 permissions:
   contents: write
@@ -25,7 +32,7 @@ jobs:
           PYTHONPATH: src
         run: python scripts/update_ibm_catalog.py
 
-      - name: Commit changed catalog
+      - name: Commit refreshed catalog
         run: |
           if git diff --quiet -- data/ibm/catalog.json; then
             echo "IBM catalog unchanged"
