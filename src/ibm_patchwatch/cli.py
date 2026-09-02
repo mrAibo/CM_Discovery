@@ -5,6 +5,7 @@ import json
 import sys
 
 from . import __version__
+from .checks import run_checks
 from .config import AppConfig, load_config
 from .inventory import patch_targets, product_version, validate_inventory
 from .ssh import SSHScanError, collect_inventory
@@ -23,10 +24,7 @@ def _print_product(item: dict, *, details: bool = False) -> None:
     if not details:
         return
 
-    # Product-native maintenance/build metadata. These fields come from the
-    # authoritative local product tools/files and must not be lost merely
-    # because the compact one-line inventory only prints the base version.
-    detail_fields = (
+    for key, label in (
         ("build", "Build"),
         ("fix_level", "Fix level"),
         ("build_level", "Build level"),
@@ -36,11 +34,9 @@ def _print_product(item: dict, *, details: bool = False) -> None:
         ("code_release", "Code release"),
         ("special_build", "Special build"),
         ("build_token", "Build token"),
-    )
-    for key, label in detail_fields:
-        value = item.get(key)
-        if value is not None and value != "":
-            print(f"    {label}: {value}")
+    ):
+        if item.get(key) is not None:
+            print(f"    {label}: {item[key]}")
 
     if item.get("im_internal_version"):
         print(f"    IM internal version: {item['im_internal_version']}")
@@ -58,6 +54,15 @@ def _print_product(item: dict, *, details: bool = False) -> None:
         print("    Rollback levels (history, not additionally installed fixes):")
         for version in rollback:
             print(f"      - {version}")
+
+
+def _fresh_inventory(cfg: AppConfig, alias: str):
+    if alias not in cfg.hosts:
+        raise ValueError(f"unknown host: {alias}")
+    host = cfg.hosts[alias]
+    inventory = collect_inventory(host, cfg.ssh)
+    validate_inventory(inventory)
+    return host, inventory
 
 
 def cmd_scan(args: argparse.Namespace) -> int:
@@ -133,6 +138,79 @@ def cmd_inventory(args: argparse.Namespace) -> int:
     return 0
 
 
+def _available_label(result: dict) -> str:
+    available = result.get("available") or {}
+    product_id = result.get("product_id")
+    if product_id == "db2":
+        return " ".join(
+            str(x) for x in (
+                available.get("version"),
+                available.get("special_build"),
+                available.get("ptf"),
+            ) if x
+        )
+    return str(available.get("version") or "?")
+
+
+def cmd_check(args: argparse.Namespace) -> int:
+    cfg = _config(args.config)
+    try:
+        host, inventory = _fresh_inventory(cfg, args.host)
+    except (SSHScanError, ValueError) as exc:
+        print(f"{args.host}: ERROR: {exc}", file=sys.stderr)
+        return 1
+
+    db = connect(cfg.database)
+    scan_id = save_scan(db, args.host, host.environment, inventory)
+    results = run_checks(inventory)
+
+    payload = {
+        "host_alias": args.host,
+        "environment": host.environment,
+        "scan_id": scan_id,
+        "inventory": inventory,
+        "checks": results,
+    }
+    if args.json:
+        print(json.dumps(payload, ensure_ascii=False, indent=2 if args.pretty else None))
+        return 1 if any(r.get("status") == "error" for r in results) else 0
+
+    names = {
+        item.get("id"): item.get("name", item.get("id"))
+        for item in inventory.get("products", [])
+        if isinstance(item, dict)
+    }
+    remote = (inventory.get("host") or {}).get("hostname", "?")
+    print(f"{args.host} ({host.environment}) -> {remote}  scan={scan_id}")
+    for result in results:
+        product_id = result.get("product_id")
+        name = str(names.get(product_id, product_id))
+        status = result.get("status", "unknown")
+        installed = (result.get("installed") or {}).get("version", "?")
+
+        if status == "not_checked":
+            print(f"  {name:<46} {installed:<18} NOT CHECKED")
+            continue
+        if status == "error":
+            print(f"  {name:<46} {installed:<18} ERROR")
+            print(f"    {result.get('error', 'unknown error')}")
+            continue
+
+        available = _available_label(result)
+        marker = "CURRENT" if status == "current" else "UPDATE AVAILABLE"
+        print(f"  {name:<46} {installed:<18} {marker}")
+        print(f"    IBM available: {available}")
+        if result.get("cumulative") is True:
+            print("    Maintenance stream: cumulative")
+        if result.get("ifx_audit"):
+            print(f"    Interim-fix audit: {str(result['ifx_audit']).upper()}")
+        if result.get("source_url"):
+            print(f"    Source: {result['source_url']}")
+
+    errors = any(r.get("status") == "error" for r in results)
+    return 1 if errors else 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="ibm-patchwatch")
     parser.add_argument("--version", action="version", version=__version__)
@@ -143,14 +221,20 @@ def build_parser() -> argparse.ArgumentParser:
     scan.add_argument("host", help="configured SSH alias or 'all'")
     scan.add_argument("--json", action="store_true")
     scan.add_argument("--pretty", action="store_true")
-    scan.add_argument("--details", action="store_true", help="show product build metadata, installed fixes and rollback history")
+    scan.add_argument("--details", action="store_true", help="show installed fixes and rollback history")
     scan.set_defaults(func=cmd_scan)
 
     inventory = sub.add_parser("inventory", help="show latest stored inventory")
     inventory.add_argument("--json", action="store_true")
     inventory.add_argument("--pretty", action="store_true")
-    inventory.add_argument("--details", action="store_true", help="show product build metadata, installed fixes and rollback history")
+    inventory.add_argument("--details", action="store_true", help="show installed fixes and rollback history")
     inventory.set_defaults(func=cmd_inventory)
+
+    check = sub.add_parser("check", help="fresh scan plus online IBM maintenance check")
+    check.add_argument("host", help="configured SSH alias")
+    check.add_argument("--json", action="store_true")
+    check.add_argument("--pretty", action="store_true")
+    check.set_defaults(func=cmd_check)
     return parser
 
 
