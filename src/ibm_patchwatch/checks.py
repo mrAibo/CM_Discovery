@@ -3,21 +3,18 @@ from __future__ import annotations
 from typing import Any, Callable
 
 from .catalog import fallback_result
-from .providers import db2, java, websphere
+from .providers import content_manager, content_navigator, daeja, db2, iccsap, java, websphere
 
 Checker = Callable[[dict[str, Any]], dict[str, Any]]
 
 CHECKERS: dict[str, Checker] = {
+    "content_manager": content_manager.check,
+    "content_navigator": content_navigator.check,
+    "daeja_viewone_virtual": daeja.check,
     "db2": db2.check,
     "ibm_java": java.check,
+    "iccsap": iccsap.check,
     "websphere": websphere.check,
-}
-
-PENDING_PRODUCT_IDS = {
-    "content_manager",
-    "content_navigator",
-    "daeja_viewone_virtual",
-    "iccsap",
 }
 
 
@@ -29,7 +26,15 @@ def run_checks(inventory: dict[str, Any]) -> list[dict[str, Any]]:
         if isinstance(item, dict) and item.get("id")
     }
 
-    for product_id in ("content_manager", "content_navigator", "daeja_viewone_virtual", "db2", "ibm_java", "iccsap", "websphere"):
+    for product_id in (
+        "content_manager",
+        "content_navigator",
+        "daeja_viewone_virtual",
+        "db2",
+        "ibm_java",
+        "iccsap",
+        "websphere",
+    ):
         installed = products.get(product_id)
         if not installed:
             continue
@@ -39,7 +44,7 @@ def run_checks(inventory: dict[str, Any]) -> list[dict[str, Any]]:
                 "product_id": product_id,
                 "status": "not_checked",
                 "installed": {"version": installed.get("version")},
-                "reason": "online provider not implemented yet",
+                "reason": "provider not implemented",
             })
             continue
         try:
