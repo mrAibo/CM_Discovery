@@ -127,27 +127,40 @@ ibm-patchwatch check cmtest --json --pretty
 
 ## Rich update table from GitHub
 
-The table implementation deliberately separates data access from presentation:
+The table implementation deliberately separates data access, comparison, and presentation:
 
-- `src/ibm_patchwatch/github_catalog.py` — Git/GitHub fetch and normalization only.
-- `src/ibm_patchwatch/rich_updates.py` — Rich table rendering only.
+- `src/ibm_patchwatch/github_catalog.py` — Git/GitHub fetch and catalog normalization only.
+- `src/ibm_patchwatch/update_report.py` — installed inventory versus GitHub catalog comparison.
+- `src/ibm_patchwatch/rich_updates.py` — Rich rendering only.
 - `scripts/github_update_table.py` — manual / polling trigger CLI.
 
 The Git source refreshes `origin/main` and reads `data/ibm/catalog.json` directly from the remote-tracking Git ref. It does **not** reset or modify the working tree.
 
-Manual refresh and display:
+### Global catalog view
+
+This only shows what IBM Patchwatch currently knows as the latest target levels. It does **not** say whether a particular server needs them:
 
 ```bash
 python scripts/github_update_table.py show
 ```
 
-Interactive polling mode, for example every 60 seconds:
+### Installed-vs-target host view
+
+This performs a fresh SSH discovery of the configured host and joins it with the latest GitHub catalog. This is the normal update report:
 
 ```bash
-python scripts/github_update_table.py watch --interval 60
+python scripts/github_update_table.py show --host cmtest
 ```
 
-The table displays a clickable `download` link only when the catalog contains an explicitly verified `download_url`. Otherwise it displays the IBM `details` / readme link. Patchwatch never fabricates package URLs.
+The table contains `CURRENT`, `UPDATE`, or `REVIEW` plus the installed and target maintenance levels.
+
+Interactive polling with a fresh host scan every 60 seconds:
+
+```bash
+python scripts/github_update_table.py watch --host cmtest --interval 60
+```
+
+The table displays a clickable `download` link only when the catalog contains an explicitly verified package/Fix Central URL. Otherwise it displays the IBM `details` / readme link. Patchwatch never fabricates package URLs.
 
 ### GitHub-side triggers
 
@@ -159,7 +172,7 @@ The table displays a clickable `download` link only when the catalog contains an
 - GitHub release `published` / `edited` events
 - explicit `repository_dispatch` event `refresh-ibm-catalog`
 
-This means GitHub events update the source-of-truth catalog without requiring an inbound webhook endpoint in the corporate network.
+Catalog refresh runs are serialized to avoid concurrent pushes. Provider/network failures are isolated: if one IBM endpoint times out, its last known good entry is preserved and marked with `refresh_error`; the other products can still refresh.
 
 ### Server-side scheduled trigger with systemd
 
@@ -171,11 +184,13 @@ cp systemd/ibm-patchwatch-updates.service ~/.config/systemd/user/
 cp systemd/ibm-patchwatch-updates.timer ~/.config/systemd/user/
 ```
 
-If the server requires a proxy, create:
+Create the environment file. `PATCHWATCH_HOST` turns the timer from a catalog-only display into the useful installed-vs-target report:
 
 ```bash
 mkdir -p ~/.config/ibm-patchwatch
 cat > ~/.config/ibm-patchwatch/proxy.env <<'EOF'
+PATCHWATCH_HOST=cmtest
+PATCHWATCH_CONFIG=/home/xout-adm/bin/CM_Discovery/config.toml
 HTTP_PROXY=http://proxy.kkk:8080
 HTTPS_PROXY=http://proxy.kkk:8080
 http_proxy=http://proxy.kkk:8080
