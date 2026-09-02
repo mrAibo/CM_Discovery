@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -31,6 +32,61 @@ def _age_hours(generated_at: str | None) -> float | None:
         return None
 
 
+def _icn_ifix(build_level: object) -> int | None:
+    match = re.search(r"icn310\.(\d{3})\.", str(build_level or ""), re.I)
+    return int(match.group(1)) if match else None
+
+
+def _latest_iccsap_jre_fix_date(installed: dict[str, Any]) -> str | None:
+    dates: list[str] = []
+    for item in installed.get("installed_fixes") or []:
+        match = re.search(r"JRE_fix_(\d{8})", str(item), re.I)
+        if match:
+            dates.append(match.group(1))
+    return max(dates) if dates else None
+
+
+def _compare(product_id: str, installed: dict[str, Any], available: dict[str, Any]) -> str:
+    current_version = str(installed.get("version") or "")
+
+    if product_id in {"websphere", "ibm_java", "content_manager"}:
+        latest = str(available.get("version") or "")
+        if not latest:
+            raise ValueError(f"catalog has no available version for {product_id}")
+        return "current" if version_tuple(current_version) >= version_tuple(latest) else "update_available"
+
+    if product_id == "db2":
+        installed_special = str(installed.get("special_build") or "")
+        latest_special = str(available.get("special_build") or "")
+        if not latest_special:
+            raise ValueError("catalog has no Db2 special build")
+        return "current" if installed_special == latest_special else "update_available"
+
+    if product_id == "content_navigator":
+        installed_ifix = _icn_ifix(installed.get("build_level"))
+        latest_ifix = available.get("interim_fix")
+        if installed_ifix is None or latest_ifix is None:
+            return "review_required"
+        return "current" if installed_ifix >= int(latest_ifix) else "update_available"
+
+    if product_id == "daeja_viewone_virtual":
+        try:
+            installed_ifix = int(installed.get("interim_fix"))
+            latest_ifix = int(available.get("interim_fix"))
+        except (TypeError, ValueError):
+            return "review_required"
+        return "current" if installed_ifix >= latest_ifix else "update_available"
+
+    if product_id == "iccsap":
+        installed_date = _latest_iccsap_jre_fix_date(installed)
+        target_date = str(available.get("jre_fix_date") or "")
+        if not installed_date or not target_date:
+            return "review_required"
+        return "current" if installed_date >= target_date else "update_available"
+
+    raise KeyError(f"catalog comparison not implemented for {product_id}")
+
+
 def fallback_result(
     product_id: str,
     installed: dict[str, Any],
@@ -44,21 +100,7 @@ def fallback_result(
         raise KeyError(f"product {product_id!r} missing from IBM catalog")
 
     available = entry.get("available") or {}
-    current_version = str(installed.get("version") or "")
-
-    if product_id in {"websphere", "ibm_java"}:
-        latest = str(available.get("version") or "")
-        if not latest:
-            raise ValueError(f"catalog has no available version for {product_id}")
-        status = "current" if version_tuple(current_version) >= version_tuple(latest) else "update_available"
-    elif product_id == "db2":
-        installed_special = str(installed.get("special_build") or "")
-        latest_special = str(available.get("special_build") or "")
-        if not latest_special:
-            raise ValueError("catalog has no Db2 special build")
-        status = "current" if installed_special == latest_special else "update_available"
-    else:
-        raise KeyError(f"catalog comparison not implemented for {product_id}")
+    status = _compare(product_id, installed, available)
 
     generated_at = catalog.get("generated_at")
     age = _age_hours(str(generated_at) if generated_at else None)
@@ -66,7 +108,7 @@ def fallback_result(
 
     return {
         "product_id": product_id,
-        "status": status,
+        "status": "error" if stale else status,
         "installed": dict(installed),
         "available": available,
         "cumulative": entry.get("cumulative"),
@@ -79,4 +121,5 @@ def fallback_result(
         "catalog_age_hours": age,
         "catalog_stale": stale,
         "live_error": f"{type(live_error).__name__}: {live_error}",
+        **({"error": f"IBM catalog is stale ({age!r} hours)"} if stale else {}),
     }
