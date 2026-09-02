@@ -1,8 +1,51 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-09-02T14:13:07.564756+00:00",
+  "generated_at": "2026-09-02T14:14:26.458307+00:00",
   "generator": "scripts/update_ibm_catalog.py",
   "products": {
+    "content_manager": {
+      "available": {
+        "version": "8.7.00.400",
+        "fix_pack": 4
+      },
+      "cumulative": true,
+      "scope": "8.7_fix_pack_level",
+      "source_url": "https://www.ibm.com/docs/en/content-manager/8.7.0?topic=fp-content-manager-version-87-fix-pack-4-readme",
+      "ifx_audit": "pending",
+      "notes": [
+        "Fix-pack comparison only; interim/security fixes are audited separately.",
+        "The IBM Fix Pack 4 readme includes the cumulative fix list through Fix Pack 4."
+      ]
+    },
+    "content_navigator": {
+      "available": {
+        "version": "3.1.0",
+        "interim_fix": 12,
+        "build_level": "icn310.012.703"
+      },
+      "cumulative": null,
+      "scope": "3.1.0_interim_fix_stream",
+      "source_url": "https://www.ibm.com/support/pages/ibm-content-navigator-version-310-interim-fix-12-readme",
+      "ifx_audit": null,
+      "notes": [
+        "The target is restricted to the installed 3.1.0 maintenance stream; no 3.2 major upgrade is inferred.",
+        "Supersedence/cumulative semantics remain conservative until explicitly proven from IBM metadata."
+      ]
+    },
+    "daeja_viewone_virtual": {
+      "available": {
+        "version": "5.0.15",
+        "interim_fix": 6
+      },
+      "cumulative": true,
+      "scope": "5.0.15_ifix_stream",
+      "source_url": "https://delivery04.dhe.ibm.com/sar/CMA/OSA/0dx21/0/5.0.15_DAEJA_VIEWONE_IFIX006_Readme.htm",
+      "ifx_audit": null,
+      "notes": [
+        "The iFix 6 readme explicitly carries forward fixes/features from previous 5.0.15 iFixes.",
+        "IBM Daeja 26.0.0 is a newer release, but Patchwatch does not infer a major-version upgrade from a maintenance check."
+      ]
+    },
     "db2": {
       "available": {
         "version": "11.5.9.0",
@@ -30,6 +73,22 @@
       "source_url": "https://www.ibm.com/support/pages/ibm-sdk-java-technology-edition-refreshes",
       "ifx_audit": null,
       "notes": []
+    },
+    "iccsap": {
+      "available": {
+        "version": "4.0.0.4",
+        "jre_version": "8.0.8.70",
+        "jre_fix_date": "20260812",
+        "fix_name": "4.0.0.4-ICCSAP-Base-JRE-8.0.8.70"
+      },
+      "cumulative": null,
+      "scope": "4.0.0.4_embedded_jre_security_fix",
+      "source_url": "https://www.ibm.com/support/pages/security-bulletin-multiple-vulnerabilities-may-affect-ibm%C2%AE-sdk-java%E2%84%A2-technology-edition-ibm-content-collector-sap-applications-16",
+      "ifx_audit": null,
+      "notes": [
+        "This check targets the currently published ICCSAP embedded-JRE security remediation, not every ICCSAP component fix.",
+        "Installed state is correlated from Installation Manager JRE_fix_YYYYMMDD identifiers; if that identifier is unavailable, manual review is required."
+      ]
     },
     "websphere": {
       "available": {
