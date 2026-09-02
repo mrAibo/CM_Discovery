@@ -149,6 +149,28 @@ def _available_label(result: dict) -> str:
                 available.get("ptf"),
             ) if x
         )
+    if product_id == "content_manager":
+        version = str(available.get("version") or "?")
+        fp = available.get("fix_pack")
+        return f"{version} (FP{fp})" if fp is not None else version
+    if product_id == "content_navigator":
+        version = str(available.get("version") or "?")
+        ifix = available.get("interim_fix")
+        build = available.get("build_level")
+        parts = [version]
+        if ifix is not None:
+            parts.append(f"IF{ifix}")
+        if build:
+            parts.append(str(build))
+        return " ".join(parts)
+    if product_id == "daeja_viewone_virtual":
+        version = str(available.get("version") or "?")
+        ifix = available.get("interim_fix")
+        return f"{version} iFix {ifix}" if ifix is not None else version
+    if product_id == "iccsap":
+        version = str(available.get("version") or "?")
+        jre = available.get("jre_version")
+        return f"{version} / embedded JRE {jre}" if jre else version
     return str(available.get("version") or "?")
 
 
@@ -197,11 +219,17 @@ def cmd_check(args: argparse.Namespace) -> int:
             continue
 
         available = _available_label(result)
-        marker = "CURRENT" if status == "current" else "UPDATE AVAILABLE"
+        marker = {
+            "current": "CURRENT",
+            "update_available": "UPDATE AVAILABLE",
+            "review_required": "REVIEW REQUIRED",
+        }.get(str(status), str(status).upper())
         print(f"  {name:<46} {installed:<18} {marker}")
         print(f"    IBM available: {available}")
         if result.get("cumulative") is True:
             print("    Maintenance stream: cumulative")
+        elif result.get("cumulative") is None:
+            print("    Maintenance stream: cumulative status not assumed")
         if result.get("ifx_audit"):
             print(f"    Interim-fix audit: {str(result['ifx_audit']).upper()}")
         if result.get("source_mode") == "catalog":
