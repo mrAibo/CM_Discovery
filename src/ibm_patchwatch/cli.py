@@ -204,11 +204,20 @@ def cmd_check(args: argparse.Namespace) -> int:
             print("    Maintenance stream: cumulative")
         if result.get("ifx_audit"):
             print(f"    Interim-fix audit: {str(result['ifx_audit']).upper()}")
+        if result.get("source_mode") == "catalog":
+            stamp = result.get("catalog_generated_at") or "unknown"
+            stale = " STALE" if result.get("catalog_stale") else ""
+            print(f"    Source mode: GitHub IBM catalog ({stamp}){stale}")
+            if result.get("live_error"):
+                print(f"    Live IBM: unavailable ({result['live_error']})")
+        else:
+            print("    Source mode: live IBM")
         if result.get("source_url"):
-            print(f"    Source: {result['source_url']}")
+            print(f"    IBM source: {result['source_url']}")
 
     errors = any(r.get("status") == "error" for r in results)
-    return 1 if errors else 0
+    stale = any(r.get("catalog_stale") for r in results)
+    return 1 if errors or stale else 0
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -230,7 +239,7 @@ def build_parser() -> argparse.ArgumentParser:
     inventory.add_argument("--details", action="store_true", help="show installed fixes and rollback history")
     inventory.set_defaults(func=cmd_inventory)
 
-    check = sub.add_parser("check", help="fresh scan plus online IBM maintenance check")
+    check = sub.add_parser("check", help="fresh scan plus IBM maintenance check (live with catalog fallback)")
     check.add_argument("host", help="configured SSH alias")
     check.add_argument("--json", action="store_true")
     check.add_argument("--pretty", action="store_true")
