@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-09-02T11:58:00+00:00",
-  "generator": "seeded from official IBM support pages",
+  "generated_at": "2026-09-02T14:07:35.349177+00:00",
+  "generator": "scripts/update_ibm_catalog.py",
   "products": {
     "db2": {
       "available": {
