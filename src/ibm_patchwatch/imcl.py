@@ -4,6 +4,13 @@ import re
 from typing import Any
 
 
+PACKAGE_TO_PRODUCT = {
+    "com.ibm.websphere.BASE.v90": "websphere",
+    "com.ibm.java.jdk.v8": "ibm_java",
+    "com.ibm.im.iccsap.offering": "iccsap",
+}
+
+
 def parse_packages(lines: list[str]) -> list[dict[str, Any]]:
     """Parse English or German `imcl listInstalledPackages -verbose` output."""
     package_headers = {"[package]", "[paket]"}
@@ -76,6 +83,45 @@ def parse_packages(lines: list[str]) -> list[dict[str, Any]]:
     return packages
 
 
+def enrich_products(inventory: dict[str, Any], packages: list[dict[str, Any]]) -> None:
+    products = inventory.get("products")
+    if not isinstance(products, list):
+        return
+
+    by_id = {
+        item.get("id"): item
+        for item in products
+        if isinstance(item, dict) and item.get("id")
+    }
+
+    for package in packages:
+        package_id = package.get("package_id")
+        product_id = PACKAGE_TO_PRODUCT.get(str(package_id))
+        product = by_id.get(product_id)
+        if not isinstance(product, dict):
+            continue
+
+        product["im_package_id"] = package_id
+        if package.get("internal_version"):
+            product["im_internal_version"] = package["internal_version"]
+        if package.get("repository"):
+            product["im_repository"] = package["repository"]
+        if package.get("installation_directory"):
+            product["installation_directory"] = package["installation_directory"]
+
+        fixes = package.get("fixes")
+        if isinstance(fixes, list):
+            product["installed_fixes"] = list(fixes)
+
+        rollback = package.get("rollback_versions")
+        if isinstance(rollback, list):
+            product["rollback_versions"] = list(rollback)
+
+        if package.get("version"):
+            product["im_version"] = package["version"]
+            product["im_version_matches"] = str(package["version"]) == str(product.get("version"))
+
+
 def normalize_installation_manager(inventory: dict[str, Any]) -> None:
     im = inventory.get("installation_manager")
     if not isinstance(im, dict):
@@ -83,3 +129,6 @@ def normalize_installation_manager(inventory: dict[str, Any]) -> None:
     raw = im.get("packages_raw")
     if isinstance(raw, list) and not isinstance(im.get("packages"), list):
         im["packages"] = parse_packages([str(line) for line in raw])
+    packages = im.get("packages")
+    if isinstance(packages, list):
+        enrich_products(inventory, packages)
