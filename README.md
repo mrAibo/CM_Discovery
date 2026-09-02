@@ -44,7 +44,7 @@ Keep connection details in `~/.ssh/config`:
 
 ```sshconfig
 Host cmtest
-    HostName VNLDICM-D2013
+    HostName cm_host123
     User root
     IdentityFile ~/.ssh/id_ed25519
 ```
