@@ -5,7 +5,15 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
-from ibm_patchwatch.providers import db2, java, websphere
+from ibm_patchwatch.providers import (
+    content_manager,
+    content_navigator,
+    daeja,
+    db2,
+    iccsap,
+    java,
+    websphere,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "data" / "ibm" / "catalog.json"
@@ -24,6 +32,15 @@ def _entry(result: dict) -> dict:
 
 def main() -> None:
     checks = {
+        "content_manager": content_manager.check({"version": "0"}),
+        "content_navigator": content_navigator.check({
+            "version": "3.1.0",
+            "build_level": "icn310.000.000",
+        }),
+        "daeja_viewone_virtual": daeja.check({
+            "version": "5.0.15",
+            "interim_fix": 0,
+        }),
         "db2": db2.check({
             "version": "11.5.9.0",
             "fix_pack": "0",
@@ -31,6 +48,10 @@ def main() -> None:
             "code_release": "SQL11059",
         }),
         "ibm_java": java.check({"version": "0"}),
+        "iccsap": iccsap.check({
+            "version": "4.0.0.4",
+            "installed_fixes": [],
+        }),
         "websphere": websphere.check({"version": "0"}),
     }
 
