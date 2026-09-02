@@ -12,8 +12,14 @@ ExecStart=%h/bin/CM_Discovery/.venv/bin/python scripts/github_update_table.py sh
 # The rendered Rich table is written to the user journal. View it with:
 #   journalctl --user -u ibm-patchwatch-updates.service -n 100 --no-pager
 #
-# Optional proxy file example:
+# Environment file example (~/.config/ibm-patchwatch/proxy.env):
+#   PATCHWATCH_HOST=cmtest
+#   PATCHWATCH_CONFIG=/home/xout-adm/bin/CM_Discovery/config.toml
 #   HTTP_PROXY=http://proxy.kkk:8080
 #   HTTPS_PROXY=http://proxy.kkk:8080
 #   http_proxy=http://proxy.kkk:8080
 #   https_proxy=http://proxy.kkk:8080
+#
+# PATCHWATCH_HOST is optional. Without it the service displays only the global
+# IBM catalog; with it the service performs a fresh SSH discovery and renders
+# CURRENT / UPDATE / REVIEW for that host.
