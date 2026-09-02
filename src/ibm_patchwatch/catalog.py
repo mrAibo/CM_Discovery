@@ -46,7 +46,13 @@ def _latest_iccsap_jre_fix_date(installed: dict[str, Any]) -> str | None:
     return max(dates) if dates else None
 
 
-def _compare(product_id: str, installed: dict[str, Any], available: dict[str, Any]) -> str:
+def compare_installed(product_id: str, installed: dict[str, Any], available: dict[str, Any]) -> str:
+    """Compare one installed product with one normalized catalog entry.
+
+    Returns one of ``current``, ``update_available`` or ``review_required``.
+    The comparison is intentionally conservative for maintenance streams where
+    a simple semantic version comparison would be unsafe.
+    """
     current_version = str(installed.get("version") or "")
 
     if product_id in {"websphere", "ibm_java", "content_manager"}:
@@ -100,7 +106,7 @@ def fallback_result(
         raise KeyError(f"product {product_id!r} missing from IBM catalog")
 
     available = entry.get("available") or {}
-    status = _compare(product_id, installed, available)
+    status = compare_installed(product_id, installed, available)
 
     generated_at = catalog.get("generated_at")
     age = _age_hours(str(generated_at) if generated_at else None)
