@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-09-02T11:58:00+00:00",
+  "generator": "seeded from official IBM support pages",
+  "products": {
+    "db2": {
+      "available": {
+        "version": "11.5.9.0",
+        "update_number": "87984",
+        "special_build": "special_87984",
+        "ptf": "DYN2607151721AMD64_87984"
+      },
+      "cumulative": true,
+      "scope": "published_cumulative_updates",
+      "source_url": "https://www.ibm.com/support/pages/node/7087189",
+      "ifx_audit": null,
+      "notes": [
+        "IBM states that Db2 11.5.9 published updates are cumulative.",
+        "Update numbers are not treated as chronological version numbers; IBM page order/most-recent marker is authoritative."
+      ]
+    },
+    "ibm_java": {
+      "available": {
+        "version": "8.0.8.71",
+        "service_refresh": 8,
+        "fix_pack": 71
+      },
+      "cumulative": true,
+      "scope": "java8_refresh_stream",
+      "source_url": "https://www.ibm.com/support/pages/ibm-sdk-java-technology-edition-refreshes",
+      "ifx_audit": null,
+      "notes": []
+    },
+    "websphere": {
+      "available": {
+        "version": "9.0.5.28"
+      },
+      "cumulative": true,
+      "scope": "fix_pack_only",
+      "source_url": "https://www.ibm.com/support/pages/fix-list-ibm-websphere-application-server-traditional-v9-0",
+      "ifx_audit": "pending",
+      "notes": [
+        "WebSphere traditional fix packs are cumulative.",
+        "CURRENT here means current fix-pack level only; interim fixes are audited separately."
+      ]
+    }
+  }
+}
