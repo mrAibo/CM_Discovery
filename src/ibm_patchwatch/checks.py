@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Callable
 
+from .catalog import fallback_result
 from .providers import db2, java, websphere
 
 Checker = Callable[[dict[str, Any]], dict[str, Any]]
@@ -42,12 +43,20 @@ def run_checks(inventory: dict[str, Any]) -> list[dict[str, Any]]:
             })
             continue
         try:
-            results.append(checker(installed))
+            result = checker(installed)
+            result.setdefault("source_mode", "live")
+            results.append(result)
         except Exception as exc:
-            results.append({
-                "product_id": product_id,
-                "status": "error",
-                "installed": {"version": installed.get("version")},
-                "error": f"{type(exc).__name__}: {exc}",
-            })
+            try:
+                results.append(fallback_result(product_id, installed, exc))
+            except Exception as fallback_exc:
+                results.append({
+                    "product_id": product_id,
+                    "status": "error",
+                    "installed": {"version": installed.get("version")},
+                    "error": (
+                        f"live check failed: {type(exc).__name__}: {exc}; "
+                        f"catalog fallback failed: {type(fallback_exc).__name__}: {fallback_exc}"
+                    ),
+                })
     return results
