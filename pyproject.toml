@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ibm-patchwatch"
+version = "0.1.0"
+description = "IBM product discovery and patch intelligence for Content Manager environments"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{name = "CM Discovery contributors"}]
+dependencies = []
+
+[project.scripts]
+ibm-patchwatch = "ibm_patchwatch.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
