@@ -234,6 +234,18 @@ ssh cmtest '/root/bin/ibm_discovery.py --json'
 
 The one-line JSON form is intentional and ideal for machine transport. Use `--pretty` only for manual debugging.
 
+## Temporary LAN update checker
+
+Run discovery once and expose the in-memory inventory plus a dependency-free browser UI:
+
+```bash
+./ibm_discovery.py --serve --bind 0.0.0.0 --port 8765
+```
+
+Open `http://CM_HOST:8765/` from the Windows workstation and stop the server with `Ctrl+C` after the check. The Content Manager host makes no outbound requests. IBM pages open in separate tabs; enter the confirmed target level manually because browser same-origin policy prevents the LAN page from reading those tabs. IBMid credentials and cookies remain on IBM's site.
+
+The default bind address is `127.0.0.1`; exposing the checker to the LAN is an explicit `--bind 0.0.0.0` choice. Use it only on a trusted network because the inventory endpoint contains host and installed-product information.
+
 ## Proxy
 
 Online IBM providers honor the central host's standard proxy environment. For a classic HTTP CONNECT corporate proxy both variables normally use an `http://` proxy URL, for example:
