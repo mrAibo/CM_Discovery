@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 
 from . import __version__
@@ -248,6 +249,24 @@ def cmd_check(args: argparse.Namespace) -> int:
     return 1 if errors or stale else 0
 
 
+def cmd_serve(args: argparse.Namespace) -> int:
+    from .web import serve
+
+    cfg = _config(args.config)
+    try:
+        _, inventory = _fresh_inventory(cfg, args.host)
+    except (SSHScanError, ValueError) as exc:
+        print(f"{args.host}: ERROR: {exc}", file=sys.stderr)
+        return 1
+
+    user = os.environ.get("IBM_CHECK_USER", "admin")
+    password = os.environ.get("IBM_CHECK_PASSWORD", "admin")
+    if (user, password) == ("admin", "admin"):
+        print("WARNING: using default LAN-only credentials admin/admin", file=sys.stderr)
+    serve(inventory, args.bind, args.port, user, password)
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="ibm-patchwatch")
     parser.add_argument("--version", action="version", version=__version__)
@@ -272,6 +291,12 @@ def build_parser() -> argparse.ArgumentParser:
     check.add_argument("--json", action="store_true")
     check.add_argument("--pretty", action="store_true")
     check.set_defaults(func=cmd_check)
+
+    web = sub.add_parser("serve", help="fresh remote scan plus temporary authenticated LAN UI")
+    web.add_argument("host", help="configured SSH alias")
+    web.add_argument("--bind", default="127.0.0.1", help="LAN address to listen on")
+    web.add_argument("--port", type=int, default=8765)
+    web.set_defaults(func=cmd_serve)
     return parser
 
 
