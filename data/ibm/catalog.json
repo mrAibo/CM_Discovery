@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "generated_at": "2026-09-03T08:08:00.328803+00:00",
+  "generated_at": "2026-09-04T08:02:59.010458+00:00",
   "generator": "scripts/update_ibm_catalog.py",
   "refresh_status": "ok",
   "refresh_errors": {},
@@ -18,7 +18,7 @@
         "Fix-pack comparison only; interim/security fixes are audited separately.",
         "The IBM Fix Pack 4 readme includes the cumulative fix list through Fix Pack 4."
       ],
-      "refreshed_at": "2026-09-03T08:08:00.328803+00:00"
+      "refreshed_at": "2026-09-04T08:02:59.010458+00:00"
     },
     "content_navigator": {
       "available": {
@@ -34,7 +34,7 @@
         "The target is restricted to the installed 3.1.0 maintenance stream; no 3.2 major upgrade is inferred.",
         "Supersedence/cumulative semantics remain conservative until explicitly proven from IBM metadata."
       ],
-      "refreshed_at": "2026-09-03T08:08:00.328803+00:00"
+      "refreshed_at": "2026-09-04T08:02:59.010458+00:00"
     },
     "daeja_viewone_virtual": {
       "available": {
@@ -49,7 +49,7 @@
         "The iFix 6 readme explicitly carries forward fixes/features from previous 5.0.15 iFixes.",
         "IBM Daeja 26.0.0 is a newer release, but Patchwatch does not infer a major-version upgrade from a maintenance check."
       ],
-      "refreshed_at": "2026-09-03T08:08:00.328803+00:00"
+      "refreshed_at": "2026-09-04T08:02:59.010458+00:00"
     },
     "db2": {
       "available": {
@@ -66,7 +66,7 @@
         "IBM states that Db2 11.5.9 published updates are cumulative.",
         "Update numbers are not treated as chronological version numbers; IBM page order/most-recent marker is authoritative."
       ],
-      "refreshed_at": "2026-09-03T08:08:00.328803+00:00"
+      "refreshed_at": "2026-09-04T08:02:59.010458+00:00"
     },
     "ibm_java": {
       "available": {
@@ -79,7 +79,7 @@
       "source_url": "https://www.ibm.com/support/pages/ibm-sdk-java-technology-edition-refreshes",
       "ifx_audit": null,
       "notes": [],
-      "refreshed_at": "2026-09-03T08:08:00.328803+00:00"
+      "refreshed_at": "2026-09-04T08:02:59.010458+00:00"
     },
     "iccsap": {
       "available": {
@@ -96,7 +96,7 @@
         "This check targets the currently published ICCSAP embedded-JRE security remediation, not every ICCSAP component fix.",
         "Installed state is correlated from Installation Manager JRE_fix_YYYYMMDD identifiers; if that identifier is unavailable, manual review is required."
       ],
-      "refreshed_at": "2026-09-03T08:08:00.328803+00:00"
+      "refreshed_at": "2026-09-04T08:02:59.010458+00:00"
     },
     "websphere": {
       "available": {
@@ -110,7 +110,7 @@
         "WebSphere traditional fix packs are cumulative.",
         "CURRENT here means current fix-pack level only; interim fixes are audited separately."
       ],
-      "refreshed_at": "2026-09-03T08:08:00.328803+00:00"
+      "refreshed_at": "2026-09-04T08:02:59.010458+00:00"
     }
   }
 }
