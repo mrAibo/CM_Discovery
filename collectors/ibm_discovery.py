@@ -3,7 +3,6 @@
 """Read-only IBM product discovery collector. Python 3.6+, stdlib only."""
 import argparse, datetime, json, os, platform, re, socket, subprocess, time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from http.server import BaseHTTPRequestHandler, HTTPServer
 
 SCHEMA_VERSION=1
 COLLECTOR_VERSION="0.5.0"
@@ -152,67 +151,8 @@ def human(r):
  for n,s in sorted(r["discovery"].items()):print("  {:24}: {:12} ({:.3f}s)".format(n,s.get("status","unknown"),s.get("duration_seconds",0.0)))
  print("\n"+"="*78)
 
-WEB_HTML=b'''<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>IBM Update Checker</title><style>
-body{font:16px system-ui,sans-serif;max-width:1200px;margin:auto;padding:1rem;color:#161616}table{border-collapse:collapse;width:100%}th,td{border:1px solid #aaa;padding:.5rem;text-align:left;vertical-align:top}input{box-sizing:border-box;width:100%;min-width:9rem;padding:.4rem}.CURRENT{color:#087830}.UPDATE{color:#b34b00}.REVIEW{color:#a2191f}.UNKNOWN{color:#525252}.note{background:#fff8e1;padding:.8rem}button,a{margin:.15rem}</style>
-<script src="/app.js" defer></script></head><body>
-<h1>IBM Update Checker</h1><p id="host"></p>
-<p class="note"><strong>Manual check:</strong> the browser cannot inspect IBM tabs. Open the IBM source, enter the confirmed target level, then optionally paste an official HTTP(S) details/download URL. IBMid credentials remain on IBM.</p>
-<table><thead><tr><th>Product</th><th>Installed</th><th>Confirmed target</th><th>Status</th><th>IBM / download</th></tr></thead><tbody id="products"></tbody></table>
-</body></html>'''
-
-WEB_JS=r'''"use strict";
-const sources={
- content_manager:"https://www.ibm.com/docs/en/content-manager/8.7.0?topic=fix-packs",
- content_navigator:"https://www.ibm.com/support/pages/ibm-content-navigator-version-310-interim-fix-12-readme",
- daeja_viewone_virtual:"https://delivery04.dhe.ibm.com/sar/CMA/OSA/0dx21/0/5.0.15_DAEJA_VIEWONE_IFIX006_Readme.htm",
- db2:"https://www.ibm.com/support/pages/node/7087189",
- ibm_java:"https://www.ibm.com/support/pages/ibm-sdk-java-technology-edition-refreshes",
- iccsap:"https://www.ibm.com/support/pages/security-bulletin-multiple-vulnerabilities-may-affect-ibm%C2%AE-sdk-java%E2%84%A2-technology-edition-ibm-content-collector-sap-applications-16",
- websphere:"https://www.ibm.com/support/pages/fix-list-ibm-websphere-application-server-traditional-v9-0"
-};
-function el(tag,text){const node=document.createElement(tag);if(text!==undefined)node.textContent=text;return node}
-function parts(value){const found=String(value).match(/\d+/g);return found&&found.map(Number)}
-function status(installed,target){const a=parts(installed),b=parts(target);if(!target)return"UNKNOWN";if(!a||!b)return"REVIEW";const n=Math.max(a.length,b.length);for(let i=0;i<n;i++){const x=a[i]||0,y=b[i]||0;if(y>x)return"UPDATE";if(y<x)return"REVIEW"}return"CURRENT"}
-function safeUrl(value){try{const u=new URL(value);return u.protocol==="http:"||u.protocol==="https:"?u.href:null}catch(_){return null}}
-function openUrl(value){const url=safeUrl(value);if(url)window.open(url,"_blank","noopener,noreferrer");else alert("Only HTTP(S) URLs are allowed.")}
-function installedLevel(p){let level=String(p.version||"?");if(p.interim_fix!==undefined)level+=" iFix "+p.interim_fix;else if(p.id==="content_navigator"&&p.build_level){const m=String(p.build_level).match(/icn\d+\.(\d+)/i);if(m)level+=" iFix "+Number(m[1])}if(p.special_build)level+=" "+p.special_build;return level}
-function cell(row,node){const td=el("td");td.append(node);row.append(td)}
-fetch("/inventory.json",{cache:"no-store"}).then(r=>{if(!r.ok)throw Error(r.status);return r.json()}).then(data=>{
- document.getElementById("host").textContent="Host: "+(data.host&&data.host.hostname||"?")+" — inventory: "+(data.timestamp||"?");
- for(const product of data.products||[]){const row=el("tr"),installed=installedLevel(product);cell(row,el("strong",product.name||product.id||"Unknown"));cell(row,el("span",installed));
-  const manualTarget=el("input");manualTarget.className="manualTarget";manualTarget.placeholder="e.g. 9.0.5.28";cell(row,manualTarget);
-  const result=el("strong","UNKNOWN");result.className="UNKNOWN";cell(row,result);
-  const actions=el("div"),source=sources[product.id];if(source){const a=el("a","Open IBM source");a.href=source;a.target="_blank";a.rel="noopener noreferrer";actions.append(a)}
-  const url=el("input");url.placeholder="Optional IBM URL";actions.append(url);const button=el("button","Open URL");button.type="button";button.onclick=()=>openUrl(url.value);actions.append(button);cell(row,actions);
-  manualTarget.oninput=()=>{result.textContent=status(installed,manualTarget.value.trim());result.className=result.textContent};document.getElementById("products").append(row)
- }
-}).catch(error=>{document.getElementById("host").textContent="Inventory unavailable: "+error});
-'''.encode("utf-8")
-
-def make_web_handler(snapshot):
- inventory_json=json.dumps(snapshot,ensure_ascii=False).encode("utf-8")
- class Handler(BaseHTTPRequestHandler):
-  def do_GET(self):
-   path=self.path.split("?",1)[0]
-   payload,content_type=({"/":(WEB_HTML,"text/html; charset=utf-8"),"/app.js":(WEB_JS,"text/javascript; charset=utf-8"),"/inventory.json":(inventory_json,"application/json; charset=utf-8")}).get(path,(b"Not Found","text/plain; charset=utf-8"))
-   self.send_response(200 if path in ("/","/app.js","/inventory.json") else 404)
-   self.send_header("Content-Type",content_type);self.send_header("Content-Length",str(len(payload)));self.send_header("Cache-Control","no-store")
-   self.send_header("Content-Security-Policy","default-src 'self'; script-src 'self'; style-src 'unsafe-inline'; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'")
-   self.send_header("X-Content-Type-Options","nosniff");self.end_headers();self.wfile.write(payload)
-  def log_message(self,format,*args): pass
- return Handler
-
-def serve_web(snapshot,bind,port):
- with HTTPServer((bind,port),make_web_handler(snapshot)) as server:
-  print("IBM Update Checker: http://{}:{}/".format(bind,server.server_port))
-  try:server.serve_forever()
-  except KeyboardInterrupt:pass
-
 def main():
- p=argparse.ArgumentParser();p.add_argument("--json",action="store_true");p.add_argument("--pretty",action="store_true");p.add_argument("--skip-im",action="store_true");p.add_argument("--serve",action="store_true");p.add_argument("--bind",default="127.0.0.1");p.add_argument("--port",type=int,default=8765);a=p.parse_args();r=inventory(a.skip_im)
- if a.serve:serve_web(r,a.bind,a.port);return
+ p=argparse.ArgumentParser();p.add_argument("--json",action="store_true");p.add_argument("--pretty",action="store_true");p.add_argument("--skip-im",action="store_true");a=p.parse_args();r=inventory(a.skip_im)
  if a.json:print(json.dumps(r,ensure_ascii=False,indent=2 if a.pretty else None))
  else:human(r)
 if __name__=="__main__":main()

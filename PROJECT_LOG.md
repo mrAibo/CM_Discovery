@@ -8,3 +8,11 @@
 - **Tests run:** focused pytest, full pytest, Python compileall, git diff check, Node comparison self-check, CLI help, GitHub Raw CORS/header probe.
 - **Open issues:** Real SSH/IBM-host acceptance requires the user's configured `cmtest` target and key; HTTP Basic Auth is appropriate only for the confirmed trusted LAN.
 - **Next action:** Configure `config.toml` and restricted root key on the deployment servers, then run physical acceptance with `ibm-patchwatch serve cmtest --bind <LAN-IP>`.
+
+## 2026-09-04 — Remove legacy Patchwatch flows
+
+- **Task:** Reduce the repository to the approved remote discovery → temporary LAN browser checker architecture and replace the stale README.
+- **Decisions:** Keep the GitHub catalog builder/providers; remove SQLite history, terminal reports/watch mode, systemd timer, local collector web UI, and their tests. Central CLI exposes only `serve`; central package and collector versions are aligned at `0.5.0`.
+- **Tests run:** full pytest, Python compileall, collector help, and central CLI help.
+- **Open issues:** Physical SSH/LAN acceptance remains `NOT_RUN` until deployment.
+- **Next action:** Install using the two-host procedure in `README.md`, then run physical acceptance.

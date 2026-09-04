@@ -1,6 +1,3 @@
-[storage]
-database = "data/patchwatch.db"
-
 [ssh]
 command = "ssh"
 connect_timeout = 15
@@ -8,9 +5,7 @@ collector_timeout = 60
 
 [hosts.cmtest]
 collector = "/root/bin/ibm_discovery.py"
-environment = "test"
 
 # Add more hosts using aliases from ~/.ssh/config:
 # [hosts.cmprod]
 # collector = "/root/bin/ibm_discovery.py"
-# environment = "prod"

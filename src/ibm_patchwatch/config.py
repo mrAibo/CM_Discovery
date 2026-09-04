@@ -17,20 +17,13 @@ class SSHConfig:
 class HostConfig:
     alias: str
     collector: str
-    environment: str = "unknown"
 
 
 @dataclass(frozen=True)
 class AppConfig:
     path: Path
-    database: Path
     ssh: SSHConfig
     hosts: dict[str, HostConfig]
-
-
-def _resolve_relative(base: Path, value: str) -> Path:
-    path = Path(value).expanduser()
-    return path if path.is_absolute() else (base / path).resolve()
 
 
 def load_config(path: str | Path = "config.toml") -> AppConfig:
@@ -38,12 +31,8 @@ def load_config(path: str | Path = "config.toml") -> AppConfig:
     with config_path.open("rb") as handle:
         raw: dict[str, Any] = tomllib.load(handle)
 
-    base = config_path.parent
-    storage = raw.get("storage", {})
     ssh_raw = raw.get("ssh", {})
     hosts_raw = raw.get("hosts", {})
-
-    database = _resolve_relative(base, storage.get("database", "data/patchwatch.db"))
     ssh = SSHConfig(
         command=str(ssh_raw.get("command", "ssh")),
         connect_timeout=int(ssh_raw.get("connect_timeout", 15)),
@@ -57,10 +46,6 @@ def load_config(path: str | Path = "config.toml") -> AppConfig:
         collector = str(item.get("collector", "")).strip()
         if not collector:
             raise ValueError(f"hosts.{alias}.collector is required")
-        hosts[alias] = HostConfig(
-            alias=alias,
-            collector=collector,
-            environment=str(item.get("environment", "unknown")),
-        )
+        hosts[alias] = HostConfig(alias=alias, collector=collector)
 
-    return AppConfig(path=config_path, database=database, ssh=ssh, hosts=hosts)
+    return AppConfig(path=config_path, ssh=ssh, hosts=hosts)
