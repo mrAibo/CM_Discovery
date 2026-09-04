@@ -1,71 +1,113 @@
-# CM Discovery / IBM Patchwatch
+# IBM CM Update Checker
 
-Central IBM product discovery and patch intelligence for IBM Content Manager environments.
+A short-lived LAN web application that discovers installed IBM Content Manager components over SSH and compares them with a catalog maintained from official IBM sources.
+
+Nothing is installed on the Windows workstation. The browser receives inventory from the central Linux server and reads the public update catalog from GitHub. IBM credentials remain on IBM websites.
 
 ## Architecture
 
-The project has three layers:
+```text
+IBM CM server                 Central Linux server                Windows browser
+/root/bin/ibm_discovery.py <- restricted SSH -- ibm-patchwatch serve -> LAN HTTP
+                                                                    |
+                                           GitHub catalog.json <----+
+```
 
-1. `collectors/ibm_discovery.py` runs read-only on an IBM/CM server and emits inventory JSON.
-2. `ibm-patchwatch` runs on a central Linux host, calls collectors over SSH, stores snapshots in SQLite, and compares installed maintenance levels with IBM metadata.
-3. GitHub Actions refresh `data/ibm/catalog.json` from official IBM sources. The central server can use that GitHub-hosted catalog when direct IBM access is blocked by a corporate proxy.
-
-### Discovered products
-
-The collector currently detects:
-
-- IBM Content Manager (`cmlevel -l`)
-- WebSphere Application Server (`versionInfo.sh`)
-- IBM SDK Java (`versionInfo.sh`)
-- DB2 (`db2level`, with `db2profile` fallback for non-interactive SSH)
-- IBM Content Navigator (`ECMClient/version.txt`)
-- FileNet CE/PE clients
-- Content Manager APIs
-- Daeja ViewONE Virtual and iFix level
-- IBM Content Collector for SAP Applications
-- IBM Installation Manager package information
+- The IBM CM server does not need internet access.
+- Inventory stays inside the LAN and is never uploaded to GitHub.
+- GitHub Actions refreshes `data/ibm/catalog.json` daily from official IBM pages.
+- Version comparison is conservative: missing, stale or ambiguous data becomes `CHECK_REQUIRED` rather than a false `CURRENT`.
 
 ## Requirements
 
-Central host:
+### IBM CM server
 
 - Linux
-- Python 3.11+ (tested target: Python 3.12)
-- OpenSSH client
-- Git
-- SSH access to target IBM servers
-- `rich` for the optional GitHub update table
+- Python 3.6 or newer
+- Commands required by the detected IBM products (`cmlevel`, `db2level`, WebSphere `versionInfo`, and related local files)
+- root execution, because the collector must inspect all configured installations
 
-Remote collector:
+### Central Linux server
 
-- Python 3.6+
-- no third-party Python dependencies
+- Linux with access to the IBM CM server over SSH
+- internet access to GitHub
+- Python 3.11 or newer
+- Git and OpenSSH client
 
-## SSH configuration
+### Windows workstation
 
-Keep connection details in `~/.ssh/config`:
+- A current browser
+- LAN access to the central Linux server
+- internet access to `raw.githubusercontent.com` and IBM support pages
+
+## Installation
+
+### 1. Install the collector on the IBM CM server
+
+Clone this repository on the central Linux server, then copy the single dependency-free collector to the CM server:
+
+```bash
+git clone https://github.com/mrAibo/CM_Discovery.git
+cd CM_Discovery
+ssh root@cmserver 'mkdir -p /root/bin && chmod 700 /root/bin'
+scp collectors/ibm_discovery.py root@cmserver:/root/bin/
+ssh root@cmserver 'chmod 700 /root/bin/ibm_discovery.py'
+```
+
+Verify it locally on the CM server:
+
+```bash
+/root/bin/ibm_discovery.py --json | python3 -m json.tool >/dev/null
+```
+
+Expected result: exit code `0` and no JSON error.
+
+### 2. Create a restricted SSH key
+
+On the central Linux server:
+
+```bash
+ssh-keygen -t ed25519 -f ~/.ssh/id_cm_discovery -C ibm-cm-discovery
+```
+
+Add the generated public key to `/root/.ssh/authorized_keys` on the CM server. Restrict it to the central server's LAN address and the collector command:
+
+```text
+from="<CENTRAL_LINUX_LAN_IP>",restrict,command="/usr/bin/python3 /root/bin/ibm_discovery.py --json" ssh-ed25519 AAAA...
+```
+
+Add an alias on the central server in `~/.ssh/config`:
 
 ```sshconfig
 Host cmtest
-    HostName cm_host123
+    HostName <IBM_CM_LAN_IP_OR_NAME>
     User root
-    IdentityFile ~/.ssh/id_ed25519
+    IdentityFile ~/.ssh/id_cm_discovery
+    IdentitiesOnly yes
 ```
 
-Patchwatch only refers to `cmtest`.
-
-## Configuration
+Test the forced command:
 
 ```bash
+ssh -T cmtest | python3 -m json.tool >/dev/null
+```
+
+The restricted key cannot open a shell or forward ports; it can only run discovery.
+
+### 3. Install the central application
+
+From the repository checkout on the central Linux server:
+
+```bash
+python3 -m venv .venv
+. .venv/bin/activate
+python -m pip install -e .
 cp config.example.toml config.toml
 ```
 
-Example:
+`config.toml`:
 
 ```toml
-[storage]
-database = "data/patchwatch.db"
-
 [ssh]
 command = "ssh"
 connect_timeout = 15
@@ -73,210 +115,75 @@ collector_timeout = 60
 
 [hosts.cmtest]
 collector = "/root/bin/ibm_discovery.py"
-environment = "test"
 ```
 
-`config.toml` is intentionally ignored by Git.
+`config.toml` is ignored by Git.
 
-## Install / update central CLI
+### 4. Start the temporary checker
 
 ```bash
-python3 -m venv .venv
+. .venv/bin/activate
+IBM_CHECK_USER=admin \
+IBM_CHECK_PASSWORD=admin \
+ibm-patchwatch --config config.toml serve cmtest \
+  --bind <CENTRAL_LINUX_LAN_IP> \
+  --port 8765
+```
+
+Open from Windows:
+
+```text
+http://<CENTRAL_LINUX_LAN_IP>:8765/
+```
+
+The browser asks for the configured username and password. Stop the server with `Ctrl+C` when the check is finished.
+
+`admin/admin` is the requested default and only prevents casual access. HTTP Basic Auth is not encryption; use this mode only for the confirmed trusted LAN. Set different environment values or place the application behind an existing HTTPS reverse proxy if the network boundary expands.
+
+## Result statuses
+
+- `CURRENT` — installed maintenance level matches the catalog.
+- `UPDATE_AVAILABLE` — a newer applicable level is known.
+- `NEWER_THAN_CATALOG` — installed level is newer than the catalog.
+- `CHECK_REQUIRED` — data is missing, stale or unsafe to compare automatically.
+- `NOT_SUPPORTED` — the catalog explicitly marks the product stream unsupported.
+
+DB2 special builds are not treated as ordinary numeric versions. A non-identical special build at the same DB2 version requires review.
+
+## Updating
+
+On the central Linux server:
+
+```bash
+cd CM_Discovery
+git pull --ff-only
 . .venv/bin/activate
 python -m pip install -e .
 ```
 
-For an existing checkout use:
+When the collector changes, copy it to the CM server again and repeat the JSON verification from step 1.
+
+## Development checks
 
 ```bash
-git pull
-source scripts/update_env.sh
+python -m pip install pytest
+python -m pytest -q
 ```
 
-## Patchwatch usage
+The repository intentionally keeps two runtime closures:
 
-Scan one host:
+- `collectors/ibm_discovery.py` — offline CM inventory collector;
+- `src/ibm_patchwatch/` plus `scripts/update_ibm_catalog.py` — central web checker and GitHub catalog refresh.
 
-```bash
-ibm-patchwatch scan cmtest
-```
+## Security boundaries
 
-Detailed scan:
+- Do not place SSH private keys, `config.toml`, IBM credentials or inventory snapshots in Git.
+- Bind the web server to a private LAN address, not a public interface.
+- IBM download links open directly in the Windows browser; the application never receives IBMid credentials.
+- Malformed SSH output prevents the web server from starting.
 
-```bash
-ibm-patchwatch scan cmtest --details
-```
+## Limitations
 
-Compare installed levels with IBM maintenance metadata:
-
-```bash
-ibm-patchwatch check cmtest
-```
-
-Show latest stored inventory:
-
-```bash
-ibm-patchwatch inventory --details
-```
-
-Machine-readable output:
-
-```bash
-ibm-patchwatch check cmtest --json --pretty
-```
-
-## Rich update table from GitHub
-
-The table implementation deliberately separates data access, comparison, and presentation:
-
-- `src/ibm_patchwatch/github_catalog.py` — Git/GitHub fetch and catalog normalization only.
-- `src/ibm_patchwatch/update_report.py` — installed inventory versus GitHub catalog comparison.
-- `src/ibm_patchwatch/rich_updates.py` — Rich rendering only.
-- `scripts/github_update_table.py` — manual / polling trigger CLI.
-
-The Git source refreshes `origin/main` and reads `data/ibm/catalog.json` directly from the remote-tracking Git ref. It does **not** reset or modify the working tree.
-
-### Global catalog view
-
-This only shows what IBM Patchwatch currently knows as the latest target levels. It does **not** say whether a particular server needs them:
-
-```bash
-python scripts/github_update_table.py show
-```
-
-### Installed-vs-target host view
-
-This performs a fresh SSH discovery of the configured host and joins it with the latest GitHub catalog. This is the normal update report:
-
-```bash
-python scripts/github_update_table.py show --host cmtest
-```
-
-The table contains `CURRENT`, `UPDATE`, or `REVIEW` plus the installed and target maintenance levels.
-
-Interactive polling with a fresh host scan every 60 seconds:
-
-```bash
-python scripts/github_update_table.py watch --host cmtest --interval 60
-```
-
-The table displays a clickable `download` link only when the catalog contains an explicitly verified package/Fix Central URL. Otherwise it displays the IBM `details` / readme link. Patchwatch never fabricates package URLs.
-
-### GitHub-side triggers
-
-`.github/workflows/update-ibm-catalog.yml` refreshes the catalog on:
-
-- manual `workflow_dispatch`
-- scheduled daily refresh
-- relevant pushes to provider/catalog logic
-- GitHub release `published` / `edited` events
-- explicit `repository_dispatch` event `refresh-ibm-catalog`
-
-Catalog refresh runs are serialized to avoid concurrent pushes. Provider/network failures are isolated: if one IBM endpoint times out, its last known good entry is preserved and marked with `refresh_error`; the other products can still refresh.
-
-### Server-side scheduled trigger with systemd
-
-The repository contains a user service and timer:
-
-```bash
-mkdir -p ~/.config/systemd/user
-cp systemd/ibm-patchwatch-updates.service ~/.config/systemd/user/
-cp systemd/ibm-patchwatch-updates.timer ~/.config/systemd/user/
-```
-
-Create the environment file. `PATCHWATCH_HOST` turns the timer from a catalog-only display into the useful installed-vs-target report:
-
-```bash
-mkdir -p ~/.config/ibm-patchwatch
-cat > ~/.config/ibm-patchwatch/proxy.env <<'EOF'
-PATCHWATCH_HOST=cmtest
-PATCHWATCH_CONFIG=/home/xout-adm/bin/CM_Discovery/config.toml
-HTTP_PROXY=http://proxy.kkk:8080
-HTTPS_PROXY=http://proxy.kkk:8080
-http_proxy=http://proxy.kkk:8080
-https_proxy=http://proxy.kkk:8080
-EOF
-chmod 600 ~/.config/ibm-patchwatch/proxy.env
-```
-
-Enable the 15-minute refresh timer:
-
-```bash
-systemctl --user daemon-reload
-systemctl --user enable --now ibm-patchwatch-updates.timer
-```
-
-Manual server-side trigger of the same service:
-
-```bash
-systemctl --user start ibm-patchwatch-updates.service
-```
-
-Show the rendered table from the journal:
-
-```bash
-journalctl --user -u ibm-patchwatch-updates.service -n 100 --no-pager
-```
-
-Check the timer:
-
-```bash
-systemctl --user list-timers ibm-patchwatch-updates.timer
-```
-
-The supplied unit assumes the checkout is at `%h/bin/CM_Discovery`. Adjust `WorkingDirectory` and `ExecStart` if the repository lives elsewhere.
-
-## Remote collector test
-
-```bash
-ssh cmtest '/root/bin/ibm_discovery.py --json'
-```
-
-The one-line JSON form is intentional and ideal for machine transport. Use `--pretty` only for manual debugging.
-
-## Temporary LAN update checker
-
-On the internet-enabled central Linux host, run one fresh SSH discovery and start the authenticated browser UI:
-
-```bash
-IBM_CHECK_USER=admin IBM_CHECK_PASSWORD=admin \
-  ibm-patchwatch --config config.toml serve cmtest \
-  --bind 192.168.1.20 --port 8765
-```
-
-Open `http://192.168.1.20:8765/` from the Windows workstation and stop the server with `Ctrl+C` after the check. The browser reads the installed inventory from the central host and the public maintenance catalog from `raw.githubusercontent.com`; inventory is never uploaded to GitHub. IBM download and details pages open in separate tabs, so IBMid credentials remain on IBM's site.
-
-The defaults are `127.0.0.1:8765` and credentials `admin/admin`. Default credentials produce a warning and are only a casual-access barrier on a trusted LAN: HTTP Basic Auth is not encryption. Set both environment variables for normal use, bind an explicit private address, and add TLS only if the trust boundary expands.
-
-For a restricted root key, install the collector at `/root/bin/ibm_discovery.py` and constrain its `authorized_keys` entry to the central host and forced command:
-
-```text
-from="192.168.1.20",restrict,command="/usr/bin/python3 /root/bin/ibm_discovery.py --json" ssh-ed25519 AAAA...
-```
-
-The central SSH client may still append the configured command; OpenSSH ignores it when a forced command is present. The collector runs once before the HTTP listener starts, and malformed discovery output prevents startup.
-
-## Proxy
-
-Online IBM providers honor the central host's standard proxy environment. For a classic HTTP CONNECT corporate proxy both variables normally use an `http://` proxy URL, for example:
-
-```bash
-export HTTP_PROXY=http://proxy.kkk:8080
-export HTTPS_PROXY=http://proxy.kkk:8080
-```
-
-No proxy credentials or SSH keys belong in this repository.
-
-## Current maintenance intelligence
-
-Patchwatch currently evaluates the maintenance streams for:
-
-- IBM Content Manager 8.7 fix packs
-- IBM Content Navigator 3.1 interim fixes
-- IBM Daeja ViewONE 5.0.15 iFixes
-- DB2 11.5.9 published cumulative updates
-- IBM Java 8 service refresh / fix packs
-- ICCSAP 4.0.0.4 embedded-JRE security maintenance
-- WebSphere 9.0.5 fix packs
-
-Interim-fix, prerequisite, corequisite and supersedence semantics remain conservative: Patchwatch does not assume cumulative behavior unless IBM explicitly establishes it.
+- Physical SSH and IBM product discovery must be verified in the target environment.
+- IBM entitlement, license acceptance and downloads remain manual in IBM Fix Central.
+- The application does not install patches or infer interim-fix supersedence unless the catalog explicitly establishes it.
