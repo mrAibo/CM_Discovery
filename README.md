@@ -236,15 +236,25 @@ The one-line JSON form is intentional and ideal for machine transport. Use `--pr
 
 ## Temporary LAN update checker
 
-Run discovery once and expose the in-memory inventory plus a dependency-free browser UI:
+On the internet-enabled central Linux host, run one fresh SSH discovery and start the authenticated browser UI:
 
 ```bash
-./ibm_discovery.py --serve --bind 0.0.0.0 --port 8765
+IBM_CHECK_USER=admin IBM_CHECK_PASSWORD=admin \
+  ibm-patchwatch --config config.toml serve cmtest \
+  --bind 192.168.1.20 --port 8765
 ```
 
-Open `http://CM_HOST:8765/` from the Windows workstation and stop the server with `Ctrl+C` after the check. The Content Manager host makes no outbound requests. IBM pages open in separate tabs; enter the confirmed target level manually because browser same-origin policy prevents the LAN page from reading those tabs. IBMid credentials and cookies remain on IBM's site.
+Open `http://192.168.1.20:8765/` from the Windows workstation and stop the server with `Ctrl+C` after the check. The browser reads the installed inventory from the central host and the public maintenance catalog from `raw.githubusercontent.com`; inventory is never uploaded to GitHub. IBM download and details pages open in separate tabs, so IBMid credentials remain on IBM's site.
 
-The default bind address is `127.0.0.1`; exposing the checker to the LAN is an explicit `--bind 0.0.0.0` choice. Use it only on a trusted network because the inventory endpoint contains host and installed-product information.
+The defaults are `127.0.0.1:8765` and credentials `admin/admin`. Default credentials produce a warning and are only a casual-access barrier on a trusted LAN: HTTP Basic Auth is not encryption. Set both environment variables for normal use, bind an explicit private address, and add TLS only if the trust boundary expands.
+
+For a restricted root key, install the collector at `/root/bin/ibm_discovery.py` and constrain its `authorized_keys` entry to the central host and forced command:
+
+```text
+from="192.168.1.20",restrict,command="/usr/bin/python3 /root/bin/ibm_discovery.py --json" ssh-ed25519 AAAA...
+```
+
+The central SSH client may still append the configured command; OpenSSH ignores it when a forced command is present. The collector runs once before the HTTP listener starts, and malformed discovery output prevents startup.
 
 ## Proxy
 
