@@ -28,3 +28,16 @@ jobs:
 
       - name: Test
         run: python -m pytest -q
+
+      - name: Set up Node for portable page comparison tests
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Test portable comparison logic
+        run: node --test tests/test_portable.js
+
+      - name: Verify portable page is reproducible
+        run: |
+          python scripts/build_static_page.py
+          git diff --exit-code -- docs/IBM-Patchwatch.html

@@ -17,6 +17,8 @@ on:
     paths:
       - ".github/workflows/update-ibm-catalog.yml"
       - "scripts/update_ibm_catalog.py"
+      - "scripts/build_static_page.py"
+      - "web/**"
       - "src/ibm_patchwatch/providers/**"
 
 # Several provider commits can arrive within seconds.  Only one refresh is
@@ -53,17 +55,20 @@ jobs:
           PYTHONPATH: src
         run: python scripts/update_ibm_catalog.py
 
+      - name: Build portable browser page (catalog only)
+        run: python scripts/build_static_page.py
+
       - name: Commit and publish refreshed catalog
         run: |
-          if git diff --quiet -- data/ibm/catalog.json; then
+          if git diff --quiet -- data/ibm/catalog.json docs/IBM-Patchwatch.html; then
             echo "IBM catalog unchanged"
             exit 0
           fi
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/ibm/catalog.json
-          git commit -m "chore: refresh IBM metadata catalog"
+          git add data/ibm/catalog.json docs/IBM-Patchwatch.html
+          git commit -m "chore: refresh IBM catalog and portable page"
 
           # main can still move because of an unrelated human/CI commit between
           # checkout and push. Rebase once on the latest main and retry safely.

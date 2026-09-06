@@ -1,4 +1,79 @@
-# IBM CM Update Checker
+# IBM Patchwatch — portable update table
+
+The simplest workflow is one HTML file on Windows plus the existing offline
+collector. Open `docs/IBM-Patchwatch.html` in your browser, then select the
+collector's `inventory.json`. The embedded catalog is visible even without an
+inventory file. No Windows installation, local web server, extension, or SSH
+connection from Windows is required.
+
+## Recommended: portable page
+
+1. Download `docs/IBM-Patchwatch.html` with GitHub's **Download raw file** button
+   and open it in a current Windows browser.
+2. Run the existing collector on the CM server:
+
+   ```bash
+   python3 collectors/ibm_discovery.py --json > inventory.json
+   ```
+
+3. Transfer that JSON file using an approved existing LAN/file-transfer method
+   and click **Открыть inventory.json** in the page.
+4. Open the IBM download or Fix Central links in the row. Some links go directly
+   to a fix selection; others require product/platform selection on IBM's page.
+   IBMid, entitlement checks, license acceptance, and actual downloads remain on IBM.
+
+The HTML contains inline CSS, JavaScript, and the catalog, with no external
+dependencies. The page makes **no network requests** and reads files only when
+selected. Its CSP disables network connections. Inventory stays in browser memory
+and is discarded when the page closes; opening an IBM link does not upload it.
+
+### Rebuilding and refreshing
+
+```bash
+python3 scripts/build_static_page.py
+```
+
+The builder is Python 3.6+ standard library and does not need the central
+application installed. GitHub Actions rebuilds the public, inventory-free HTML
+after each successful catalog refresh and commits it alongside `catalog.json`.
+Download a fresh HTML periodically, or import a newer `catalog.json` with the
+control under **Как пользоваться и обновлять таблицу**. Opening an old HTML does
+not refresh it automatically.
+
+For an explicitly private report with inventory embedded:
+
+```bash
+python3 scripts/build_static_page.py --inventory /private/inventory.json --output /private/IBM-Patchwatch-report.html
+```
+
+Do not commit private reports. The builder refuses to embed inventory into the
+tracked public HTML path.
+
+### What the comparison proves
+
+- Versions compare only inside the displayed product stream. A different stream
+  requires review; major-version changes are not inferred.
+- Unknown or conflicting iFix/build values, discovery errors, stale/undated
+  catalog entries, and failed source refreshes cannot produce a matching status.
+- CM and WAS base/fix-pack matches do not certify interim/security-fix coverage.
+- Db2 special-build numbers do not imply chronology. Unequal builds require review.
+- Daeja detected in ICN's `version.txt` is a bundled component. ICN 3.1 IF12's
+  Readme includes Daeja 26.0.0 iFix 1; standalone 5.0.15 iFix6 is not an automatic
+  recommendation for that bundled installation.
+- ICCSAP IM `JRE_fix_YYYYMMDD` dates are displayed as evidence, not converted into
+  measured Java versions. Its embedded JRE is distinct from WebSphere's SDK.
+
+`web/verified-notes.json` contains dated IBM observations, conditions and download
+links. Version-specific notes disappear when the imported catalog's target changes.
+The catalog timestamp and this file's review date remain separate.
+
+**Known source limitation:** some existing providers read a pinned readme for a
+known release. Successfully fetching that page again does not discover the next
+release or prove that the target is the latest. The static UI calls these
+confirmed levels, exposes dates, and flags source age. Better product-index
+discovery can be added to the catalog independently of the browser workflow.
+
+## Optional: existing central LAN checker
 
 A short-lived LAN web application that discovers installed IBM Content Manager components over SSH and compares them with a catalog maintained from official IBM sources.
 
