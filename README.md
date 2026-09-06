@@ -142,6 +142,15 @@ neueste ist. Die Tabelle zeigt deshalb bestätigte Stände mit Quellen und Datum
 Die Suche nach neuen Releases muss für diese Provider noch um Produktindizes
 oder andere belegte IBM-Metadatenquellen erweitert werden.
 
+## Unabhängige Ansible-Vorprüfung
+
+Der neue Bereich [ansible/](ansible/README.md) enthält eine eigenständige
+WebSphere-Rolle für Python **3.12** auf Controller und Zielhost. Er prüft ein
+lokal bereitgestelltes Paket und die genaue Installation anhand von IM-Paket-ID,
+Installationspfad und `versionInfo.sh`. Download und Ausführung bleiben getrennt.
+Aktuell ist eine Basis-Vorprüfung implementiert; eine Installation wird noch
+nicht ausgeführt. Der bestehende Offline-Collector bleibt mit Python 3.6+ nutzbar.
+
 ## Optional: vorhandenes zentrales LAN-Prüfprogramm
 
 Der Befehl `ibm-patchwatch serve` bleibt für den bisherigen LAN-Ablauf verfügbar.

@@ -1,0 +1,14 @@
+---
+- name: WebSphere-Bestand und lokales Update-Paket prüfen
+  hosts: ibm_was
+  gather_facts: false
+  any_errors_fatal: true
+  tasks:
+    - name: Genau einen Zielhost verlangen
+      ansible.builtin.assert:
+        that:
+          - ansible_play_hosts_all | length == 1
+        fail_msg: "Mit --limit genau einen Host auswählen."
+    - name: WebSphere-Vorprüfung ausführen
+      ansible.builtin.include_role:
+        name: ibm_was_update
