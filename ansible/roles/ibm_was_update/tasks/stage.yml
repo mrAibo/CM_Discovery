@@ -1,0 +1,112 @@
+---
+- name: Vorprüfung und Staging-Parameter verlangen
+  ansible.builtin.assert:
+    that:
+      - not ansible_check_mode
+      - ibm_was_inventory_result is defined
+      - ibm_was_inventory_result.installation.version_info_verified | default(false)
+      - ibm_was.target_internal_version is defined
+      - ibm_was.stage_directory is defined
+      - ibm_was.stage_directory is string
+      - ibm_was.stage_directory is match('^/[^,\\\n\r]+$')
+      - ibm_was.stage_directory != '/'
+      - ibm_was.stage_reserve_bytes is defined
+      - ibm_was.stage_reserve_bytes is integer
+      - ibm_was.stage_reserve_bytes > 0
+      - ibm_was.target_internal_version is match('^9\.0\.\d+\.\d{8}_\d{4}$')
+    fail_msg: "Staging benötigt einen normalen Lauf nach der Vorprüfung, eine exakte Zielversion und einen vorhandenen Staging-Pfad mit Speicherreserve."
+
+- name: Verzeichnis und Eigentümer prüfen
+  ansible.builtin.stat:
+    path: "{{ ibm_was.stage_directory }}"
+    follow: false
+  become: true
+  register: ibm_was_stage_stat
+
+- name: Vorhandenes privates Staging-Verzeichnis bestätigen
+  ansible.builtin.assert:
+    that:
+      - ibm_was_stage_stat.stat.isdir | default(false)
+      - not (ibm_was_stage_stat.stat.islnk | default(false))
+      - ibm_was_stage_stat.stat.pw_name | default('') == ibm_was.installation_owner
+      - ibm_was_stage_stat.stat.mode | default('') == '0700'
+    fail_msg: "Staging-Verzeichnis vorab mit Eigentümer installation_owner und Modus 0700 einrichten; kein Symlink."
+
+- name: Staging-Pfad außerhalb der IBM-Installation bestätigen
+  ansible.builtin.command:
+    argv:
+      - "{{ ansible_python_interpreter }}"
+      - -c
+      - "import os,sys; a,b=map(os.path.realpath,sys.argv[1:]); sys.exit(1 if os.path.commonpath([a,b]) in (a,b) else 0)"
+      - "{{ ibm_was.stage_directory }}"
+      - "{{ ibm_was.installation_directory }}"
+  changed_when: false
+
+- name: ZIP-Struktur auf dem Controller prüfen
+  ibm_was_repository:
+    archive: "{{ ibm_was.artifact_path }}"
+    sha256: "{{ ibm_was.artifact_sha256 }}"
+  delegate_to: localhost
+  become: false
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+  register: ibm_was_archive
+
+- name: Platz für Paket, temporäre Übertragung und Reserve prüfen
+  ansible.builtin.command:
+    argv:
+      - "{{ ansible_python_interpreter }}"
+      - -c
+      - "import os,sys; s=os.statvfs(sys.argv[1]); free=s.f_bavail*s.f_frsize; print(free); sys.exit(0 if free >= int(sys.argv[2]) else 1)"
+      - "{{ ibm_was.stage_directory }}"
+      - "{{ (ibm_was_archive.repository.bytes * 2 + ibm_was.stage_reserve_bytes) | string }}"
+  become: true
+  become_user: "{{ ibm_was.installation_owner }}"
+  changed_when: false
+
+- name: Zielpfad aus SHA-256 bilden
+  ansible.builtin.set_fact:
+    ibm_was_staged_path: "{{ ibm_was.stage_directory }}/{{ ibm_was.artifact_sha256 | lower }}.zip"
+
+- name: Vorhandenes Ziel prüfen
+  ansible.builtin.stat:
+    path: "{{ ibm_was_staged_path }}"
+    checksum_algorithm: sha256
+    follow: false
+  become: true
+  register: ibm_was_existing
+
+- name: Vorhandenes Ziel nur bei identischem Inhalt akzeptieren
+  ansible.builtin.assert:
+    that:
+      - ibm_was_existing.stat.isreg | default(false)
+      - ibm_was_existing.stat.checksum | default('') == ibm_was.artifact_sha256 | lower
+    fail_msg: "Ziel existiert mit falschem Typ/Inhalt; keine automatische Überschreibung."
+  when: ibm_was_existing.stat.exists
+
+- name: Unverändertes Repository-ZIP übertragen
+  ansible.builtin.copy:
+    src: "{{ ibm_was.artifact_path }}"
+    dest: "{{ ibm_was_staged_path }}"
+    owner: "{{ ibm_was.installation_owner }}"
+    mode: '0600'
+    force: false
+  become: true
+
+- name: Ziel-Prüfsumme und exaktes Offering ohne Netzwerkzugriff prüfen
+  ibm_was_repository:
+    archive: "{{ ibm_was_staged_path }}"
+    sha256: "{{ ibm_was.artifact_sha256 }}"
+    probe: true
+    imcl_path: "{{ ibm_was.imcl_path }}"
+    installation_owner: "{{ ibm_was.installation_owner }}"
+    target_offering: "{{ ibm_was.package_id }}_{{ ibm_was.target_internal_version }}"
+  become: true
+  register: ibm_was_repository_result
+
+- name: Repository-Ergebnis ausgeben
+  ansible.builtin.debug:
+    msg:
+      status: "Repository bereitgestellt und Ziel-Offering gefunden – noch keine Installationsfreigabe"
+      repository: "{{ ibm_was_repository_result.repository }}"
+      remaining: "Voraussetzungen, iFix-Kompatibilität, Dienstplan, Healthchecks und Wiederherstellung fehlen noch."

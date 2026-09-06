@@ -148,8 +148,8 @@ Der neue Bereich [ansible/](ansible/README.md) enthält eine eigenständige
 WebSphere-Rolle für Python **3.12** auf Controller und Zielhost. Er prüft ein
 lokal bereitgestelltes Paket und die genaue Installation anhand von IM-Paket-ID,
 Installationspfad und `versionInfo.sh`. Download und Ausführung bleiben getrennt.
-Aktuell ist eine Basis-Vorprüfung implementiert; eine Installation wird noch
-nicht ausgeführt. Der bestehende Offline-Collector bleibt mit Python 3.6+ nutzbar.
+Implementiert sind Basis-Vorprüfung und separates Repository-Staging mit
+SHA-256- und Ziel-Offering-Prüfung; eine Installation wird noch nicht ausgeführt. Der bestehende Offline-Collector bleibt mit Python 3.6+ nutzbar.
 
 ## Optional: vorhandenes zentrales LAN-Prüfprogramm
 

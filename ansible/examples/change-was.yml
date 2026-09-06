@@ -12,3 +12,8 @@ ibm_was:
   expected_display_version: UNRESOLVED
   artifact_path: /srv/ibm-updates/UNRESOLVED.zip
   artifact_sha256: UNRESOLVED
+  # Nur für stage_was.yml: Werte aus dem konkreten IBM-Paket übernehmen.
+  target_internal_version: UNRESOLVED
+  stage_directory: /srv/ibm-stage
+  # Freie Reserve zusätzlich zum doppelten ZIP-Umfang, in Bytes.
+  stage_reserve_bytes: 1073741824
