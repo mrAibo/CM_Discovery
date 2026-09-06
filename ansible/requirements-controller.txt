@@ -1,0 +1,2 @@
+# Tested with Python 3.12; update the pinned Ansible version deliberately.
+ansible-core==2.20.8

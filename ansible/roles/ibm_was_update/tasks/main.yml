@@ -1,0 +1,115 @@
+---
+- name: Parameter für die Vorprüfung verlangen
+  ansible.builtin.assert:
+    that:
+      - ibm_was is defined
+      - ibm_was is mapping
+    fail_msg: "Datei mit ibm_was-Parametern über -e @datei.yml angeben."
+
+- name: Pflichtfelder prüfen
+  ansible.builtin.assert:
+    that:
+      - ibm_was[item] is defined
+      - ibm_was[item] is string
+      - ibm_was[item] | length > 0
+      - "'UNRESOLVED' not in ibm_was[item]"
+    fail_msg: "Pflichtfeld {{ item }} fehlt oder enthält einen Platzhalter."
+  loop:
+    - target_inventory_host
+    - expected_fqdn
+    - expected_os_version
+    - expected_architecture
+    - installation_directory
+    - imcl_path
+    - installation_owner
+    - package_id
+    - expected_internal_version
+    - expected_display_version
+    - artifact_path
+    - artifact_sha256
+
+- name: Zielhost, Pfade, Paket-ID und Prüfsumme prüfen
+  ansible.builtin.assert:
+    that:
+      - inventory_hostname == ibm_was.target_inventory_host
+      - ansible_play_hosts_all | length == 1
+      - ansible_python_interpreter is defined
+      - ansible_python_interpreter is string
+      - ansible_python_interpreter.startswith('/')
+      - ibm_was.installation_directory.startswith('/')
+      - ibm_was.installation_directory != '/'
+      - ibm_was.imcl_path.startswith('/')
+      - ibm_was.artifact_path.startswith('/')
+      - ibm_was.artifact_sha256 is match('^[0-9a-fA-F]{64}$')
+      - ibm_was.package_id in ['com.ibm.websphere.BASE.v90', 'com.ibm.websphere.ND.v90']
+      - ansible_playbook_python is defined
+    fail_msg: "Ungültige Zielidentität, Paket-ID, SHA-256 oder absolute Pfade."
+
+- name: Python 3.12 auf dem Controller prüfen
+  ansible.builtin.assert:
+    that:
+      - lookup('pipe', (ansible_playbook_python | quote) ~ ' -c "import sys; print(str(sys.version_info.major) + chr(46) + str(sys.version_info.minor))"') == '3.12'
+    fail_msg: "Ansible aus einer Python-3.12-Umgebung starten."
+
+- name: Python 3.12 auf dem Ziel vor Modulaufrufen prüfen
+  ansible.builtin.raw: >-
+    {{ ansible_python_interpreter | quote }} -c
+    'import sys; print(str(sys.version_info.major) + chr(46) + str(sys.version_info.minor)); sys.exit(0 if sys.version_info[:2] == (3, 12) else 1)'
+  changed_when: false
+  check_mode: false
+
+- name: Lokales Paket auf dem Controller prüfen
+  ansible.builtin.stat:
+    path: "{{ ibm_was.artifact_path }}"
+    checksum_algorithm: sha256
+    follow: false
+  delegate_to: localhost
+  become: false
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+  register: ibm_was_artifact
+
+- name: Reguläre Paketdatei und SHA-256 bestätigen
+  ansible.builtin.assert:
+    that:
+      - ibm_was_artifact.stat.exists
+      - ibm_was_artifact.stat.isreg | default(false)
+      - ibm_was_artifact.stat.size | default(0) > 0
+      - ibm_was_artifact.stat.checksum | default('') == ibm_was.artifact_sha256 | lower
+    fail_msg: "Paket fehlt, ist keine reguläre Datei oder SHA-256 stimmt nicht."
+
+- name: Zielsystem erfassen
+  ansible.builtin.setup:
+    gather_subset:
+      - '!all'
+      - min
+      - hardware
+  register: ibm_was_host
+
+- name: Betriebssystem und Architektur bestätigen
+  ansible.builtin.assert:
+    that:
+      - ansible_facts.fqdn == ibm_was.expected_fqdn
+      - ansible_facts.distribution == 'SLES'
+      - ansible_facts.distribution_version == ibm_was.expected_os_version
+      - ansible_facts.architecture == ibm_was.expected_architecture
+    fail_msg: "FQDN, SLES-Version oder Architektur weicht von den erwarteten Daten ab."
+
+- name: Eindeutige Installation mit IM und versionInfo prüfen
+  ibm_was_inventory:
+    imcl_path: "{{ ibm_was.imcl_path }}"
+    installation_directory: "{{ ibm_was.installation_directory }}"
+    package_id: "{{ ibm_was.package_id }}"
+    expected_internal_version: "{{ ibm_was.expected_internal_version }}"
+    expected_display_version: "{{ ibm_was.expected_display_version }}"
+  become: true
+  become_user: "{{ ibm_was.installation_owner }}"
+  register: ibm_was_inventory_result
+
+- name: Ergebnis der Basisprüfung ausgeben
+  ansible.builtin.debug:
+    msg:
+      status: "Basisprüfung erfolgreich – keine Installationsfreigabe"
+      installation: "{{ ibm_was_inventory_result.installation }}"
+      artifact_sha256: "{{ ibm_was_artifact.stat.checksum }}"
+      next_step: "Repository-Inhalt, Voraussetzungen, Dienste, Speicherplatz und Wiederherstellung für das konkrete Paket prüfen."

@@ -1,0 +1,14 @@
+# Vorlage: UNRESOLVED ersetzen. Keine IBM-Pakete oder Zugangsdaten in Git.
+ibm_was:
+  target_inventory_host: cmtest
+  expected_fqdn: UNRESOLVED
+  expected_os_version: UNRESOLVED
+  expected_architecture: UNRESOLVED
+  installation_directory: /opt/IBM/WebSphere/AppServer
+  imcl_path: /opt/IBM/InstallationManager/eclipse/tools/imcl
+  installation_owner: UNRESOLVED
+  package_id: com.ibm.websphere.BASE.v90
+  expected_internal_version: UNRESOLVED
+  expected_display_version: UNRESOLVED
+  artifact_path: /srv/ibm-updates/UNRESOLVED.zip
+  artifact_sha256: UNRESOLVED
