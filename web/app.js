@@ -51,71 +51,71 @@ function ifixLevel(p) {
 }
 
 function freshness(entry, catalog, now) {
-  if (entry.refresh_error) return "Не удалось обновить источник; сохранён предыдущий уровень.";
+  if (entry.refresh_error) return "Die Quelle konnte nicht aktualisiert werden; der bisherige Stand bleibt erhalten.";
   const date = entry.refreshed_at || catalog.generated_at;
-  if (typeof date !== "string" || !/^\d{4}-\d\d-\d\dT/.test(date)) return "Не указана дата получения данных IBM.";
+  if (typeof date !== "string" || !/^\d{4}-\d\d-\d\dT/.test(date)) return "Das Abrufdatum der IBM-Daten fehlt.";
   const timestamp = Date.parse(date);
-  if (!Number.isFinite(timestamp) || timestamp > now + 300000) return "Дата каталога отсутствует, некорректна или находится в будущем.";
-  if (now - timestamp > FRESH_HOURS * 3600000) return "Данные старше 72 часов. Проверьте IBM или откройте свежий каталог.";
+  if (!Number.isFinite(timestamp) || timestamp > now + 300000) return "Das Katalogdatum fehlt, ist ungültig oder liegt in der Zukunft.";
+  if (now - timestamp > FRESH_HOURS * 3600000) return "Die Daten sind älter als 72 Stunden. Prüfen Sie die IBM-Quelle oder öffnen Sie einen aktuellen Katalog.";
   return "";
 }
 
 function compareProduct(id, installed, entry, catalog, now = Date.now()) {
-  if (!installed) return result("empty", "Нет данных inventory", "Загрузите файл с сервера; отсутствие записи не доказывает отсутствие продукта.");
-  if (!entry || !object(entry.available) || !own(PRODUCTS, id)) return result("review", "Нет данных каталога", "Для этой записи нужен отдельный источник IBM.");
+  if (!installed) return result("empty", "Keine Inventardaten", "Öffnen Sie die Datei vom Server. Ein fehlender Eintrag beweist nicht, dass das Produkt nicht installiert ist.");
+  if (!entry || !object(entry.available) || !own(PRODUCTS, id)) return result("review", "Kein Katalogeintrag", "Für diesen Eintrag wird eine eigene IBM-Quelle benötigt.");
   const stale = freshness(entry, catalog, now);
-  if (stale) return result("stale", "Проверить каталог", stale);
-  if (installed._discoveryError) return result("error", "Ошибка обнаружения", installed._discoveryError);
-  if (entry.support_status === "not_supported") return result("review", "Ветка не поддерживается", "Проверьте статус поддержки у IBM.");
+  if (stale) return result("stale", "Katalog prüfen", stale);
+  if (installed._discoveryError) return result("error", "Fehler bei der Erfassung", installed._discoveryError);
+  if (entry.support_status === "not_supported") return result("review", "Versionslinie nicht unterstützt", "Prüfen Sie den Supportstatus bei IBM.");
   const available = entry.available;
   const x = versionParts(installed.version), y = versionParts(available.version);
-  if (!x || !y) return result("review", "Не удалось сравнить", "Нужны точные числовые версии продукта.");
+  if (!x || !y) return result("review", "Vergleich nicht möglich", "Für den Vergleich werden eindeutige numerische Produktversionen benötigt.");
   const streamLength = PRODUCTS[id][1];
   if (x.slice(0, streamLength).join(".") !== y.slice(0, streamLength).join(".")) {
-    return result("different", "Другая ветка", "Каталог относится к " + y.slice(0, streamLength).join(".") + "; применимость перехода не определена.");
+    return result("different", "Andere Versionslinie", "Der Katalog bezieht sich auf " + y.slice(0, streamLength).join(".") + "; die Anwendbarkeit eines Wechsels ist nicht geklärt.");
   }
   const base = compareVersions(installed.version, available.version);
-  if (base > 0) return result("different", "Выше каталога", "Найденный уровень новее указанного в каталоге; понижение не предлагается.");
-  if (base < 0) return result("update", "Есть более новый уровень", "Перед установкой проверьте платформу и требования IBM.");
-  if (id === "content_manager") return result("review", "FP совпадает · проверить iFix", "Collector cmlevel не подтверждает наличие отдельных interim fixes.");
-  if (id === "websphere") return result("level", "Fix Pack совпадает", "Отдельные iFix/security fixes не проверены.");
+  if (base > 0) return result("different", "Neuer als Katalog", "Der erfasste Stand ist neuer als der Katalogstand. Ein Downgrade wird nicht vorgeschlagen.");
+  if (base < 0) return result("update", "Neuerer Stand verfügbar", "Prüfen Sie vor der Installation die Plattform und die IBM-Voraussetzungen.");
+  if (id === "content_manager") return result("review", "Fix Pack gleich · iFix prüfen", "Die Erfassung über cmlevel bestätigt keine einzelnen Interim Fixes.");
+  if (id === "websphere") return result("level", "Fix Pack stimmt überein", "Einzelne iFixes und Sicherheitskorrekturen wurden nicht geprüft.");
   if (id === "db2") {
-    if (typeof installed.special_build === "string" && installed.special_build === available.special_build) return result("match", "Update совпадает", "Совпадение с опубликованным Update; индивидуальные APAR отдельно не проверены.");
-    return result("review", "Сверить special build", "Номера special build не сравниваются по величине. Нужна проверка состава по IBM.");
+    if (typeof installed.special_build === "string" && installed.special_build === available.special_build) return result("match", "Update stimmt überein", "Der Stand stimmt mit dem veröffentlichten Update überein. Individuelle APARs wurden nicht separat geprüft.");
+    return result("review", "Special Build prüfen", "Special-Build-Nummern werden nicht numerisch geordnet. Prüfen Sie den Inhalt anhand der IBM-Angaben.");
   }
   if (id === "iccsap") {
     const jre = compareVersions(installed.jre_version, available.jre_version);
-    if (jre === null) return result("review", "Проверить встроенную JRE", "В inventory нет измеренной версии JRE. Даты JRE_fix не заменяют номер версии.");
-    return jre < 0 ? result("update", "Есть обновление JRE", "Используйте пакет ICCSAP из бюллетеня IBM.") : jre > 0 ? result("different", "JRE выше каталога", "Состав установленного пакета требует сверки.") : result("match", "JRE совпадает", "Проверен только уровень встроенной JRE.");
+    if (jre === null) return result("review", "Mitgelieferte JRE prüfen", "Das Inventar enthält keine gemessene JRE-Version. Datumsangaben in JRE_fix ersetzen keine Versionsnummer.");
+    return jre < 0 ? result("update", "JRE-Update verfügbar", "Verwenden Sie das ICCSAP-Paket aus dem IBM-Bulletin.") : jre > 0 ? result("different", "JRE neuer als Katalog", "Der Inhalt des installierten Pakets muss geprüft werden.") : result("match", "JRE stimmt überein", "Verglichen wurde ausschließlich die mitgelieferte JRE.");
   }
   if (id === "content_navigator" || id === "daeja_viewone_virtual") {
     const ix = ifixLevel(installed), iy = integer(available.interim_fix);
-    if (ix === null || iy === null) return result("review", "Проверить уровень iFix", "Номер iFix отсутствует или противоречит build level.");
-    if (id === "daeja_viewone_virtual" && installed.source === "ecmclient_version_txt") return result("review", "Встроен в ICN", "Проверяйте поставку Daeja в выбранном пакете ICN.");
-    if (ix > iy) return result("different", "iFix выше каталога", "Проверьте более свежую страницу IBM.");
-    if (ix < iy) return result("update", "Есть более новый iFix", "Известен iFix " + iy + "; применимость и зависимости — в Readme.");
-    if (id === "content_navigator" && installed.build_level && available.build_level && String(installed.build_level).toLowerCase() !== String(available.build_level).toLowerCase()) return result("review", "iFix совпадает · другой build", "Build level отличается от Readme IBM; требуется сверка пакета.");
-    return result("match", "iFix совпадает", "Совпадает указанный уровень iFix в этой ветке.");
+    if (ix === null || iy === null) return result("review", "iFix-Stand prüfen", "Die iFix-Nummer fehlt oder widerspricht dem Build-Level.");
+    if (id === "daeja_viewone_virtual" && installed.source === "ecmclient_version_txt") return result("review", "In ICN enthalten", "Prüfen Sie die Daeja-Version im ausgewählten ICN-Paket.");
+    if (ix > iy) return result("different", "iFix neuer als Katalog", "Prüfen Sie eine aktuellere IBM-Quelle.");
+    if (ix < iy) return result("update", "Neuerer iFix verfügbar", "Bekannt ist iFix " + iy + "; Anwendbarkeit und Abhängigkeiten stehen in der Readme.");
+    if (id === "content_navigator" && installed.build_level && available.build_level && String(installed.build_level).toLowerCase() !== String(available.build_level).toLowerCase()) return result("review", "iFix gleich · anderer Build", "Der Build-Level weicht von der IBM-Readme ab; das Paket muss geprüft werden.");
+    return result("match", "iFix stimmt überein", "Der angegebene iFix-Stand dieser Versionslinie stimmt überein.");
   }
-  return result("match", "Версия совпадает", "Проверен указанный уровень SDK, не всё окружение.");
+  return result("match", "Version stimmt überein", "Verglichen wurde ausschließlich der angegebene SDK-Stand.");
 }
 
 function validateInventory(value) {
-  if (!object(value) || value.schema_version !== 1 || !object(value.host) || !Array.isArray(value.products)) throw Error("Ожидается inventory schema_version 1 с host и списком products.");
-  if (value.products.length > 1000) throw Error("В файле больше 1000 продуктов.");
+  if (!object(value) || value.schema_version !== 1 || !object(value.host) || !Array.isArray(value.products)) throw Error("Erwartet wird ein Inventar mit schema_version 1, einem host-Objekt und einer products-Liste.");
+  if (value.products.length > 1000) throw Error("Die Datei enthält mehr als 1000 Produkte.");
   for (const p of value.products) {
-    if (!object(p) || typeof p.id !== "string" || !p.id || p.id.length > 150) throw Error("У каждой записи products должен быть текстовый id.");
-    if (p.version != null && typeof p.version !== "string") throw Error("Версия продукта должна быть строкой.");
-    if (p.installed_fixes != null && (!Array.isArray(p.installed_fixes) || !p.installed_fixes.every(v => typeof v === "string"))) throw Error("installed_fixes должен быть списком строк.");
+    if (!object(p) || typeof p.id !== "string" || !p.id || p.id.length > 150) throw Error("Jeder products-Eintrag benötigt eine nicht leere id als Zeichenkette.");
+    if (p.version != null && typeof p.version !== "string") throw Error("Die Produktversion muss eine Zeichenkette sein.");
+    if (p.installed_fixes != null && (!Array.isArray(p.installed_fixes) || !p.installed_fixes.every(v => typeof v === "string"))) throw Error("installed_fixes muss eine Liste von Zeichenketten sein.");
   }
   return value;
 }
 
 function validateCatalog(value) {
-  if (!object(value) || value.schema_version !== 2 || !object(value.products)) throw Error("Ожидается catalog schema_version 2 с объектом products.");
-  if (Object.keys(value.products).length > 1000) throw Error("Каталог слишком большой.");
+  if (!object(value) || value.schema_version !== 2 || !object(value.products)) throw Error("Erwartet wird ein Katalog mit schema_version 2 und einem products-Objekt.");
+  if (Object.keys(value.products).length > 1000) throw Error("Der Katalog ist zu groß.");
   for (const entry of Object.values(value.products)) {
-    if (!object(entry) || (entry.available != null && !object(entry.available))) throw Error("Некорректная запись каталога.");
+    if (!object(entry) || (entry.available != null && !object(entry.available))) throw Error("Ungültiger Katalogeintrag.");
   }
   return value;
 }
@@ -171,7 +171,7 @@ function rowsFor(inventory, catalog) {
   for (const p of products) {
     const discoveryId = p.id === "ibm_java" ? "websphere" : p.id === "daeja_viewone_virtual" ? "content_navigator" : p.id;
     const discovery = inventory.discovery && inventory.discovery[discoveryId];
-    if (object(discovery) && discovery.status && !["ok", "skipped"].includes(discovery.status)) p._discoveryError = "Статус collector: " + discovery.status + ". Данные этой записи могут быть неполными.";
+    if (object(discovery) && discovery.status && !["ok", "skipped"].includes(discovery.status)) p._discoveryError = "Collector-Status: " + discovery.status + ". Die Daten dieses Eintrags können unvollständig sein.";
     if (p.id === "iccsap" && !p.installed_fixes && products.filter(x => x.id === "iccsap").length === 1) p.installed_fixes = iccsapFixes(inventory);
   }
   const rows = [];
@@ -190,9 +190,9 @@ function startApp() {
   const initial = JSON.parse($("inventory-data").textContent);
   let inventory = initial === null ? null : validateInventory(initial);
   const notes = JSON.parse($("notes-data").textContent);
-  let inventoryName = "", catalogName = "встроенный";
+  let inventoryName = "", catalogName = "eingebettet";
   const el = (tag, text, className) => { const node = document.createElement(tag); if (text !== undefined) node.textContent = String(text); if (className) node.className = className; return node; };
-  const date = value => { const stamp = Date.parse(value); return Number.isFinite(stamp) ? new Date(stamp).toLocaleString("ru-RU", {timeZone:"UTC", year:"numeric", month:"2-digit", day:"2-digit", hour:"2-digit", minute:"2-digit"}) + " UTC" : "дата не указана"; };
+  const date = value => { const stamp = Date.parse(value); return Number.isFinite(stamp) ? new Date(stamp).toLocaleString("de-DE", {timeZone:"UTC", year:"numeric", month:"2-digit", day:"2-digit", hour:"2-digit", minute:"2-digit"}) + " UTC" : "kein Datum angegeben"; };
   function link(label, url, primary) {
     const safe = ibmUrl(url);
     if (!safe) return null;
@@ -204,17 +204,17 @@ function startApp() {
   function metadata(parent, text) { if (text) parent.append(el("span", text, "metadata")); }
   function render() {
     const now = Date.now();
-    $("catalog-date").textContent = "Каталог: " + date(catalog.generated_at) + " · " + catalogName + " · Примечания IBM: " + notes.checked_at;
+    $("catalog-date").textContent = "Katalog: " + date(catalog.generated_at) + " · " + catalogName + " · IBM-Hinweise: " + notes.checked_at;
     $("clear-inventory").hidden = !inventory;
-    $("inventory-title").textContent = inventory ? inventory.context_only ? "Версии из приложенного описания" : "Снимок: " + (inventory.host.hostname || "имя сервера не указано") : "Каталог IBM · 7 основных продуктов";
-    $("inventory-meta").textContent = inventory ? inventory.context_only ? "Это ранее указанные версии. Новый скан не выполнялся; загрузите inventory.json для обновления." : [inventoryName, "Сбор: " + date(inventory.timestamp), inventory.host.machine, inventory.host.os_release && inventory.host.os_release.PRETTY_NAME].filter(Boolean).join(" · ") : "Откройте inventory.json для сравнения с вашим сервером. Каталог доступен и без него.";
+    $("inventory-title").textContent = inventory ? inventory.context_only ? "Versionsstand aus der bereitgestellten Beschreibung" : "Inventarstand: " + (inventory.host.hostname || "kein Servername angegeben") : "IBM-Katalog · 7 Hauptprodukte";
+    $("inventory-meta").textContent = inventory ? inventory.context_only ? "Dies sind die zuvor angegebenen Versionen. Es wurde kein neuer Scan ausgeführt. Öffnen Sie eine aktuelle inventory.json für einen neuen Vergleich." : [inventoryName, "Erfasst: " + date(inventory.timestamp), inventory.host.machine, inventory.host.os_release && inventory.host.os_release.PRETTY_NAME].filter(Boolean).join(" · ") : "Öffnen Sie inventory.json für den Vergleich mit Ihrem Server. Der Katalog ist auch ohne Inventar nutzbar.";
     const warnings = [];
     const badEntries = Object.values(catalog.products).filter(e => freshness(e, catalog, now));
-    if (badEntries.length) warnings.push("Для " + badEntries.length + " записей каталог устарел, не датирован или источник недоступен. Уровни показаны для справки.");
-    if (now - Date.parse(notes.checked_at + "T00:00:00Z") > FRESH_HOURS * 3600000) warnings.push("Примечания IBM от " + notes.checked_at + " требуют повторной проверки, даже если catalog.json обновился.");
+    if (badEntries.length) warnings.push("Für " + badEntries.length + " Einträge ist der Katalog veraltet, undatiert oder die Quelle nicht erreichbar. Die Stände dienen zur Orientierung.");
+    if (now - Date.parse(notes.checked_at + "T00:00:00Z") > FRESH_HOURS * 3600000) warnings.push("Die IBM-Hinweise vom " + notes.checked_at + " müssen erneut geprüft werden, auch wenn catalog.json inzwischen aktualisiert wurde.");
     if (inventory && !inventory.context_only) {
       const stamp = Date.parse(inventory.timestamp);
-      if (!Number.isFinite(stamp) || stamp > now + 300000 || now - stamp > FRESH_HOURS * 3600000) warnings.push("Inventory не имеет достоверной свежей даты. Сравниваются значения из файла, а не текущее состояние сервера.");
+      if (!Number.isFinite(stamp) || stamp > now + 300000 || now - stamp > FRESH_HOURS * 3600000) warnings.push("Das Inventar hat kein verlässliches aktuelles Erfassungsdatum. Verglichen werden die Werte aus der Datei; der aktuelle Serverzustand wurde nicht abgefragt.");
     }
     $("freshness").hidden = !warnings.length; $("freshness").textContent = warnings.join(" ");
     $("products").replaceChildren();
@@ -231,11 +231,11 @@ function startApp() {
       const product = el("div", undefined, "cell-content");
       product.append(el("strong", own(PRODUCTS, id) ? PRODUCTS[id][0] : p.name || id, "product-name"));
       const parts = versionParts(target.version);
-      if (parts && own(PRODUCTS, id)) product.append(el("span", "Ветка " + parts.slice(0, PRODUCTS[id][1]).join("."), "stream"));
+      if (parts && own(PRODUCTS, id)) product.append(el("span", "Versionslinie " + parts.slice(0, PRODUCTS[id][1]).join("."), "stream"));
       if (p && p.installation_directory) metadata(product, p.installation_directory);
-      cell(tr, "Продукт", product);
+      cell(tr, "Produkt", product);
       const installedCell = el("div", undefined, "cell-content");
-      installedCell.append(el("span", p ? p.version || "Версия неизвестна" : "—", "version"));
+      installedCell.append(el("span", p ? p.version || "Version unbekannt" : "—", "version"));
       if (p) {
         const ix = ifixLevel(p);
         if (ix !== null) metadata(installedCell, "iFix " + ix);
@@ -243,46 +243,46 @@ function startApp() {
         const fixes = (p.installed_fixes || []).filter(v => /JRE_fix_\d{8}/i.test(v));
         if (fixes.length) metadata(installedCell, fixes.map(v => v.match(/JRE_fix_\d{8}/i)[0]).join(" · "));
       }
-      cell(tr, "Установлено", installedCell);
+      cell(tr, "Installiert", installedCell);
       const availableCell = el("div", undefined, "cell-content");
-      const targetText = [target.version, target.interim_fix != null ? "iFix " + target.interim_fix : "", target.jre_version ? "+ JRE " + target.jre_version : ""].filter(Boolean).join(" ") || "Нет данных";
+      const targetText = [target.version, target.interim_fix != null ? "iFix " + target.interim_fix : "", target.jre_version ? "+ JRE " + target.jre_version : ""].filter(Boolean).join(" ") || "Keine Daten";
       availableCell.append(el("span", targetText, "version"));
       metadata(availableCell, target.special_build);
       if (note) metadata(availableCell, note.availability_note);
-      if (e) metadata(availableCell, "Источник получен: " + date(e.refreshed_at || catalog.generated_at));
+      if (e) metadata(availableCell, "Quelle abgerufen: " + date(e.refreshed_at || catalog.generated_at));
       if (note) {
         const details = el("details", undefined, "product-notes");
-        details.append(el("summary", "Условия и примечания"));
+        details.append(el("summary", "Voraussetzungen und Hinweise"));
         for (const text of note.notes) details.append(el("p", text));
-        details.append(el("p", "Проверка примечаний: " + notes.checked_at, "muted"));
+        details.append(el("p", "Hinweise geprüft am: " + notes.checked_at, "muted"));
         availableCell.append(details);
       }
-      cell(tr, "Подтверждено IBM", availableCell);
+      cell(tr, "Bei IBM bestätigt", availableCell);
       const statusCell = el("div", undefined, "cell-content");
       statusCell.append(el("span", status.label, "status " + status.code), el("p", status.reason, "reason"));
-      cell(tr, "Сравнение", statusCell);
+      cell(tr, "Vergleich", statusCell);
       const actions = el("div", undefined, "cell-content links");
       const links = note ? note.links.slice() : [];
-      if (e && e.source_url && !links.some(l => l.url === e.source_url)) links.push({label:"Источник каталога IBM", url:e.source_url});
-      if (e && e.download_url && !links.some(l => l.url === e.download_url)) links.unshift({label:"IBM: страница скачивания", url:e.download_url, download:true});
+      if (e && e.source_url && !links.some(l => l.url === e.source_url)) links.push({label:"IBM-Quelle des Katalogs", url:e.source_url});
+      if (e && e.download_url && !links.some(l => l.url === e.download_url)) links.unshift({label:"IBM: Downloadseite", url:e.download_url, download:true});
       for (const item of links) { const a = link(item.label, item.url, item.download); if (a) actions.append(a); }
-      if (!actions.childNodes.length) actions.append(el("span", "Источник не указан", "metadata"));
-      cell(tr, "Ссылки", actions);
+      if (!actions.childNodes.length) actions.append(el("span", "Keine Quelle angegeben", "metadata"));
+      cell(tr, "Quellen und Downloads", actions);
       $("products").append(tr);
     }
-    $("summary").textContent = inventory ? counts.update + " — более новый уровень · " + counts.review + " — проверить · " + counts.match + " — совпадает" : "Известные уровни и официальные страницы IBM";
+    $("summary").textContent = inventory ? counts.update + " — neuerer Stand · " + counts.review + " — prüfen · " + counts.match + " — übereinstimmend" : "Bekannte Versionsstände und offizielle IBM-Seiten";
   }
   async function readFile(input, kind) {
     const file = input.files[0];
     if (!file) return;
     try {
-      if (file.size > MAX_BYTES) throw Error("Максимальный размер JSON — 10 МБ.");
+      if (file.size > MAX_BYTES) throw Error("Die JSON-Datei darf höchstens 10 MiB groß sein.");
       const value = JSON.parse((await file.text()).replace(/^\uFEFF/, ""));
       if (kind === "inventory") { validateInventory(value); inventory = value; inventoryName = file.name; }
       else { validateCatalog(value); catalog = value; catalogName = file.name; }
       $("error").hidden = true; $("error").textContent = ""; render();
     } catch (error) {
-      $("error").textContent = "Файл не загружен: " + error.message + " Предыдущие данные сохранены.";
+      $("error").textContent = "Die Datei konnte nicht geladen werden: " + error.message + " Die bisherigen Daten bleiben erhalten.";
       $("error").hidden = false;
     } finally { input.value = ""; }
   }
@@ -298,7 +298,7 @@ if (typeof module !== "undefined" && module.exports) module.exports = {versionPa
 if (typeof document !== "undefined") {
   try { startApp(); } catch (error) {
     const target = document.getElementById("error");
-    target.textContent = "Не удалось открыть встроенные данные: " + error.message;
+    target.textContent = "Die eingebetteten Daten konnten nicht geöffnet werden: " + error.message;
     target.hidden = false;
   }
 }
