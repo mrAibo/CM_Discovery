@@ -1,7 +1,7 @@
 # IBM-Updates mit Ansible
 
 Eigenständige Automatisierung für bereits lokal vorhandene IBM-Pakete.
-**Aktueller Stand: Basis-Vorprüfung für WebSphere, noch keine Installation.**
+**Aktueller Stand: Basis-Vorprüfung und Repository-Staging für WebSphere, noch keine Installation.**
 Die Rolle lädt nichts herunter und benötigt weder Patchwatch noch dessen Katalog.
 
 ## Voraussetzungen
@@ -24,6 +24,7 @@ Die konkrete Python-3.12-Bereitstellung hängt von SLES-Version und Service Pack
 
 - `roles/ibm_was_update/`: Rolle und eigenständiges lesendes Prüfmodul.
 - `playbooks/preflight_was.yml`: separater Einstieg für genau einen Host.
+- `playbooks/stage_was.yml`: erneute Vorprüfung, Übertragung und lokale Repository-Abfrage.
 - `inventories/example/hosts.yml`: Inventory-Vorlage.
 - `examples/change-was.yml`: Vorlage für lokale Parameter.
 - `tests/`: Tests für mehrfache Installationen, Versionsabweichungen und Fehler.
@@ -92,18 +93,80 @@ Abhängigkeiten, iFix-Kompatibilität, freien Staging-/Backup-Speicher, Profile,
 Sperren, Healthchecks oder Wiederherstellbarkeit. Er beweist weder Update-Eignung
 noch vollständige Sicherheit des installierten Systems.
 
+## Repository separat bereitstellen
+
+Nach erfolgreicher Basisprüfung kann das bereits heruntergeladene Paket mit
+`stage_was.yml` auf den Zielhost übertragen und dort geprüft werden. Dieser
+Schritt ändert nur das Staging und gegebenenfalls lokale IM-Caches/Protokolle;
+IBM-Software und Dienste werden nicht aktualisiert oder gestoppt.
+
+Zusätzliche Parameter in `private/change-was.yml`:
+
+- `target_internal_version`: exakte interne Zielversion aus dem gewählten Paket;
+  kein `latest` und keine aus einer sichtbaren Versionsnummer erfundene Build-ID.
+- `stage_directory`: vorhandenes dediziertes Verzeichnis auf dem Ziel, außerhalb
+  der WAS-Installation, ohne Symlink, Eigentümer `installation_owner`, Modus 0700.
+- `stage_reserve_bytes`: gewünschte freie Reserve in Bytes. Die Vorlage enthält
+  1 GiB; vor dem Lauf passend zur Umgebung festlegen. Zusätzlich wird freier
+  Platz für zweimal die ZIP-Größe verlangt. Das ersetzt keine Platzprüfung für
+  die spätere Installation, Entpackung oder Sicherung. Auch Ansible-Temporärpfade
+  müssen ausreichend Platz haben.
+
+Der Staging-Lauf benötigt administrative Rechte sowie `unshare` und `runuser`
+aus util-linux auf dem Ziel. Die Rolle installiert diese Programme nicht.
+`unshare --net` startet die IM-Abfrage ohne externe Netzwerkverbindung;
+`runuser` führt IM anschließend als Installationseigentümer aus. Fehlende Rechte
+oder eine gesperrte Namespace-Funktion führen zum Abbruch. Es gibt keinen
+Fallback mit Netzwerkzugriff und keine globale Änderung der IM-Präferenzen.
+Die Unterstützung muss auf dem konkreten SLES-Host geprüft werden.
+
+```bash
+ansible-playbook -i private/hosts.yml playbooks/stage_was.yml \
+  --limit cmtest -e @private/change-was.yml
+```
+
+Ablauf:
+
+1. Basis-Vorprüfung erneut ausführen.
+2. Ein vollständiges ZIP mit `repository.config` im Wurzelverzeichnis verlangen;
+   doppelte Namen, verschlüsselte Einträge, Links und gefährliche Pfade ablehnen.
+3. Staging-Verzeichnis und freie Kapazität prüfen.
+4. Datei als `<sha256>.zip` übertragen, ohne vorhandene abweichende Dateien
+   automatisch zu überschreiben. Das Archiv wird nicht entpackt.
+5. SHA-256 auf dem Ziel erneut prüfen und mit IM
+   `listAvailablePackages -repositories <lokales-zip>` genau das gewünschte
+   `<package_id>_<target_internal_version>` bestätigen.
+
+Ein bereits vorhandenes identisches ZIP wird wiederverwendet; die Prüfung wird
+wiederholt. Bei Fehlern bleibt die übertragene Datei zur Diagnose bestehen.
+Gleichzeitige Staging-Läufe mit identischem Inhalt benötigen dieselbe Datei;
+das ist **keine Installationssperre**. Eine spätere Installation braucht eine
+separate Sperre für den betroffenen IM-Bereich.
+
+Mehrteilige Medien, verschachtelte ZIPs, HTTP-Repositories und automatische
+Auswahl der neuesten Version werden in diesem Schritt nicht unterstützt.
+Die ZIP-Strukturprüfung ersetzt keine vollständige Validierung aller Nutzdaten.
+Ein Treffer in der IM-Liste beweist das Vorhandensein des Offering, aber nicht
+Plattform-Kompatibilität, alle erforderlichen Basis-Medien oder Installierbarkeit.
+Bei fehlenden Informationen erfolgt keine Installationsfreigabe.
+`stage_was.yml` unterstützt absichtlich keinen `--check`-Durchlauf; verwenden Sie
+für die lesende Basisprüfung `preflight_was.yml`.
+
+Die IM-Schnittstelle ist in der offiziellen Dokumentation beschrieben:
+[Repository-Inhalte mit imcl auflisten](https://www.ibm.com/docs/en/installation-manager/1.9.2?topic=line-listing-repository-contents-by-using-imcl-command).
+Die Abnahme des konkreten IBM-ZIP auf SLES steht weiterhin aus.
+
 ## Nächster Ausbauschritt
 
-Nach Sichtung eines realen WAS-Pakets mit Readme: exakte Ziel-Offering-Version,
-lokales Repository, vorhandene iFixes, Dienstplan und Recovery festlegen. Danach
-separates `install_was.yml` implementieren, das unmittelbar vor Änderungen erneut
-prüft, sperrt, überträgt, installiert und das Ergebnis verifiziert. Kein
-`perform_installation=true`-Schalter und kein Installationsaufruf aus Patchwatch.
-BASE und ND lassen sich im Preflight erkennen; ein späterer Installer benötigt
-für ND/Cluster eine eigene geprüfte Prozedur.
+Für ein separates `install_was.yml` fehlen noch die Readme des tatsächlichen
+Pakets, Voraussetzungen einschließlich vorhandener iFixes, Profile/Dienstplan,
+Healthchecks und eine geprüfte Wiederherstellung. Erst danach die passende
+Installationsprozedur implementieren. Kein `perform_installation=true`-Schalter
+und kein Installationsaufruf aus Patchwatch. BASE und ND lassen sich prüfen;
+für ND/Cluster ist später eine eigene geprüfte Prozedur erforderlich.
 
 Der bisherige Collector bleibt ein optionaler Bericht. Sein globales Mapping
-nach Produkt-ID wird nicht für diese Rolle verwendet. Das neue Prüfmodul enthält
+nach Produkt-ID wird nicht für diese Rolle verwendet. Die Prüfmodule enthalten
 keinen Import aus `src/ibm_patchwatch` und keine Abhängigkeit von Python 3.6.
 
 ## Entwicklung
@@ -111,8 +174,10 @@ keinen Import aus `src/ibm_patchwatch` und keine Abhängigkeit von Python 3.6.
 ```bash
 python -m unittest discover -s tests -p 'test_*.py' -v
 ansible-playbook -i inventories/example/hosts.yml playbooks/preflight_was.yml --syntax-check
+ansible-playbook -i inventories/example/hosts.yml playbooks/stage_was.yml --syntax-check
 ```
 
-CI prüft Modulentscheidungen, echten Ansible-Modultransport mit synthetischen
-IBM-Kommandos, abgelehnte Platzhalter/Zielhosts und Ansible-Syntax mit Python 3.12. Eine reale
-SSH-/IBM-Abnahme steht aus; synthetische Tests ersetzen sie nicht.
+CI prüft Entscheidungen, Ansible-Modultransport und Staging mit synthetischen
+IBM-Dateien, abgelehnte Platzhalter/Zielhosts und beide Playbook-Syntaxen.
+Ein gesperrter Netzwerk-Namespace muss auch im Test zum Abbruch der Abfrage
+führen. Eine reale SSH-/IBM-Abnahme steht aus; synthetische Tests ersetzen sie nicht.

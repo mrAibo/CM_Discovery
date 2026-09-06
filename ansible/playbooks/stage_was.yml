@@ -1,0 +1,13 @@
+---
+- name: Lokales WAS-Repository vorbereiten und prüfen
+  hosts: ibm_was
+  gather_facts: false
+  any_errors_fatal: true
+  tasks:
+    - name: Vollständige Basisprüfung erneut ausführen
+      ansible.builtin.include_role:
+        name: ibm_was_update
+    - name: Repository ohne Softwareinstallation bereitstellen
+      ansible.builtin.include_role:
+        name: ibm_was_update
+        tasks_from: stage
