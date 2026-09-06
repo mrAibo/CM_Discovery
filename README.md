@@ -1,125 +1,162 @@
-# IBM Patchwatch — portable update table
+# IBM Patchwatch — Versionsstände und Updates
 
-The simplest workflow is one HTML file on Windows plus the existing offline
-collector. Open `docs/IBM-Patchwatch.html` in your browser, then select the
-collector's `inventory.json`. The embedded catalog is visible even without an
-inventory file. No Windows installation, local web server, extension, or SSH
-connection from Windows is required.
+IBM Patchwatch zeigt installierte IBM-Produkte und die anhand offizieller
+IBM-Quellen bestätigten Updates in einer Tabelle. Der empfohlene Ablauf besteht
+aus dem vorhandenen Offline-Collector und **einer portablen HTML-Datei mit
+deutscher Oberfläche**.
 
-## Recommended: portable page
+Öffnen Sie [IBM-Patchwatch.html](docs/IBM-Patchwatch.html) im Browser und wählen
+Sie Ihre `inventory.json` aus. Der eingebettete Katalog ist auch ohne Inventar
+sichtbar. Auf Windows genügt ein aktueller Browser mit aktiviertem JavaScript.
 
-1. Download `docs/IBM-Patchwatch.html` with GitHub's **Download raw file** button
-   and open it in a current Windows browser.
-2. Run the existing collector on the CM server:
+## Schnellstart: portable HTML-Datei
+
+1. Öffnen Sie [docs/IBM-Patchwatch.html](docs/IBM-Patchwatch.html) auf GitHub und
+   speichern Sie die Datei über **Download raw file** auf dem Windows-Rechner.
+   Öffnen Sie die heruntergeladene Datei im Browser.
+2. Erzeugen Sie auf dem CM-Server das Inventar. Aus dem Repository-Verzeichnis:
 
    ```bash
    python3 collectors/ibm_discovery.py --json > inventory.json
    ```
 
-3. Transfer that JSON file using an approved existing LAN/file-transfer method
-   and click **Открыть inventory.json** in the page.
-4. Open the IBM download or Fix Central links in the row. Some links go directly
-   to a fix selection; others require product/platform selection on IBM's page.
-   IBMid, entitlement checks, license acceptance, and actual downloads remain on IBM.
+   Liegt der einzelne Collector bereits unter `/root/bin`, verwenden Sie:
 
-The HTML contains inline CSS, JavaScript, and the catalog, with no external
-dependencies. The page makes **no network requests** and reads files only when
-selected. Its CSP disables network connections. Inventory stays in browser memory
-and is discarded when the page closes; opening an IBM link does not upload it.
+   ```bash
+   python3 /root/bin/ibm_discovery.py --json > inventory.json
+   ```
 
-### Rebuilding and refreshing
+3. Übertragen Sie die JSON-Datei über einen vorhandenen Dateitransferweg nach
+   Windows. Klicken Sie in der Seite auf **inventory.json öffnen**.
+4. Prüfen Sie die Produktzeilen und öffnen Sie die IBM-Links. Einige führen zur
+   konkreten Fix-Auswahl, andere zur Downloadseite oder zur Produktauswahl in
+   Fix Central. Plattform, IBMid-Anmeldung, Berechtigungen und Lizenzannahme
+   werden auf der IBM-Seite behandelt.
+
+Die Seite verarbeitet die ausgewählte Datei im Browser und lädt sie nicht hoch.
+Sie enthält CSS, JavaScript und Katalogdaten vollständig eingebettet und ruft
+selbst keine Netzwerkressourcen ab. IBM-Links öffnen sich in einem neuen Tab.
+Das Inventar bleibt nur im Arbeitsspeicher dieser Seite. **Inventar ausblenden**
+entfernt es aus dem Vergleich; beim Schließen der Seite wird es verworfen.
+
+## Voraussetzungen
+
+| Aufgabe | Voraussetzungen |
+| --- | --- |
+| HTML-Datei unter Windows verwenden | Aktueller Browser; Internetzugang für die IBM-Downloadseiten |
+| Installierte Produkte auf dem CM-Server erfassen | Linux, Python 3.6+, lokale IBM-Kommandos und ausreichende Leserechte |
+| HTML-Datei aus einem vorhandenen Katalog erzeugen | Python 3.6+, nur Standardbibliothek; Repository mit `web/` und `data/ibm/` |
+| Katalog aus IBM-Quellen aktualisieren | Python 3.11+ und Zugriff auf IBM; der GitHub-Workflow verwendet Python 3.12 |
+| Optionales zentrales LAN-Prüfprogramm betreiben | Python 3.11+, Git/OpenSSH und SSH-Zugriff auf den CM-Server |
+
+Der CM-Server benötigt für die Erfassung keinen Internetzugang. Der Collector
+verwendet die in `collectors/ibm_discovery.py` unter `P` hinterlegten Pfade,
+beispielsweise für `cmlevel`, `db2level`, WebSphere `versionInfo.sh`, ICN
+`version.txt` und Installation Manager. Prüfen Sie diese Pfade für Ihre Umgebung.
+Die vorhandene zentrale SSH-Konfiguration verwendet root; der Collector selbst
+erzwingt keine bestimmte Benutzerkennung. Fehlende Rechte oder Pfade müssen im
+Discovery-Ergebnis beachtet werden.
+
+## Katalog und HTML aktualisieren
+
+Der Workflow **Refresh IBM metadata catalog** ist täglich für **03:17 UTC**
+geplant. Er kann auf GitHub auch über **Run workflow** gestartet werden und läuft
+zusätzlich bei den im Workflow definierten Quellcode- und Release-Ereignissen.
+Er aktualisiert `data/ibm/catalog.json`, erzeugt danach
+`docs/IBM-Patchwatch.html` neu und übernimmt beide Dateien in `main`.
+
+Ist eine IBM-Quelle nicht erreichbar, bleibt ein vorhandener Katalogeintrag mit
+seinem bisherigen Abrufdatum und einem Fehlerhinweis erhalten. Fehlt für eine
+fehlgeschlagene Quelle ein früherer Eintrag, bricht der Workflow ab. Ein
+teilweise aktualisierter Katalog mit erhaltenen Einträgen kann veröffentlicht
+werden; die betroffenen Zeilen verlangen eine Prüfung.
+
+**Eine bereits heruntergeladene HTML-Datei aktualisiert sich beim Öffnen nicht.**
+Laden Sie eine neue HTML-Datei herunter oder wählen Sie unter
+**Bedienung und Aktualisierung** die Schaltfläche **catalog.json öffnen**.
+Quellendaten, die älter als 72 Stunden sind, und fehlgeschlagene Aktualisierungen
+werden gekennzeichnet.
+
+Nur die HTML-Datei aus dem vorhandenen Katalog neu erzeugen:
 
 ```bash
 python3 scripts/build_static_page.py
 ```
 
-The builder is Python 3.6+ standard library and does not need the central
-application installed. GitHub Actions rebuilds the public, inventory-free HTML
-after each successful catalog refresh and commits it alongside `catalog.json`.
-Download a fresh HTML periodically, or import a newer `catalog.json` with the
-control under **Как пользоваться и обновлять таблицу**. Opening an old HTML does
-not refresh it automatically.
+Der Builder benötigt weder die installierte zentrale Anwendung noch einen
+Internetzugang. Um auf einem Rechner mit IBM-Zugriff auch den Katalog zu
+aktualisieren, verwenden Sie dort Python 3.11 oder neuer:
 
-For an explicitly private report with inventory embedded:
+```bash
+PYTHONPATH=src python3 scripts/update_ibm_catalog.py
+python3 scripts/build_static_page.py
+```
+
+Für einen privaten Bericht mit eingebettetem Inventar:
 
 ```bash
 python3 scripts/build_static_page.py --inventory /private/inventory.json --output /private/IBM-Patchwatch-report.html
 ```
 
-Do not commit private reports. The builder refuses to embed inventory into the
-tracked public HTML path.
+Dieser Bericht enthält Serverdaten und gehört nicht ins Repository. Der Builder
+verhindert, dass `--inventory` in die öffentliche Ausgabedatei
+`docs/IBM-Patchwatch.html` geschrieben wird. Die automatisch erzeugte öffentliche
+HTML-Datei enthält ausschließlich Katalogdaten und Hinweise.
 
-### What the comparison proves
+## Bedeutung des Vergleichs
 
-- Versions compare only inside the displayed product stream. A different stream
-  requires review; major-version changes are not inferred.
-- Unknown or conflicting iFix/build values, discovery errors, stale/undated
-  catalog entries, and failed source refreshes cannot produce a matching status.
-- CM and WAS base/fix-pack matches do not certify interim/security-fix coverage.
-- Db2 special-build numbers do not imply chronology. Unequal builds require review.
-- Daeja detected in ICN's `version.txt` is a bundled component. ICN 3.1 IF12's
-  Readme includes Daeja 26.0.0 iFix 1; standalone 5.0.15 iFix6 is not an automatic
-  recommendation for that bundled installation.
-- ICCSAP IM `JRE_fix_YYYYMMDD` dates are displayed as evidence, not converted into
-  measured Java versions. Its embedded JRE is distinct from WebSphere's SDK.
+| Anzeige in der portablen Seite | Bedeutung |
+| --- | --- |
+| Neuerer Stand verfügbar / Neuerer iFix verfügbar | In derselben Versionslinie ist ein neuerer Stand bekannt; Voraussetzungen vor Installation prüfen |
+| Version / iFix / Update stimmt überein | Der konkret verglichene Stand passt zum Katalog; keine Gesamtaussage über alle Sicherheitskorrekturen |
+| Fix Pack stimmt überein | WAS-Fix-Pack passt; einzelne iFixes wurden nicht geprüft |
+| Fix Pack gleich · iFix prüfen | CM-Fix-Pack passt; einzelne Interim Fixes lassen sich so nicht bestätigen |
+| Special Build prüfen | Db2-Builds unterscheiden sich; ihre Nummern ergeben keine zeitliche Reihenfolge |
+| In ICN enthalten | Daeja wurde als mitgelieferte ICN-Komponente erfasst und ist mit dem ICN-Paket zu prüfen |
+| Mitgelieferte JRE prüfen | Für ICCSAP fehlt eine gemessene JRE-Version; IM-Datumskennungen reichen nicht aus |
+| Andere Versionslinie / Neuer als Katalog | Kein automatischer Versionswechsel oder Downgrade wird abgeleitet |
+| Katalog prüfen / Fehler bei der Erfassung | Quelle oder Erfassung ist veraltet, unvollständig, widersprüchlich oder fehlgeschlagen |
+| Keine Inventardaten / Kein Katalogeintrag | Die jeweils andere Seite des Vergleichs fehlt |
 
-`web/verified-notes.json` contains dated IBM observations, conditions and download
-links. Version-specific notes disappear when the imported catalog's target changes.
-The catalog timestamp and this file's review date remain separate.
+Der Vergleich bleibt innerhalb der angezeigten Versionslinie. Unbekannte oder
+widersprüchliche iFix- und Build-Angaben werden zur Prüfung markiert. Mehrere
+Installationen derselben Produkt-ID bleiben als eigene Zeilen erhalten.
 
-**Known source limitation:** some existing providers read a pinned readme for a
-known release. Successfully fetching that page again does not discover the next
-release or prove that the target is the latest. The static UI calls these
-confirmed levels, exposes dates, and flags source age. Better product-index
-discovery can be added to the catalog independently of the browser workflow.
+Besondere Abhängigkeiten stehen unter **Voraussetzungen und Hinweise**:
+ICN 3.1 IF12 liefert laut seiner Readme Daeja 26.0.0 iFix 1 mit; sein Installer
+benötigt Java 11 oder 17. Die eigenständige Daeja-5.0.15-Korrektur ist daher keine
+automatische Empfehlung für die ICN-Komponente. Das SDK von WebSphere und die
+mitgelieferte JRE von ICCSAP werden getrennt betrachtet.
 
-## Optional: existing central LAN checker
+`web/verified-notes.json` enthält fachlich geprüfte, datierte Hinweise und
+Downloadlinks. Das Prüfdatum bleibt unabhängig vom Abrufdatum des Katalogs.
+Versionsgebundene Hinweise werden ausgeblendet, wenn ein importierter Katalog
+einen anderen Zielstand enthält. Auch die Hinweise werden nach 72 Stunden zur
+erneuten Prüfung markiert; der automatische Kataloglauf aktualisiert ihren
+Inhalt und ihr Prüfdatum nicht.
 
-A short-lived LAN web application that discovers installed IBM Content Manager components over SSH and compares them with a catalog maintained from official IBM sources.
+**Bekannte Grenze der Quellen:** Einige Provider lesen die fest hinterlegte
+Readme eines bereits bekannten Releases. Ein erfolgreicher erneuter Abruf
+entdeckt kein nachfolgendes Release und beweist nicht, dass der Zielstand der
+neueste ist. Die Tabelle zeigt deshalb bestätigte Stände mit Quellen und Datum.
+Die Suche nach neuen Releases muss für diese Provider noch um Produktindizes
+oder andere belegte IBM-Metadatenquellen erweitert werden.
 
-Nothing is installed on the Windows workstation. The browser receives inventory from the central Linux server and reads the public update catalog from GitHub. IBM credentials remain on IBM websites.
+## Optional: vorhandenes zentrales LAN-Prüfprogramm
 
-## Architecture
+Der Befehl `ibm-patchwatch serve` bleibt für den bisherigen LAN-Ablauf verfügbar.
+Dieser Modus verwendet eine separate englische Oberfläche und die bisherige
+Vergleichslogik. Die oben beschriebenen erweiterten Statusregeln gelten für die
+portable HTML-Datei. Für den empfohlenen portablen Ablauf ist der LAN-Modus
+nicht erforderlich.
 
-```text
-IBM CM server                 Central Linux server                Windows browser
-/root/bin/ibm_discovery.py <- restricted SSH -- ibm-patchwatch serve -> LAN HTTP
-                                                                    |
-                                           GitHub catalog.json <----+
-```
+Im LAN-Modus erfasst ein zentraler Linux-Rechner das Inventar über SSH. Der
+Windows-Browser lädt es von diesem Rechner und holt den öffentlichen Katalog
+von `raw.githubusercontent.com`. IBM-Zugangsdaten bleiben auf IBM-Seiten.
 
-- The IBM CM server does not need internet access.
-- Inventory stays inside the LAN and is never uploaded to GitHub.
-- GitHub Actions refreshes `data/ibm/catalog.json` daily from official IBM pages.
-- Version comparison is conservative: missing, stale or ambiguous data becomes `CHECK_REQUIRED` rather than a false `CURRENT`.
+### Collector und SSH vorbereiten
 
-## Requirements
-
-### IBM CM server
-
-- Linux
-- Python 3.6 or newer
-- Commands required by the detected IBM products (`cmlevel`, `db2level`, WebSphere `versionInfo`, and related local files)
-- root execution, because the collector must inspect all configured installations
-
-### Central Linux server
-
-- Linux with access to the IBM CM server over SSH
-- internet access to GitHub
-- Python 3.11 or newer
-- Git and OpenSSH client
-
-### Windows workstation
-
-- A current browser
-- LAN access to the central Linux server
-- internet access to `raw.githubusercontent.com` and IBM support pages
-
-## Installation
-
-### 1. Install the collector on the IBM CM server
-
-Clone this repository on the central Linux server, then copy the single dependency-free collector to the CM server:
+Auf dem zentralen Linux-Rechner:
 
 ```bash
 git clone https://github.com/mrAibo/CM_Discovery.git
@@ -127,31 +164,19 @@ cd CM_Discovery
 ssh root@cmserver 'mkdir -p /root/bin && chmod 700 /root/bin'
 scp collectors/ibm_discovery.py root@cmserver:/root/bin/
 ssh root@cmserver 'chmod 700 /root/bin/ibm_discovery.py'
-```
-
-Verify it locally on the CM server:
-
-```bash
-/root/bin/ibm_discovery.py --json | python3 -m json.tool >/dev/null
-```
-
-Expected result: exit code `0` and no JSON error.
-
-### 2. Create a restricted SSH key
-
-On the central Linux server:
-
-```bash
 ssh-keygen -t ed25519 -f ~/.ssh/id_cm_discovery -C ibm-cm-discovery
 ```
 
-Add the generated public key to `/root/.ssh/authorized_keys` on the CM server. Restrict it to the central server's LAN address and the collector command:
+Den erzeugten öffentlichen Schlüssel auf dem CM-Server in
+`/root/.ssh/authorized_keys` auf Quelladresse und Collector beschränken.
+Ersetzen Sie die Platzhalter durch die tatsächliche LAN-IP und den vollständigen
+öffentlichen Schlüssel:
 
 ```text
-from="<CENTRAL_LINUX_LAN_IP>",restrict,command="/usr/bin/python3 /root/bin/ibm_discovery.py --json" ssh-ed25519 AAAA...
+from="<CENTRAL_LINUX_LAN_IP>",restrict,command="/usr/bin/python3 /root/bin/ibm_discovery.py --json" ssh-ed25519 <PUBLIC_KEY_DATA>
 ```
 
-Add an alias on the central server in `~/.ssh/config`:
+Alias auf dem zentralen Rechner in `~/.ssh/config`:
 
 ```sshconfig
 Host cmtest
@@ -161,17 +186,16 @@ Host cmtest
     IdentitiesOnly yes
 ```
 
-Test the forced command:
+Der eingeschränkte Schlüssel erlaubt nur den Collector-Aufruf. Prüfen Sie die
+JSON-Ausgabe:
 
 ```bash
 ssh -T cmtest | python3 -m json.tool >/dev/null
 ```
 
-The restricted key cannot open a shell or forward ports; it can only run discovery.
+### Anwendung installieren und starten
 
-### 3. Install the central application
-
-From the repository checkout on the central Linux server:
+Im Repository auf dem zentralen Rechner mit Python 3.11 oder neuer:
 
 ```bash
 python3 -m venv .venv
@@ -180,7 +204,7 @@ python -m pip install -e .
 cp config.example.toml config.toml
 ```
 
-`config.toml`:
+`config.toml` bleibt außerhalb von Git. Beispiel:
 
 ```toml
 [ssh]
@@ -192,9 +216,7 @@ collector_timeout = 60
 collector = "/root/bin/ibm_discovery.py"
 ```
 
-`config.toml` is ignored by Git.
-
-### 4. Start the temporary checker
+Den temporären Dienst starten:
 
 ```bash
 . .venv/bin/activate
@@ -205,60 +227,60 @@ ibm-patchwatch --config config.toml serve cmtest \
   --port 8765
 ```
 
-Open from Windows:
+Öffnen Sie unter Windows `http://<CENTRAL_LINUX_LAN_IP>:8765/`. Ohne `--bind`
+lauscht der Dienst nur auf `127.0.0.1`. Beenden Sie ihn nach der Prüfung mit
+`Ctrl+C`.
 
-```text
-http://<CENTRAL_LINUX_LAN_IP>:8765/
-```
+`admin/admin` ist der vorhandene Standardwert. HTTP Basic Auth verschlüsselt die
+Verbindung nicht. Dieser Modus ist für das vereinbarte vertrauenswürdige LAN
+vorgesehen; setzen Sie bei Bedarf eigene Zugangsdaten oder verwenden Sie einen
+vorhandenen HTTPS-Reverse-Proxy. Binden Sie den Dienst an eine private LAN-Adresse.
+SSH-Schlüssel, IBM-Zugangsdaten, Konfigurationen und Inventardateien gehören
+nicht in Git.
 
-The browser asks for the configured username and password. Stop the server with `Ctrl+C` when the check is finished.
-
-`admin/admin` is the requested default and only prevents casual access. HTTP Basic Auth is not encryption; use this mode only for the confirmed trusted LAN. Set different environment values or place the application behind an existing HTTPS reverse proxy if the network boundary expands.
-
-## Result statuses
-
-- `CURRENT` — installed maintenance level matches the catalog.
-- `UPDATE_AVAILABLE` — a newer applicable level is known.
-- `NEWER_THAN_CATALOG` — installed level is newer than the catalog.
-- `CHECK_REQUIRED` — data is missing, stale or unsafe to compare automatically.
-- `NOT_SUPPORTED` — the catalog explicitly marks the product stream unsupported.
-
-DB2 special builds are not treated as ordinary numeric versions. A non-identical special build at the same DB2 version requires review.
-
-## Updating
-
-On the central Linux server:
+Zum Aktualisieren der zentralen Anwendung:
 
 ```bash
-cd CM_Discovery
 git pull --ff-only
 . .venv/bin/activate
 python -m pip install -e .
 ```
 
-When the collector changes, copy it to the CM server again and repeat the JSON verification from step 1.
+Bei Collector-Änderungen dessen Datei erneut auf den CM-Server übertragen.
+`scripts/update_env.sh` kann die virtuelle Umgebung der zentralen Anwendung
+reparieren; dieses Skript wird für die portable HTML-Datei nicht benötigt.
 
-## Development checks
+## Entwicklung und Prüfungen
+
+Für die vollständigen Entwicklungstests werden Python 3.11+ mit `pytest` und
+Node.js benötigt; CI verwendet Python 3.12 und Node.js 22. Node.js ist keine
+Voraussetzung auf dem Windows-Arbeitsplatz oder dem CM-Server.
 
 ```bash
-python -m pip install pytest
-python -m pytest -q
+python3 -m pip install -e . pytest
+python3 -m pytest -q
+node --test tests/test_portable.js
+python3 scripts/build_static_page.py
+git diff --exit-code -- docs/IBM-Patchwatch.html
 ```
 
-The repository intentionally keeps two runtime closures:
+Nach beabsichtigten Änderungen an `web/` oder am Katalog die HTML-Datei neu
+bauen und mit einchecken. Die letzte Prüfung kontrolliert anschließend die
+reproduzierbare Ausgabe. Die Tests prüfen unter anderem Versionslinien,
+fehlende oder widersprüchliche Angaben, Quellenalter, IM-Paketzuordnung,
+Skripteinbettung und CSP-Hashes.
 
-- `collectors/ibm_discovery.py` — offline CM inventory collector;
-- `src/ibm_patchwatch/` plus `scripts/update_ibm_catalog.py` — central web checker and GitHub catalog refresh.
+| Pfad | Aufgabe |
+| --- | --- |
+| `collectors/ibm_discovery.py` | Offline-Erfassung auf dem CM-Server, Inventarschema 1 |
+| `data/ibm/catalog.json` | Bekannte IBM-Zielstände, Katalogschema 2 |
+| `web/` | Deutsche Oberfläche, Vergleich und datierte IBM-Hinweise |
+| `scripts/build_static_page.py` | Netzwerkfreier Builder für eine einzelne HTML-Datei |
+| `docs/IBM-Patchwatch.html` | Generierte öffentliche HTML-Datei ohne Serverinventar |
+| `scripts/update_ibm_catalog.py` und `src/ibm_patchwatch/providers/` | Abruf der IBM-Quellen |
+| `src/ibm_patchwatch/` | Bestehende zentrale CLI-/LAN-Anwendung |
 
-## Security boundaries
-
-- Do not place SSH private keys, `config.toml`, IBM credentials or inventory snapshots in Git.
-- Bind the web server to a private LAN address, not a public interface.
-- IBM download links open directly in the Windows browser; the application never receives IBMid credentials.
-- Malformed SSH output prevents the web server from starting.
-
-## Limitations
-
-- Physical SSH and IBM product discovery must be verified in the target environment.
-- IBM entitlement, license acceptance and downloads remain manual in IBM Fix Central.
-- The application does not install patches or infer interim-fix supersedence unless the catalog explicitly establishes it.
+Die Anwendung installiert keine Patches. Die tatsächliche Erfassung auf den
+IBM-Servern sowie authentifizierte Downloads und Voraussetzungen müssen in der
+Zielumgebung geprüft werden. Ein vollständiger Sicherheits- oder
+Kompatibilitätsaudit ist nicht Teil dieses Versionsvergleichs.

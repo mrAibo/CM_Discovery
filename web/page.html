@@ -1,27 +1,27 @@
 <!doctype html>
-<html lang="ru">
+<html lang="de">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="referrer" content="no-referrer">
   <meta http-equiv="Content-Security-Policy" content="__CSP__">
-  <title>IBM Patchwatch — версии и обновления</title>
-  <meta name="description" content="Установленные версии IBM и подтверждённые обновления. Локальное сравнение inventory.json, официальные источники и страницы скачивания.">
+  <title>IBM Patchwatch — Versionsstände und Updates</title>
+  <meta name="description" content="Installierte IBM-Versionen und bestätigte Updates. Lokaler Vergleich mit inventory.json, offizielle Quellen und Downloadseiten.">
   <style>__CSS__</style>
 </head>
 <body>
-  <header class="topbar"><span class="brand">IBM <strong>Patchwatch</strong></span><span class="edition">Content Manager environment</span></header>
+  <header class="topbar"><span class="brand">IBM <strong>Patchwatch</strong></span><span class="edition">Content-Manager-Umgebung</span></header>
   <main>
-    <div class="heading"><div><p class="eyebrow">ОБЗОР ОБНОВЛЕНИЙ</p><h1>Версии и исправления</h1><p class="muted" id="catalog-date"></p></div><div class="controls"><button type="button" id="load-inventory">Открыть inventory.json</button><button type="button" id="clear-inventory" class="secondary" hidden>Убрать inventory</button><input type="file" id="inventory-file" accept=".json,application/json" hidden></div></div>
-    <div class="inventory-banner"><div><strong id="inventory-title">Каталог IBM</strong><p id="inventory-meta">Откройте inventory.json для сравнения с сервером.</p></div><span class="local-label">Файл обрабатывается локально</span></div>
+    <div class="heading"><div><p class="eyebrow">UPDATE-ÜBERSICHT</p><h1>Versionsstände und Updates</h1><p class="muted" id="catalog-date"></p></div><div class="controls"><button type="button" id="load-inventory">inventory.json öffnen</button><button type="button" id="clear-inventory" class="secondary" hidden>Inventar ausblenden</button><input type="file" id="inventory-file" accept=".json,application/json" hidden></div></div>
+    <div class="inventory-banner"><div><strong id="inventory-title">IBM-Katalog</strong><p id="inventory-meta">Öffnen Sie inventory.json für den Vergleich mit Ihrem Server.</p></div><span class="local-label">Lokale Dateiverarbeitung</span></div>
     <p class="notice" id="freshness" hidden></p>
     <p class="error" id="error" role="alert" hidden></p>
-    <div class="table-heading"><h2>Продукты</h2><p id="summary" role="status" aria-live="polite"></p></div>
-    <table><caption class="sr-only">Сравнение установленных версий с подтверждёнными уровнями IBM в выбранных ветках</caption><colgroup><col class="col-product"><col class="col-installed"><col class="col-available"><col class="col-status"><col class="col-links"></colgroup><thead><tr><th scope="col">Продукт / ветка</th><th scope="col">Установлено</th><th scope="col">Подтверждено у IBM</th><th scope="col">Сравнение</th><th scope="col">Источники и скачивание</th></tr></thead><tbody id="products"></tbody></table>
-    <p class="table-note">Сравнение относится к указанной ветке и компоненту. Совпадение версии не подтверждает наличие всех security fixes или совместимость всего окружения.</p>
-    <details class="help"><summary>Как пользоваться и обновлять таблицу</summary><div class="help-content"><ol><li>Откройте этот HTML-файл обычным браузером Windows.</li><li>На CM-сервере создайте файл командой <code>python3 ibm_discovery.py --json &gt; inventory.json</code> и перенесите его на Windows доступным в вашей сети способом.</li><li>Нажмите «Открыть inventory.json». Сравнение происходит в браузере; файл никуда не отправляется.</li><li>Ссылки открывают IBM Support или Fix Central. Там выбирают платформу, входят с IBMid и скачивают пакет. Скачивание с учётной записью IBM здесь не проверяется.</li></ol><p>Каталог встроен в страницу и сам не обновляется при её открытии. Возьмите свежий HTML из репозитория или откройте новый catalog.json. Сборка страницы в существующем GitHub Actions выполняется после обновления каталога.</p><button type="button" id="load-catalog" class="secondary">Открыть catalog.json</button><input type="file" id="catalog-file" accept=".json,application/json" hidden><p class="muted">Некоторые существующие сборщики проверяют фиксированную страницу уже известного релиза. Дата получения такой страницы не доказывает отсутствие более новых исправлений. Дополнительные примечания в этой версии проверены 06.09.2026 и имеют собственную дату.</p></div></details>
-    <footer><span>IBM Patchwatch · portable</span><span>Без сервера и дополнительных установок на Windows</span></footer>
-    <noscript><p>Для таблицы и чтения JSON включите JavaScript в браузере.</p></noscript>
+    <div class="table-heading"><h2>Produkte</h2><p id="summary" role="status" aria-live="polite"></p></div>
+    <table><caption class="sr-only">Vergleich installierter Versionen mit den bei IBM bestätigten Ständen der jeweiligen Versionslinie</caption><colgroup><col class="col-product"><col class="col-installed"><col class="col-available"><col class="col-status"><col class="col-links"></colgroup><thead><tr><th scope="col">Produkt / Versionslinie</th><th scope="col">Installiert</th><th scope="col">Bei IBM bestätigt</th><th scope="col">Vergleich</th><th scope="col">Quellen und Downloads</th></tr></thead><tbody id="products"></tbody></table>
+    <p class="table-note">Der Vergleich gilt für die angegebene Versionslinie und Komponente. Eine übereinstimmende Version bestätigt weder die Abdeckung aller Sicherheitskorrekturen noch die Kompatibilität der gesamten Umgebung.</p>
+    <details class="help"><summary>Bedienung und Aktualisierung</summary><div class="help-content"><ol><li>Öffnen Sie diese HTML-Datei in einem normalen Windows-Browser.</li><li>Erzeugen Sie auf dem CM-Server im Verzeichnis des Collectors die Datei mit <code>python3 ibm_discovery.py --json &gt; inventory.json</code> und übertragen Sie sie über einen vorhandenen Dateitransferweg nach Windows.</li><li>Klicken Sie auf „inventory.json öffnen“. Der Vergleich erfolgt im Browser; die Datei wird nicht hochgeladen.</li><li>Die Links öffnen IBM Support oder Fix Central. Dort wählen Sie die Plattform aus, melden sich bei Bedarf mit Ihrer IBMid an und laden das Paket herunter. Downloads mit IBM-Anmeldung wurden hier nicht geprüft.</li></ol><p>Der Katalog ist in die Seite eingebettet und wird beim Öffnen nicht automatisch aktualisiert. Laden Sie eine neue HTML-Datei aus dem Repository herunter oder öffnen Sie eine neuere catalog.json. GitHub Actions erstellt die HTML-Datei nach der Katalogaktualisierung neu.</p><button type="button" id="load-catalog" class="secondary">catalog.json öffnen</button><input type="file" id="catalog-file" accept=".json,application/json" hidden><p class="muted">Einige vorhandene Provider prüfen eine fest hinterlegte Seite eines bereits bekannten Releases. Ein erneuter Abruf beweist nicht, dass es keine neueren Korrekturen gibt. Die ergänzenden Hinweise dieser Ausgabe wurden am 06.09.2026 geprüft und behalten ihr eigenes Prüfdatum.</p></div></details>
+    <footer><span>IBM Patchwatch · portable</span><span>Ohne Webserver oder zusätzliche Windows-Installation</span></footer>
+    <noscript><p>Aktivieren Sie JavaScript im Browser, um die Tabelle anzuzeigen und JSON-Dateien einzulesen.</p></noscript>
   </main>
   <script id="catalog-data" type="application/json">__CATALOG__</script>
   <script id="inventory-data" type="application/json">__INVENTORY__</script>

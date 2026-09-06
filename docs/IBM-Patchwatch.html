@@ -1,32 +1,32 @@
 <!doctype html>
-<html lang="ru">
+<html lang="de">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="referrer" content="no-referrer">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; base-uri 'none'; object-src 'none'; form-action 'none'; connect-src 'none'; style-src 'sha256-/85WtMPg43yHjLfCBhEGznlgRA93rpEIcQoxTR6nDWQ='; script-src 'sha256-6gpb3DxW7RZlQdlgbQKlCeG1+kR47HpIlND5lKylyiI='">
-  <title>IBM Patchwatch — версии и обновления</title>
-  <meta name="description" content="Установленные версии IBM и подтверждённые обновления. Локальное сравнение inventory.json, официальные источники и страницы скачивания.">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; base-uri 'none'; object-src 'none'; form-action 'none'; connect-src 'none'; style-src 'sha256-/85WtMPg43yHjLfCBhEGznlgRA93rpEIcQoxTR6nDWQ='; script-src 'sha256-CQjx6HSyDL0nCmxxr5mgcsTib6mo2dkG9RO2AQa6GwM='">
+  <title>IBM Patchwatch — Versionsstände und Updates</title>
+  <meta name="description" content="Installierte IBM-Versionen und bestätigte Updates. Lokaler Vergleich mit inventory.json, offizielle Quellen und Downloadseiten.">
   <style>:root{color-scheme:light;--ink:#172333;--muted:#526174;--blue:#0756cf;--line:#dce3ec;--paper:#fff;--soft:#f2f5f9;--navy:#12263e}*{box-sizing:border-box}body{margin:0;background:#f5f7fa;color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}button,input{font:inherit}button,a,summary{touch-action:manipulation}button{border:1px solid var(--blue);border-radius:4px;background:var(--blue);color:#fff;font-weight:600;padding:.72rem 1rem;cursor:pointer;min-height:44px}button:hover{background:#0047b6}button.secondary{background:white;color:var(--blue);border-color:#bac8dc}button.secondary:hover{background:#eef4ff}button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid #2178eb;outline-offset:4px}[hidden]{display:none!important}.topbar{background:var(--navy);color:white;display:flex;align-items:center;justify-content:space-between;padding:1.1rem max(2rem,calc((100vw - 1520px)/2))}.brand{font-size:1.2rem;letter-spacing:.02em}.brand strong{font-weight:500;border-left:1px solid #61728a;margin-left:.6rem;padding-left:.9rem}.edition{font-size:.875rem;color:#c2cfdf}main{max-width:1520px;margin:auto;padding:2rem}.heading{display:flex;justify-content:space-between;align-items:center;gap:1.5rem;margin-bottom:1.5rem}.eyebrow{font-size:.8rem;letter-spacing:.12em;font-weight:700;color:var(--blue);margin:0 0 .4rem}h1{font-size:clamp(1.7rem,2.4vw,2.25rem);line-height:1.2;letter-spacing:-.025em;margin:0 0 .6rem}h2{font-size:1.15rem;margin:0}p{margin:.35rem 0}.muted{color:var(--muted);font-size:.875rem}.controls{display:flex;flex-wrap:wrap;gap:.6rem}.inventory-banner{display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:1rem 1.25rem;background:#eaf1fc;border-left:4px solid var(--blue)}.inventory-banner p{color:#354963;font-size:.875rem;overflow-wrap:anywhere}.local-label{font-size:.8rem;color:#354963;white-space:nowrap}.table-heading{display:flex;justify-content:space-between;align-items:baseline;gap:1rem;margin:1.6rem 0 .7rem}.table-heading p{font-size:.875rem;color:var(--muted)}table{width:100%;border-collapse:collapse;table-layout:fixed;background:var(--paper);border:1px solid var(--line)}.col-product{width:20%}.col-installed{width:19%}.col-available{width:22%}.col-status{width:20%}.col-links{width:19%}th{text-align:left;font-weight:600;background:#edf1f6;font-size:.875rem;padding:.85rem 1rem;color:#3d4d62}td{vertical-align:top;padding:1.15rem 1rem;border-top:1px solid var(--line);overflow-wrap:anywhere}td strong{font-weight:600}.product-name{display:block;font-size:1rem;line-height:1.4}.stream{display:block;color:var(--muted);font-size:.8rem;margin-top:.45rem}.version{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.98rem;font-weight:600;line-height:1.45;display:block;overflow-wrap:anywhere}.metadata{display:block;font-size:.8rem;color:var(--muted);margin-top:.35rem}.status{display:inline-block;font-size:.875rem;font-weight:600;line-height:1.35;border-radius:3px;padding:.35rem .55rem;background:var(--soft);color:#495467}.status.update{background:#fff0d3;color:#794200}.status.review,.status.stale,.status.error{background:#fff1ee;color:#9a3423}.status.match{background:#e7f4ec;color:#1a613c}.status.level,.status.different{background:#e9f0fa;color:#28568d}.reason{font-size:.8rem;color:var(--muted);margin-top:.5rem}.links{display:flex;align-items:flex-start;flex-direction:column;gap:.6rem}.links a{font-size:.875rem;color:var(--blue);text-decoration:none;line-height:1.4}.links a:hover{text-decoration:underline}.links a.download{border:1px solid #b7c9e2;border-radius:3px;padding:.4rem .6rem;font-weight:600}.product-notes{margin-top:.75rem;font-size:.875rem}.product-notes summary{color:var(--blue);cursor:pointer}.product-notes p{color:var(--muted);margin-top:.6rem;line-height:1.5}.product-notes a{color:var(--blue)}.notice,.error{padding:.85rem 1rem;margin:1rem 0;background:#fff1de;color:#754200;font-size:.875rem}.error{background:#fff0ee;color:#972c22}.table-note{font-size:.875rem;max-width:1100px;color:var(--muted);margin-top:1rem}.help{margin-top:1.5rem;background:white;border:1px solid var(--line);padding:1rem 1.25rem}.help>summary{cursor:pointer;font-size:.95rem;font-weight:600}.help-content{max-width:980px;padding:.5rem 0;font-size:.95rem}.help-content li{margin:.5rem 0}.help-content p{margin:1rem 0}.help code{font-family:ui-monospace,Consolas,monospace;font-size:.9em;overflow-wrap:anywhere}footer{display:flex;justify-content:space-between;gap:1rem;margin-top:1.75rem;font-size:.8rem;color:var(--muted)}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}@media(max-width:1050px){main{padding:1.3rem}.heading{align-items:flex-start;flex-direction:column}.local-label{white-space:normal}td,th{padding:.85rem .7rem}.col-product{width:19%}.col-installed{width:18%}.col-available{width:23%}.col-status{width:20%}.col-links{width:20%}}@media(max-width:760px){.topbar{padding:1rem}.edition{display:none}main{padding:1rem}.inventory-banner{align-items:flex-start;flex-direction:column}.table-heading{align-items:flex-start;flex-direction:column;gap:.1rem}table,tbody,tr,td{display:block;width:100%}table{border:0;background:transparent}colgroup,thead{display:none}tr{background:white;border:1px solid var(--line);border-top:3px solid #b6cbe7;margin-bottom:1rem;padding:.4rem .8rem}td{display:grid;grid-template-columns:minmax(100px,32%) minmax(0,1fr);gap:.65rem;border:0;padding:.65rem 0}td::before{content:attr(data-label);font-size:.8rem;color:var(--muted);font-weight:600}.cell-content{min-width:0}.product-notes{grid-column:2}.links{gap:.7rem}footer{flex-direction:column;gap:.2rem}}@media print{body{background:white}.topbar{background:white;color:#172333;border-bottom:2px solid #172333;padding:0 0 1rem}.edition{color:#526174}main{padding:1rem 0}.controls,.local-label,.help,footer{display:none}table{font-size:10pt}tr{break-inside:avoid}.links a{font-size:9pt}.heading{margin-bottom:1rem}.version{font-size:10pt}.status{border:1px solid #bbb}}
 </style>
 </head>
 <body>
-  <header class="topbar"><span class="brand">IBM <strong>Patchwatch</strong></span><span class="edition">Content Manager environment</span></header>
+  <header class="topbar"><span class="brand">IBM <strong>Patchwatch</strong></span><span class="edition">Content-Manager-Umgebung</span></header>
   <main>
-    <div class="heading"><div><p class="eyebrow">ОБЗОР ОБНОВЛЕНИЙ</p><h1>Версии и исправления</h1><p class="muted" id="catalog-date"></p></div><div class="controls"><button type="button" id="load-inventory">Открыть inventory.json</button><button type="button" id="clear-inventory" class="secondary" hidden>Убрать inventory</button><input type="file" id="inventory-file" accept=".json,application/json" hidden></div></div>
-    <div class="inventory-banner"><div><strong id="inventory-title">Каталог IBM</strong><p id="inventory-meta">Откройте inventory.json для сравнения с сервером.</p></div><span class="local-label">Файл обрабатывается локально</span></div>
+    <div class="heading"><div><p class="eyebrow">UPDATE-ÜBERSICHT</p><h1>Versionsstände und Updates</h1><p class="muted" id="catalog-date"></p></div><div class="controls"><button type="button" id="load-inventory">inventory.json öffnen</button><button type="button" id="clear-inventory" class="secondary" hidden>Inventar ausblenden</button><input type="file" id="inventory-file" accept=".json,application/json" hidden></div></div>
+    <div class="inventory-banner"><div><strong id="inventory-title">IBM-Katalog</strong><p id="inventory-meta">Öffnen Sie inventory.json für den Vergleich mit Ihrem Server.</p></div><span class="local-label">Lokale Dateiverarbeitung</span></div>
     <p class="notice" id="freshness" hidden></p>
     <p class="error" id="error" role="alert" hidden></p>
-    <div class="table-heading"><h2>Продукты</h2><p id="summary" role="status" aria-live="polite"></p></div>
-    <table><caption class="sr-only">Сравнение установленных версий с подтверждёнными уровнями IBM в выбранных ветках</caption><colgroup><col class="col-product"><col class="col-installed"><col class="col-available"><col class="col-status"><col class="col-links"></colgroup><thead><tr><th scope="col">Продукт / ветка</th><th scope="col">Установлено</th><th scope="col">Подтверждено у IBM</th><th scope="col">Сравнение</th><th scope="col">Источники и скачивание</th></tr></thead><tbody id="products"></tbody></table>
-    <p class="table-note">Сравнение относится к указанной ветке и компоненту. Совпадение версии не подтверждает наличие всех security fixes или совместимость всего окружения.</p>
-    <details class="help"><summary>Как пользоваться и обновлять таблицу</summary><div class="help-content"><ol><li>Откройте этот HTML-файл обычным браузером Windows.</li><li>На CM-сервере создайте файл командой <code>python3 ibm_discovery.py --json &gt; inventory.json</code> и перенесите его на Windows доступным в вашей сети способом.</li><li>Нажмите «Открыть inventory.json». Сравнение происходит в браузере; файл никуда не отправляется.</li><li>Ссылки открывают IBM Support или Fix Central. Там выбирают платформу, входят с IBMid и скачивают пакет. Скачивание с учётной записью IBM здесь не проверяется.</li></ol><p>Каталог встроен в страницу и сам не обновляется при её открытии. Возьмите свежий HTML из репозитория или откройте новый catalog.json. Сборка страницы в существующем GitHub Actions выполняется после обновления каталога.</p><button type="button" id="load-catalog" class="secondary">Открыть catalog.json</button><input type="file" id="catalog-file" accept=".json,application/json" hidden><p class="muted">Некоторые существующие сборщики проверяют фиксированную страницу уже известного релиза. Дата получения такой страницы не доказывает отсутствие более новых исправлений. Дополнительные примечания в этой версии проверены 06.09.2026 и имеют собственную дату.</p></div></details>
-    <footer><span>IBM Patchwatch · portable</span><span>Без сервера и дополнительных установок на Windows</span></footer>
-    <noscript><p>Для таблицы и чтения JSON включите JavaScript в браузере.</p></noscript>
+    <div class="table-heading"><h2>Produkte</h2><p id="summary" role="status" aria-live="polite"></p></div>
+    <table><caption class="sr-only">Vergleich installierter Versionen mit den bei IBM bestätigten Ständen der jeweiligen Versionslinie</caption><colgroup><col class="col-product"><col class="col-installed"><col class="col-available"><col class="col-status"><col class="col-links"></colgroup><thead><tr><th scope="col">Produkt / Versionslinie</th><th scope="col">Installiert</th><th scope="col">Bei IBM bestätigt</th><th scope="col">Vergleich</th><th scope="col">Quellen und Downloads</th></tr></thead><tbody id="products"></tbody></table>
+    <p class="table-note">Der Vergleich gilt für die angegebene Versionslinie und Komponente. Eine übereinstimmende Version bestätigt weder die Abdeckung aller Sicherheitskorrekturen noch die Kompatibilität der gesamten Umgebung.</p>
+    <details class="help"><summary>Bedienung und Aktualisierung</summary><div class="help-content"><ol><li>Öffnen Sie diese HTML-Datei in einem normalen Windows-Browser.</li><li>Erzeugen Sie auf dem CM-Server im Verzeichnis des Collectors die Datei mit <code>python3 ibm_discovery.py --json &gt; inventory.json</code> und übertragen Sie sie über einen vorhandenen Dateitransferweg nach Windows.</li><li>Klicken Sie auf „inventory.json öffnen“. Der Vergleich erfolgt im Browser; die Datei wird nicht hochgeladen.</li><li>Die Links öffnen IBM Support oder Fix Central. Dort wählen Sie die Plattform aus, melden sich bei Bedarf mit Ihrer IBMid an und laden das Paket herunter. Downloads mit IBM-Anmeldung wurden hier nicht geprüft.</li></ol><p>Der Katalog ist in die Seite eingebettet und wird beim Öffnen nicht automatisch aktualisiert. Laden Sie eine neue HTML-Datei aus dem Repository herunter oder öffnen Sie eine neuere catalog.json. GitHub Actions erstellt die HTML-Datei nach der Katalogaktualisierung neu.</p><button type="button" id="load-catalog" class="secondary">catalog.json öffnen</button><input type="file" id="catalog-file" accept=".json,application/json" hidden><p class="muted">Einige vorhandene Provider prüfen eine fest hinterlegte Seite eines bereits bekannten Releases. Ein erneuter Abruf beweist nicht, dass es keine neueren Korrekturen gibt. Die ergänzenden Hinweise dieser Ausgabe wurden am 06.09.2026 geprüft und behalten ihr eigenes Prüfdatum.</p></div></details>
+    <footer><span>IBM Patchwatch · portable</span><span>Ohne Webserver oder zusätzliche Windows-Installation</span></footer>
+    <noscript><p>Aktivieren Sie JavaScript im Browser, um die Tabelle anzuzeigen und JSON-Dateien einzulesen.</p></noscript>
   </main>
   <script id="catalog-data" type="application/json">{"schema_version":2,"generated_at":"2026-09-06T07:57:59.977210+00:00","generator":"scripts/update_ibm_catalog.py","refresh_status":"ok","refresh_errors":{},"products":{"content_manager":{"available":{"version":"8.7.00.400","fix_pack":4},"cumulative":true,"scope":"8.7_fix_pack_level","source_url":"https://www.ibm.com/docs/en/content-manager/8.7.0?topic=fp-content-manager-version-87-fix-pack-4-readme","ifx_audit":"pending","notes":["Fix-pack comparison only; interim/security fixes are audited separately.","The IBM Fix Pack 4 readme includes the cumulative fix list through Fix Pack 4."],"refreshed_at":"2026-09-06T07:57:59.977210+00:00"},"content_navigator":{"available":{"version":"3.1.0","interim_fix":12,"build_level":"icn310.012.703"},"cumulative":null,"scope":"3.1.0_interim_fix_stream","source_url":"https://www.ibm.com/support/pages/ibm-content-navigator-version-310-interim-fix-12-readme","ifx_audit":null,"notes":["The target is restricted to the installed 3.1.0 maintenance stream; no 3.2 major upgrade is inferred.","Supersedence/cumulative semantics remain conservative until explicitly proven from IBM metadata."],"refreshed_at":"2026-09-06T07:57:59.977210+00:00"},"daeja_viewone_virtual":{"available":{"version":"5.0.15","interim_fix":6},"cumulative":true,"scope":"5.0.15_ifix_stream","source_url":"https://delivery04.dhe.ibm.com/sar/CMA/OSA/0dx21/0/5.0.15_DAEJA_VIEWONE_IFIX006_Readme.htm","ifx_audit":null,"notes":["The iFix 6 readme explicitly carries forward fixes/features from previous 5.0.15 iFixes.","IBM Daeja 26.0.0 is a newer release, but Patchwatch does not infer a major-version upgrade from a maintenance check."],"refreshed_at":"2026-09-06T07:57:59.977210+00:00"},"db2":{"available":{"version":"11.5.9.0","update_number":"87984","special_build":"special_87984","ptf":"DYN2607151721AMD64_87984"},"cumulative":true,"scope":"published_cumulative_updates","source_url":"https://www.ibm.com/support/pages/node/7087189","ifx_audit":null,"notes":["IBM states that Db2 11.5.9 published updates are cumulative.","Update numbers are not treated as chronological version numbers; IBM page order/most-recent marker is authoritative."],"refreshed_at":"2026-09-06T07:57:59.977210+00:00"},"ibm_java":{"available":{"version":"8.0.8.71","service_refresh":8,"fix_pack":71},"cumulative":true,"scope":"java8_refresh_stream","source_url":"https://www.ibm.com/support/pages/ibm-sdk-java-technology-edition-refreshes","ifx_audit":null,"notes":[],"refreshed_at":"2026-09-06T07:57:59.977210+00:00"},"iccsap":{"available":{"version":"4.0.0.4","jre_version":"8.0.8.70","jre_fix_date":"20260812","fix_name":"4.0.0.4-ICCSAP-Base-JRE-8.0.8.70"},"cumulative":null,"scope":"4.0.0.4_embedded_jre_security_fix","source_url":"https://www.ibm.com/support/pages/security-bulletin-multiple-vulnerabilities-may-affect-ibm%C2%AE-sdk-java%E2%84%A2-technology-edition-ibm-content-collector-sap-applications-16","ifx_audit":null,"notes":["This check targets the currently published ICCSAP embedded-JRE security remediation, not every ICCSAP component fix.","Installed state is correlated from Installation Manager JRE_fix_YYYYMMDD identifiers; if that identifier is unavailable, manual review is required."],"refreshed_at":"2026-09-06T07:57:59.977210+00:00"},"websphere":{"available":{"version":"9.0.5.28"},"cumulative":true,"scope":"fix_pack_only","source_url":"https://www.ibm.com/support/pages/fix-list-ibm-websphere-application-server-traditional-v9-0","ifx_audit":"pending","notes":["WebSphere traditional fix packs are cumulative.","CURRENT here means current fix-pack level only; interim fixes are audited separately."],"refreshed_at":"2026-09-06T07:57:59.977210+00:00"}}}</script>
   <script id="inventory-data" type="application/json">null</script>
-  <script id="notes-data" type="application/json">{"checked_at":"2026-09-06","description":"Human-reviewed IBM source observations; dates are not advanced by automated catalog refresh.","products":{"content_manager":{"for_available":{"version":"8.7.00.400"},"availability_note":"FP4 Interim Fix 01 · 20.08.2026","notes":["IBM опубликовала отдельные страницы FP4 Interim Fix 01 и его Readme. Наличие IF01 нельзя установить по одному значению 8.7.00.400.","Название и дата IF01 подтверждены индексированными страницами IBM. Полный текст и пакет не удалось открыть при проверке; применимость и установку нужно сверить с Readme."],"links":[{"label":"IBM: пакет IF01","url":"https://www.ibm.com/support/pages/node/7280572","download":true},{"label":"Readme IF01","url":"https://www.ibm.com/support/pages/node/7280570"}]},"content_navigator":{"for_available":{"version":"3.1.0","interim_fix":12},"availability_note":"IF12 · 27.08.2026 · icn310.012.703","notes":["Пакет IF12 включает Daeja ViewONE Virtual 26.0.0 iFix 1 и CM 8.7 FP4 APIs. Обновление встроенного Daeja следует рассматривать вместе с ICN.","Для установщика ICN нужны Java 11 или 17. Это требование установщика, а не указание заменить Java 8, используемую WebSphere.","IBM допускает обновление с ICN 3.1.0.0 или более позднего уровня этой ветки. После установки требуется повторное развёртывание приложения. Переход на ICN 3.2 этой таблицей не предлагается.","Для Linux x86 пакет: 3.1.0.0-ICN-IF012-LINUX; для Linux on Z: 3.1.0.0-ICN-IF012-zLINUX. В Fix Central выберите IBM Content Navigator и свою платформу."],"links":[{"label":"Fix Central: выбрать ICN","url":"https://www.ibm.com/support/fixcentral/","download":true},{"label":"Readme и состав IF12","url":"https://www.ibm.com/support/pages/ibm-content-navigator-version-310-interim-fix-12-readme"}]},"daeja_viewone_virtual":{"for_available":{"version":"5.0.15","interim_fix":6},"availability_note":"Отдельная ветка 5.0.15; встроенный Daeja проверяется с ICN","notes":["iFix 6 требует установленного Daeja 5.0.15 и содержит исправления предыдущих iFix этой ветки.","IBM отдельно оговаривает доступность патчей для Daeja, поставленного внутри другого продукта. Если источник inventory — version.txt ICN, это встроенный компонент. Не применяйте к нему отдельный пакет без проверки процедуры IBM."],"links":[{"label":"Fix Central · 5.0.15","url":"https://www.ibm.com/support/fixcentral/swg/selectFixes?function=all&parent=Enterprise+Content+Management&platform=All&product=ibm%2FOther+software%2FDaeja+ViewONE+Virtual&release=5.0.15","download":true},{"label":"Readme iFix 6","url":"https://delivery04.dhe.ibm.com/sar/CMA/OSA/0dx21/0/5.0.15_DAEJA_VIEWONE_IFIX006_Readme.htm"}]},"db2":{"for_available":{"version":"11.5.9.0","update_number":"87984"},"availability_note":"Published Update 87984 · 06.08.2026","notes":["IBM помечает Update 87984 как самый свежий опубликованный update для 11.5.9 на дату проверки. Linux x86 PTF: DYN2607151721AMD64_87984; build s2607151021.","Обновления на странице IBM кумулятивны и упорядочены по времени. Их номера не задают хронологию: special_63280 нельзя признать более старым только потому, что 63280 меньше 87984. Для отдельного special build нужна проверка состава.","На странице IBM раскройте Downloads у нужного Update и выберите пакет Db2 Server/Universal для своей платформы и редакции."],"links":[{"label":"IBM: выбрать пакет Db2","url":"https://www.ibm.com/support/pages/node/7087189","download":true},{"label":"Security fixes Db2","url":"https://www.ibm.com/support/pages/published-security-vulnerabilities-db2-linux-unix-and-windows-including-security-update-information"}]},"ibm_java":{"for_available":{"version":"8.0.8.71"},"availability_note":"Java 8 SR8 FP71 · пакет Installation Manager для WAS","notes":["IBM публикует SDK 8.0.8.71 в формате репозитория Installation Manager для WebSphere traditional. На странице загрузки выберите архитектуру сервера.","SDK WebSphere и встроенная JRE ICCSAP — разные установки. Для ICCSAP используйте его собственный пакет, указанный в соответствующей строке."],"links":[{"label":"IBM: SDK для WAS / IM","url":"https://www.ibm.com/support/pages/ibm-sdk-java-technology-edition-version-80-websphere-application-server-v9-and-websphere-liberty-using-installation-manager","download":true},{"label":"Fix Central · Linux x64","url":"https://www.ibm.com/support/fixcentral/swg/selectFixes?fixids=8.0.8.71-JavaSE-SDK-linux-x64-repo&function=fixId&parent=ibm%2FWebSphere&product=ibm%2FWebSphere%2FWebSphere+Liberty"}]},"iccsap":{"for_available":{"version":"4.0.0.4","jre_version":"8.0.8.70"},"availability_note":"4.0.0.4-ICCSAP-Base-JRE-8.0.8.70","notes":["В бюллетене IBM для ICCSAP 4.0.0.4 указан собственный пакет встроенной JRE 8.0.8.70. Это проверка данного Java-исправления, а не всех компонентов ICCSAP.","Идентификатор JRE_fix_YYYYMMDD и дата публикации бюллетеня не доказывают точную версию JRE. Пока inventory не содержит её измеренную версию или подтверждённый идентификатор пакета, требуется проверка."],"links":[{"label":"Fix Central · JRE ICCSAP","url":"https://www.ibm.com/support/fixcentral/quickorder?fixids=4.0.0.4-ICCSAP-Base-JRE-8.0.8.70&product=ibm%2FInformation+Management%2FIBM+Content+Collector+for+SAP+Applications&source=SAR","download":true},{"label":"Бюллетень IBM","url":"https://www.ibm.com/support/pages/security-bulletin-multiple-vulnerabilities-may-affect-ibm%C2%AE-sdk-java%E2%84%A2-technology-edition-ibm-content-collector-sap-applications-16"}]},"websphere":{"for_available":{"version":"9.0.5.28"},"availability_note":"FP28 · 16.06.2026","notes":["9.0.5.28 — выпущенный Fix Pack. Для 9.0.5.29 IBM указывает предварительную будущую дату 08.09.2026; на 06.09.2026 он не включён как доступное обновление.","FP28 требует установленного WAS 9.0 и Installation Manager 1.8.5 или новее. IBM также указывает скачать пакет SDK. Fix Pack кумулятивен; отдельные iFix/security fixes после него требуют самостоятельной проверки."],"links":[{"label":"Fix Central · FP28","url":"https://www.ibm.com/support/fixcentral/swg/selectFixes?fixids=9.0.5-WS-WAS-FP028&function=fixId&parent=ibm%2FWebSphere&platform=All&product=ibm%2FWebSphere%2FWebSphere+Application+Server&release=All","download":true},{"label":"Инструкция FP28","url":"https://www.ibm.com/support/pages/90528-websphere-application-server-traditional-version-90528"},{"label":"Текущие релизы IBM","url":"https://www.ibm.com/support/pages/recommended-updates-websphere-application-server"}]}}}</script>
+  <script id="notes-data" type="application/json">{"checked_at":"2026-09-06","description":"Human-reviewed IBM source observations; dates are not advanced by automated catalog refresh.","products":{"content_manager":{"for_available":{"version":"8.7.00.400"},"availability_note":"FP4 Interim Fix 01 · 20.08.2026","notes":["IBM hat eigene Seiten für FP4 Interim Fix 01 und dessen Readme veröffentlicht. Aus dem Versionswert 8.7.00.400 allein lässt sich nicht erkennen, ob IF01 installiert ist.","Titel und Datum von IF01 wurden anhand indexierter IBM-Seiten bestätigt. Volltext und Paket konnten bei der Prüfung nicht geöffnet werden. Anwendbarkeit und Installation müssen mit der Readme abgeglichen werden."],"links":[{"label":"IBM: IF01-Paket","url":"https://www.ibm.com/support/pages/node/7280572","download":true},{"label":"Readme zu IF01","url":"https://www.ibm.com/support/pages/node/7280570"}]},"content_navigator":{"for_available":{"version":"3.1.0","interim_fix":12},"availability_note":"IF12 · 27.08.2026 · icn310.012.703","notes":["IF12 enthält Daeja ViewONE Virtual 26.0.0 iFix 1 und die CM 8.7 FP4 APIs. Die Aktualisierung des mitgelieferten Daeja ist gemeinsam mit ICN zu betrachten.","Das ICN-Installationsprogramm benötigt Java 11 oder 17. Diese Anforderung gilt für den Installer; sie ist keine Anweisung, die von WebSphere verwendete Java-8-Installation zu ersetzen.","IBM erlaubt die Aktualisierung von ICN 3.1.0.0 oder einem späteren Stand derselben Versionslinie. Danach muss die Anwendung erneut bereitgestellt werden. Die Tabelle empfiehlt keinen Wechsel auf ICN 3.2.","Paket für Linux x86: 3.1.0.0-ICN-IF012-LINUX; für Linux on Z: 3.1.0.0-ICN-IF012-zLINUX. Wählen Sie in Fix Central IBM Content Navigator und die passende Plattform."],"links":[{"label":"Fix Central: ICN auswählen","url":"https://www.ibm.com/support/fixcentral/","download":true},{"label":"Readme und Lieferumfang IF12","url":"https://www.ibm.com/support/pages/ibm-content-navigator-version-310-interim-fix-12-readme"}]},"daeja_viewone_virtual":{"for_available":{"version":"5.0.15","interim_fix":6},"availability_note":"Separate Versionslinie 5.0.15; mitgeliefertes Daeja gemeinsam mit ICN prüfen","notes":["iFix 6 setzt Daeja 5.0.15 voraus und enthält die Korrekturen früherer iFixes dieser Versionslinie.","IBM weist auf eine möglicherweise abweichende Verfügbarkeit der Korrekturen hin, wenn Daeja zusammen mit einem anderen Produkt geliefert wurde. Stammt der Inventareintrag aus der version.txt von ICN, handelt es sich um eine mitgelieferte Komponente. Prüfen Sie vor einer separaten Aktualisierung die IBM-Anleitung."],"links":[{"label":"Fix Central · 5.0.15","url":"https://www.ibm.com/support/fixcentral/swg/selectFixes?function=all&parent=Enterprise+Content+Management&platform=All&product=ibm%2FOther+software%2FDaeja+ViewONE+Virtual&release=5.0.15","download":true},{"label":"Readme zu iFix 6","url":"https://delivery04.dhe.ibm.com/sar/CMA/OSA/0dx21/0/5.0.15_DAEJA_VIEWONE_IFIX006_Readme.htm"}]},"db2":{"for_available":{"version":"11.5.9.0","update_number":"87984"},"availability_note":"Published Update 87984 · 06.08.2026","notes":["Zum Prüfdatum kennzeichnet IBM Update 87984 als neuestes veröffentlichtes Update für 11.5.9. Linux x86 PTF: DYN2607151721AMD64_87984; Build s2607151021.","Die Updates auf der IBM-Seite sind kumulativ und zeitlich geordnet. Ihre Nummern geben keine zeitliche Reihenfolge an: special_63280 ist nicht allein deshalb älter, weil 63280 kleiner als 87984 ist. Bei einem individuellen Special Build muss der Inhalt geprüft werden.","Öffnen Sie auf der IBM-Seite den Bereich Downloads des gewünschten Updates und wählen Sie das passende Db2-Server-/Universal-Paket für Plattform und Edition."],"links":[{"label":"IBM: Db2-Paket auswählen","url":"https://www.ibm.com/support/pages/node/7087189","download":true},{"label":"Sicherheitskorrekturen für Db2","url":"https://www.ibm.com/support/pages/published-security-vulnerabilities-db2-linux-unix-and-windows-including-security-update-information"}]},"ibm_java":{"for_available":{"version":"8.0.8.71"},"availability_note":"Java 8 SR8 FP71 · Installation-Manager-Paket für WAS","notes":["IBM stellt SDK 8.0.8.71 als Installation-Manager-Repository für WebSphere traditional bereit. Wählen Sie auf der Downloadseite die Architektur des Servers.","Das WebSphere-SDK und die mitgelieferte JRE von ICCSAP sind getrennte Installationen. Verwenden Sie für ICCSAP dessen eigenes Paket aus der entsprechenden Tabellenzeile."],"links":[{"label":"IBM: SDK für WAS / IM","url":"https://www.ibm.com/support/pages/ibm-sdk-java-technology-edition-version-80-websphere-application-server-v9-and-websphere-liberty-using-installation-manager","download":true},{"label":"Fix Central · Linux x64","url":"https://www.ibm.com/support/fixcentral/swg/selectFixes?fixids=8.0.8.71-JavaSE-SDK-linux-x64-repo&function=fixId&parent=ibm%2FWebSphere&product=ibm%2FWebSphere%2FWebSphere+Liberty"}]},"iccsap":{"for_available":{"version":"4.0.0.4","jre_version":"8.0.8.70"},"availability_note":"4.0.0.4-ICCSAP-Base-JRE-8.0.8.70","notes":["Das IBM-Bulletin zu ICCSAP 4.0.0.4 nennt ein eigenes Paket für die mitgelieferte JRE 8.0.8.70. Hier wird diese Java-Korrektur betrachtet, nicht die Gesamtheit aller ICCSAP-Komponenten.","Eine Kennung JRE_fix_YYYYMMDD und das Veröffentlichungsdatum eines Bulletins belegen keine genaue JRE-Version. Fehlen eine gemessene Version oder eine bestätigte Paketkennung im Inventar, ist eine manuelle Prüfung erforderlich."],"links":[{"label":"Fix Central · ICCSAP-JRE","url":"https://www.ibm.com/support/fixcentral/quickorder?fixids=4.0.0.4-ICCSAP-Base-JRE-8.0.8.70&product=ibm%2FInformation+Management%2FIBM+Content+Collector+for+SAP+Applications&source=SAR","download":true},{"label":"IBM-Sicherheitsbulletin","url":"https://www.ibm.com/support/pages/security-bulletin-multiple-vulnerabilities-may-affect-ibm%C2%AE-sdk-java%E2%84%A2-technology-edition-ibm-content-collector-sap-applications-16"}]},"websphere":{"for_available":{"version":"9.0.5.28"},"availability_note":"FP28 · 16.06.2026","notes":["9.0.5.28 ist ein veröffentlichter Fix Pack. Für 9.0.5.29 nennt IBM den vorläufigen zukünftigen Termin 08.09.2026. Am Prüfdatum 06.09.2026 ist dieser Stand daher nicht als verfügbares Update enthalten.","FP28 setzt WAS 9.0 und Installation Manager 1.8.5 oder neuer voraus. IBM weist außerdem auf den Download des SDK-Pakets hin. Der Fix Pack ist kumulativ; spätere einzelne iFixes und Sicherheitskorrekturen müssen separat geprüft werden."],"links":[{"label":"Fix Central · FP28","url":"https://www.ibm.com/support/fixcentral/swg/selectFixes?fixids=9.0.5-WS-WAS-FP028&function=fixId&parent=ibm%2FWebSphere&platform=All&product=ibm%2FWebSphere%2FWebSphere+Application+Server&release=All","download":true},{"label":"Installationsanleitung FP28","url":"https://www.ibm.com/support/pages/90528-websphere-application-server-traditional-version-90528"},{"label":"Aktuelle IBM-Releases","url":"https://www.ibm.com/support/pages/recommended-updates-websphere-application-server"}]}}}</script>
   <script>"use strict";
 
 const PRODUCTS = {
@@ -80,71 +80,71 @@ function ifixLevel(p) {
 }
 
 function freshness(entry, catalog, now) {
-  if (entry.refresh_error) return "Не удалось обновить источник; сохранён предыдущий уровень.";
+  if (entry.refresh_error) return "Die Quelle konnte nicht aktualisiert werden; der bisherige Stand bleibt erhalten.";
   const date = entry.refreshed_at || catalog.generated_at;
-  if (typeof date !== "string" || !/^\d{4}-\d\d-\d\dT/.test(date)) return "Не указана дата получения данных IBM.";
+  if (typeof date !== "string" || !/^\d{4}-\d\d-\d\dT/.test(date)) return "Das Abrufdatum der IBM-Daten fehlt.";
   const timestamp = Date.parse(date);
-  if (!Number.isFinite(timestamp) || timestamp > now + 300000) return "Дата каталога отсутствует, некорректна или находится в будущем.";
-  if (now - timestamp > FRESH_HOURS * 3600000) return "Данные старше 72 часов. Проверьте IBM или откройте свежий каталог.";
+  if (!Number.isFinite(timestamp) || timestamp > now + 300000) return "Das Katalogdatum fehlt, ist ungültig oder liegt in der Zukunft.";
+  if (now - timestamp > FRESH_HOURS * 3600000) return "Die Daten sind älter als 72 Stunden. Prüfen Sie die IBM-Quelle oder öffnen Sie einen aktuellen Katalog.";
   return "";
 }
 
 function compareProduct(id, installed, entry, catalog, now = Date.now()) {
-  if (!installed) return result("empty", "Нет данных inventory", "Загрузите файл с сервера; отсутствие записи не доказывает отсутствие продукта.");
-  if (!entry || !object(entry.available) || !own(PRODUCTS, id)) return result("review", "Нет данных каталога", "Для этой записи нужен отдельный источник IBM.");
+  if (!installed) return result("empty", "Keine Inventardaten", "Öffnen Sie die Datei vom Server. Ein fehlender Eintrag beweist nicht, dass das Produkt nicht installiert ist.");
+  if (!entry || !object(entry.available) || !own(PRODUCTS, id)) return result("review", "Kein Katalogeintrag", "Für diesen Eintrag wird eine eigene IBM-Quelle benötigt.");
   const stale = freshness(entry, catalog, now);
-  if (stale) return result("stale", "Проверить каталог", stale);
-  if (installed._discoveryError) return result("error", "Ошибка обнаружения", installed._discoveryError);
-  if (entry.support_status === "not_supported") return result("review", "Ветка не поддерживается", "Проверьте статус поддержки у IBM.");
+  if (stale) return result("stale", "Katalog prüfen", stale);
+  if (installed._discoveryError) return result("error", "Fehler bei der Erfassung", installed._discoveryError);
+  if (entry.support_status === "not_supported") return result("review", "Versionslinie nicht unterstützt", "Prüfen Sie den Supportstatus bei IBM.");
   const available = entry.available;
   const x = versionParts(installed.version), y = versionParts(available.version);
-  if (!x || !y) return result("review", "Не удалось сравнить", "Нужны точные числовые версии продукта.");
+  if (!x || !y) return result("review", "Vergleich nicht möglich", "Für den Vergleich werden eindeutige numerische Produktversionen benötigt.");
   const streamLength = PRODUCTS[id][1];
   if (x.slice(0, streamLength).join(".") !== y.slice(0, streamLength).join(".")) {
-    return result("different", "Другая ветка", "Каталог относится к " + y.slice(0, streamLength).join(".") + "; применимость перехода не определена.");
+    return result("different", "Andere Versionslinie", "Der Katalog bezieht sich auf " + y.slice(0, streamLength).join(".") + "; die Anwendbarkeit eines Wechsels ist nicht geklärt.");
   }
   const base = compareVersions(installed.version, available.version);
-  if (base > 0) return result("different", "Выше каталога", "Найденный уровень новее указанного в каталоге; понижение не предлагается.");
-  if (base < 0) return result("update", "Есть более новый уровень", "Перед установкой проверьте платформу и требования IBM.");
-  if (id === "content_manager") return result("review", "FP совпадает · проверить iFix", "Collector cmlevel не подтверждает наличие отдельных interim fixes.");
-  if (id === "websphere") return result("level", "Fix Pack совпадает", "Отдельные iFix/security fixes не проверены.");
+  if (base > 0) return result("different", "Neuer als Katalog", "Der erfasste Stand ist neuer als der Katalogstand. Ein Downgrade wird nicht vorgeschlagen.");
+  if (base < 0) return result("update", "Neuerer Stand verfügbar", "Prüfen Sie vor der Installation die Plattform und die IBM-Voraussetzungen.");
+  if (id === "content_manager") return result("review", "Fix Pack gleich · iFix prüfen", "Die Erfassung über cmlevel bestätigt keine einzelnen Interim Fixes.");
+  if (id === "websphere") return result("level", "Fix Pack stimmt überein", "Einzelne iFixes und Sicherheitskorrekturen wurden nicht geprüft.");
   if (id === "db2") {
-    if (typeof installed.special_build === "string" && installed.special_build === available.special_build) return result("match", "Update совпадает", "Совпадение с опубликованным Update; индивидуальные APAR отдельно не проверены.");
-    return result("review", "Сверить special build", "Номера special build не сравниваются по величине. Нужна проверка состава по IBM.");
+    if (typeof installed.special_build === "string" && installed.special_build === available.special_build) return result("match", "Update stimmt überein", "Der Stand stimmt mit dem veröffentlichten Update überein. Individuelle APARs wurden nicht separat geprüft.");
+    return result("review", "Special Build prüfen", "Special-Build-Nummern werden nicht numerisch geordnet. Prüfen Sie den Inhalt anhand der IBM-Angaben.");
   }
   if (id === "iccsap") {
     const jre = compareVersions(installed.jre_version, available.jre_version);
-    if (jre === null) return result("review", "Проверить встроенную JRE", "В inventory нет измеренной версии JRE. Даты JRE_fix не заменяют номер версии.");
-    return jre < 0 ? result("update", "Есть обновление JRE", "Используйте пакет ICCSAP из бюллетеня IBM.") : jre > 0 ? result("different", "JRE выше каталога", "Состав установленного пакета требует сверки.") : result("match", "JRE совпадает", "Проверен только уровень встроенной JRE.");
+    if (jre === null) return result("review", "Mitgelieferte JRE prüfen", "Das Inventar enthält keine gemessene JRE-Version. Datumsangaben in JRE_fix ersetzen keine Versionsnummer.");
+    return jre < 0 ? result("update", "JRE-Update verfügbar", "Verwenden Sie das ICCSAP-Paket aus dem IBM-Bulletin.") : jre > 0 ? result("different", "JRE neuer als Katalog", "Der Inhalt des installierten Pakets muss geprüft werden.") : result("match", "JRE stimmt überein", "Verglichen wurde ausschließlich die mitgelieferte JRE.");
   }
   if (id === "content_navigator" || id === "daeja_viewone_virtual") {
     const ix = ifixLevel(installed), iy = integer(available.interim_fix);
-    if (ix === null || iy === null) return result("review", "Проверить уровень iFix", "Номер iFix отсутствует или противоречит build level.");
-    if (id === "daeja_viewone_virtual" && installed.source === "ecmclient_version_txt") return result("review", "Встроен в ICN", "Проверяйте поставку Daeja в выбранном пакете ICN.");
-    if (ix > iy) return result("different", "iFix выше каталога", "Проверьте более свежую страницу IBM.");
-    if (ix < iy) return result("update", "Есть более новый iFix", "Известен iFix " + iy + "; применимость и зависимости — в Readme.");
-    if (id === "content_navigator" && installed.build_level && available.build_level && String(installed.build_level).toLowerCase() !== String(available.build_level).toLowerCase()) return result("review", "iFix совпадает · другой build", "Build level отличается от Readme IBM; требуется сверка пакета.");
-    return result("match", "iFix совпадает", "Совпадает указанный уровень iFix в этой ветке.");
+    if (ix === null || iy === null) return result("review", "iFix-Stand prüfen", "Die iFix-Nummer fehlt oder widerspricht dem Build-Level.");
+    if (id === "daeja_viewone_virtual" && installed.source === "ecmclient_version_txt") return result("review", "In ICN enthalten", "Prüfen Sie die Daeja-Version im ausgewählten ICN-Paket.");
+    if (ix > iy) return result("different", "iFix neuer als Katalog", "Prüfen Sie eine aktuellere IBM-Quelle.");
+    if (ix < iy) return result("update", "Neuerer iFix verfügbar", "Bekannt ist iFix " + iy + "; Anwendbarkeit und Abhängigkeiten stehen in der Readme.");
+    if (id === "content_navigator" && installed.build_level && available.build_level && String(installed.build_level).toLowerCase() !== String(available.build_level).toLowerCase()) return result("review", "iFix gleich · anderer Build", "Der Build-Level weicht von der IBM-Readme ab; das Paket muss geprüft werden.");
+    return result("match", "iFix stimmt überein", "Der angegebene iFix-Stand dieser Versionslinie stimmt überein.");
   }
-  return result("match", "Версия совпадает", "Проверен указанный уровень SDK, не всё окружение.");
+  return result("match", "Version stimmt überein", "Verglichen wurde ausschließlich der angegebene SDK-Stand.");
 }
 
 function validateInventory(value) {
-  if (!object(value) || value.schema_version !== 1 || !object(value.host) || !Array.isArray(value.products)) throw Error("Ожидается inventory schema_version 1 с host и списком products.");
-  if (value.products.length > 1000) throw Error("В файле больше 1000 продуктов.");
+  if (!object(value) || value.schema_version !== 1 || !object(value.host) || !Array.isArray(value.products)) throw Error("Erwartet wird ein Inventar mit schema_version 1, einem host-Objekt und einer products-Liste.");
+  if (value.products.length > 1000) throw Error("Die Datei enthält mehr als 1000 Produkte.");
   for (const p of value.products) {
-    if (!object(p) || typeof p.id !== "string" || !p.id || p.id.length > 150) throw Error("У каждой записи products должен быть текстовый id.");
-    if (p.version != null && typeof p.version !== "string") throw Error("Версия продукта должна быть строкой.");
-    if (p.installed_fixes != null && (!Array.isArray(p.installed_fixes) || !p.installed_fixes.every(v => typeof v === "string"))) throw Error("installed_fixes должен быть списком строк.");
+    if (!object(p) || typeof p.id !== "string" || !p.id || p.id.length > 150) throw Error("Jeder products-Eintrag benötigt eine nicht leere id als Zeichenkette.");
+    if (p.version != null && typeof p.version !== "string") throw Error("Die Produktversion muss eine Zeichenkette sein.");
+    if (p.installed_fixes != null && (!Array.isArray(p.installed_fixes) || !p.installed_fixes.every(v => typeof v === "string"))) throw Error("installed_fixes muss eine Liste von Zeichenketten sein.");
   }
   return value;
 }
 
 function validateCatalog(value) {
-  if (!object(value) || value.schema_version !== 2 || !object(value.products)) throw Error("Ожидается catalog schema_version 2 с объектом products.");
-  if (Object.keys(value.products).length > 1000) throw Error("Каталог слишком большой.");
+  if (!object(value) || value.schema_version !== 2 || !object(value.products)) throw Error("Erwartet wird ein Katalog mit schema_version 2 und einem products-Objekt.");
+  if (Object.keys(value.products).length > 1000) throw Error("Der Katalog ist zu groß.");
   for (const entry of Object.values(value.products)) {
-    if (!object(entry) || (entry.available != null && !object(entry.available))) throw Error("Некорректная запись каталога.");
+    if (!object(entry) || (entry.available != null && !object(entry.available))) throw Error("Ungültiger Katalogeintrag.");
   }
   return value;
 }
@@ -200,7 +200,7 @@ function rowsFor(inventory, catalog) {
   for (const p of products) {
     const discoveryId = p.id === "ibm_java" ? "websphere" : p.id === "daeja_viewone_virtual" ? "content_navigator" : p.id;
     const discovery = inventory.discovery && inventory.discovery[discoveryId];
-    if (object(discovery) && discovery.status && !["ok", "skipped"].includes(discovery.status)) p._discoveryError = "Статус collector: " + discovery.status + ". Данные этой записи могут быть неполными.";
+    if (object(discovery) && discovery.status && !["ok", "skipped"].includes(discovery.status)) p._discoveryError = "Collector-Status: " + discovery.status + ". Die Daten dieses Eintrags können unvollständig sein.";
     if (p.id === "iccsap" && !p.installed_fixes && products.filter(x => x.id === "iccsap").length === 1) p.installed_fixes = iccsapFixes(inventory);
   }
   const rows = [];
@@ -219,9 +219,9 @@ function startApp() {
   const initial = JSON.parse($("inventory-data").textContent);
   let inventory = initial === null ? null : validateInventory(initial);
   const notes = JSON.parse($("notes-data").textContent);
-  let inventoryName = "", catalogName = "встроенный";
+  let inventoryName = "", catalogName = "eingebettet";
   const el = (tag, text, className) => { const node = document.createElement(tag); if (text !== undefined) node.textContent = String(text); if (className) node.className = className; return node; };
-  const date = value => { const stamp = Date.parse(value); return Number.isFinite(stamp) ? new Date(stamp).toLocaleString("ru-RU", {timeZone:"UTC", year:"numeric", month:"2-digit", day:"2-digit", hour:"2-digit", minute:"2-digit"}) + " UTC" : "дата не указана"; };
+  const date = value => { const stamp = Date.parse(value); return Number.isFinite(stamp) ? new Date(stamp).toLocaleString("de-DE", {timeZone:"UTC", year:"numeric", month:"2-digit", day:"2-digit", hour:"2-digit", minute:"2-digit"}) + " UTC" : "kein Datum angegeben"; };
   function link(label, url, primary) {
     const safe = ibmUrl(url);
     if (!safe) return null;
@@ -233,17 +233,17 @@ function startApp() {
   function metadata(parent, text) { if (text) parent.append(el("span", text, "metadata")); }
   function render() {
     const now = Date.now();
-    $("catalog-date").textContent = "Каталог: " + date(catalog.generated_at) + " · " + catalogName + " · Примечания IBM: " + notes.checked_at;
+    $("catalog-date").textContent = "Katalog: " + date(catalog.generated_at) + " · " + catalogName + " · IBM-Hinweise: " + notes.checked_at;
     $("clear-inventory").hidden = !inventory;
-    $("inventory-title").textContent = inventory ? inventory.context_only ? "Версии из приложенного описания" : "Снимок: " + (inventory.host.hostname || "имя сервера не указано") : "Каталог IBM · 7 основных продуктов";
-    $("inventory-meta").textContent = inventory ? inventory.context_only ? "Это ранее указанные версии. Новый скан не выполнялся; загрузите inventory.json для обновления." : [inventoryName, "Сбор: " + date(inventory.timestamp), inventory.host.machine, inventory.host.os_release && inventory.host.os_release.PRETTY_NAME].filter(Boolean).join(" · ") : "Откройте inventory.json для сравнения с вашим сервером. Каталог доступен и без него.";
+    $("inventory-title").textContent = inventory ? inventory.context_only ? "Versionsstand aus der bereitgestellten Beschreibung" : "Inventarstand: " + (inventory.host.hostname || "kein Servername angegeben") : "IBM-Katalog · 7 Hauptprodukte";
+    $("inventory-meta").textContent = inventory ? inventory.context_only ? "Dies sind die zuvor angegebenen Versionen. Es wurde kein neuer Scan ausgeführt. Öffnen Sie eine aktuelle inventory.json für einen neuen Vergleich." : [inventoryName, "Erfasst: " + date(inventory.timestamp), inventory.host.machine, inventory.host.os_release && inventory.host.os_release.PRETTY_NAME].filter(Boolean).join(" · ") : "Öffnen Sie inventory.json für den Vergleich mit Ihrem Server. Der Katalog ist auch ohne Inventar nutzbar.";
     const warnings = [];
     const badEntries = Object.values(catalog.products).filter(e => freshness(e, catalog, now));
-    if (badEntries.length) warnings.push("Для " + badEntries.length + " записей каталог устарел, не датирован или источник недоступен. Уровни показаны для справки.");
-    if (now - Date.parse(notes.checked_at + "T00:00:00Z") > FRESH_HOURS * 3600000) warnings.push("Примечания IBM от " + notes.checked_at + " требуют повторной проверки, даже если catalog.json обновился.");
+    if (badEntries.length) warnings.push("Für " + badEntries.length + " Einträge ist der Katalog veraltet, undatiert oder die Quelle nicht erreichbar. Die Stände dienen zur Orientierung.");
+    if (now - Date.parse(notes.checked_at + "T00:00:00Z") > FRESH_HOURS * 3600000) warnings.push("Die IBM-Hinweise vom " + notes.checked_at + " müssen erneut geprüft werden, auch wenn catalog.json inzwischen aktualisiert wurde.");
     if (inventory && !inventory.context_only) {
       const stamp = Date.parse(inventory.timestamp);
-      if (!Number.isFinite(stamp) || stamp > now + 300000 || now - stamp > FRESH_HOURS * 3600000) warnings.push("Inventory не имеет достоверной свежей даты. Сравниваются значения из файла, а не текущее состояние сервера.");
+      if (!Number.isFinite(stamp) || stamp > now + 300000 || now - stamp > FRESH_HOURS * 3600000) warnings.push("Das Inventar hat kein verlässliches aktuelles Erfassungsdatum. Verglichen werden die Werte aus der Datei; der aktuelle Serverzustand wurde nicht abgefragt.");
     }
     $("freshness").hidden = !warnings.length; $("freshness").textContent = warnings.join(" ");
     $("products").replaceChildren();
@@ -260,11 +260,11 @@ function startApp() {
       const product = el("div", undefined, "cell-content");
       product.append(el("strong", own(PRODUCTS, id) ? PRODUCTS[id][0] : p.name || id, "product-name"));
       const parts = versionParts(target.version);
-      if (parts && own(PRODUCTS, id)) product.append(el("span", "Ветка " + parts.slice(0, PRODUCTS[id][1]).join("."), "stream"));
+      if (parts && own(PRODUCTS, id)) product.append(el("span", "Versionslinie " + parts.slice(0, PRODUCTS[id][1]).join("."), "stream"));
       if (p && p.installation_directory) metadata(product, p.installation_directory);
-      cell(tr, "Продукт", product);
+      cell(tr, "Produkt", product);
       const installedCell = el("div", undefined, "cell-content");
-      installedCell.append(el("span", p ? p.version || "Версия неизвестна" : "—", "version"));
+      installedCell.append(el("span", p ? p.version || "Version unbekannt" : "—", "version"));
       if (p) {
         const ix = ifixLevel(p);
         if (ix !== null) metadata(installedCell, "iFix " + ix);
@@ -272,46 +272,46 @@ function startApp() {
         const fixes = (p.installed_fixes || []).filter(v => /JRE_fix_\d{8}/i.test(v));
         if (fixes.length) metadata(installedCell, fixes.map(v => v.match(/JRE_fix_\d{8}/i)[0]).join(" · "));
       }
-      cell(tr, "Установлено", installedCell);
+      cell(tr, "Installiert", installedCell);
       const availableCell = el("div", undefined, "cell-content");
-      const targetText = [target.version, target.interim_fix != null ? "iFix " + target.interim_fix : "", target.jre_version ? "+ JRE " + target.jre_version : ""].filter(Boolean).join(" ") || "Нет данных";
+      const targetText = [target.version, target.interim_fix != null ? "iFix " + target.interim_fix : "", target.jre_version ? "+ JRE " + target.jre_version : ""].filter(Boolean).join(" ") || "Keine Daten";
       availableCell.append(el("span", targetText, "version"));
       metadata(availableCell, target.special_build);
       if (note) metadata(availableCell, note.availability_note);
-      if (e) metadata(availableCell, "Источник получен: " + date(e.refreshed_at || catalog.generated_at));
+      if (e) metadata(availableCell, "Quelle abgerufen: " + date(e.refreshed_at || catalog.generated_at));
       if (note) {
         const details = el("details", undefined, "product-notes");
-        details.append(el("summary", "Условия и примечания"));
+        details.append(el("summary", "Voraussetzungen und Hinweise"));
         for (const text of note.notes) details.append(el("p", text));
-        details.append(el("p", "Проверка примечаний: " + notes.checked_at, "muted"));
+        details.append(el("p", "Hinweise geprüft am: " + notes.checked_at, "muted"));
         availableCell.append(details);
       }
-      cell(tr, "Подтверждено IBM", availableCell);
+      cell(tr, "Bei IBM bestätigt", availableCell);
       const statusCell = el("div", undefined, "cell-content");
       statusCell.append(el("span", status.label, "status " + status.code), el("p", status.reason, "reason"));
-      cell(tr, "Сравнение", statusCell);
+      cell(tr, "Vergleich", statusCell);
       const actions = el("div", undefined, "cell-content links");
       const links = note ? note.links.slice() : [];
-      if (e && e.source_url && !links.some(l => l.url === e.source_url)) links.push({label:"Источник каталога IBM", url:e.source_url});
-      if (e && e.download_url && !links.some(l => l.url === e.download_url)) links.unshift({label:"IBM: страница скачивания", url:e.download_url, download:true});
+      if (e && e.source_url && !links.some(l => l.url === e.source_url)) links.push({label:"IBM-Quelle des Katalogs", url:e.source_url});
+      if (e && e.download_url && !links.some(l => l.url === e.download_url)) links.unshift({label:"IBM: Downloadseite", url:e.download_url, download:true});
       for (const item of links) { const a = link(item.label, item.url, item.download); if (a) actions.append(a); }
-      if (!actions.childNodes.length) actions.append(el("span", "Источник не указан", "metadata"));
-      cell(tr, "Ссылки", actions);
+      if (!actions.childNodes.length) actions.append(el("span", "Keine Quelle angegeben", "metadata"));
+      cell(tr, "Quellen und Downloads", actions);
       $("products").append(tr);
     }
-    $("summary").textContent = inventory ? counts.update + " — более новый уровень · " + counts.review + " — проверить · " + counts.match + " — совпадает" : "Известные уровни и официальные страницы IBM";
+    $("summary").textContent = inventory ? counts.update + " — neuerer Stand · " + counts.review + " — prüfen · " + counts.match + " — übereinstimmend" : "Bekannte Versionsstände und offizielle IBM-Seiten";
   }
   async function readFile(input, kind) {
     const file = input.files[0];
     if (!file) return;
     try {
-      if (file.size > MAX_BYTES) throw Error("Максимальный размер JSON — 10 МБ.");
+      if (file.size > MAX_BYTES) throw Error("Die JSON-Datei darf höchstens 10 MiB groß sein.");
       const value = JSON.parse((await file.text()).replace(/^\uFEFF/, ""));
       if (kind === "inventory") { validateInventory(value); inventory = value; inventoryName = file.name; }
       else { validateCatalog(value); catalog = value; catalogName = file.name; }
       $("error").hidden = true; $("error").textContent = ""; render();
     } catch (error) {
-      $("error").textContent = "Файл не загружен: " + error.message + " Предыдущие данные сохранены.";
+      $("error").textContent = "Die Datei konnte nicht geladen werden: " + error.message + " Die bisherigen Daten bleiben erhalten.";
       $("error").hidden = false;
     } finally { input.value = ""; }
   }
@@ -327,7 +327,7 @@ if (typeof module !== "undefined" && module.exports) module.exports = {versionPa
 if (typeof document !== "undefined") {
   try { startApp(); } catch (error) {
     const target = document.getElementById("error");
-    target.textContent = "Не удалось открыть встроенные данные: " + error.message;
+    target.textContent = "Die eingebetteten Daten konnten nicht geöffnet werden: " + error.message;
     target.hidden = false;
   }
 }
