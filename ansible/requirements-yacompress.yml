@@ -1,0 +1,7 @@
+---
+# Nur bei der Einrichtung installieren, niemals während des Patch-Laufs.
+# Geprüfte Quellrevision der Collection 1.6.0; kein ungebundenes main.
+collections:
+  - name: https://github.com/mrAibo/ansible_yacompress.git
+    type: git
+    version: 9ab0d250f3afe53faac4d1d7c1bdea9f11bb05aa

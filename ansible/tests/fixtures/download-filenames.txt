@@ -1,0 +1,17 @@
+3.1.0-IF012-ICN-Linux.tar
+4.0.0.4-ICCSAP-Base-JRE-8.0.8.70-LUX.zip
+4004-ICCSAP-FP4-IF21-Binaries-LUX.zip
+9.0.5-WS-WAS-FP028.zip
+9.0.5.20-WS-WAS-IFPH72166.zip
+9.0.5.24-WS-WAS-IFDT496327.zip
+9.0.5.25-WS-WAS-IFDT496500.zip
+9.0.5.26-WS-WAS-IFPH71384.zip
+9.0.5.26-WS-WAS-IFPH71670.zip
+9.0.5.27-WS-WAS-IFPH71923.zip
+9.0.5.28-WS-WAS-IFDT495928.zip
+9.0.5.28-WS-WAS-IFDT496947.zip
+9.0.5.28-WS-WAS-IFPH72192.zip
+CM87FP5_lnx.zip
+agent.installer.linux.gtk.x86_64_1.10.1004.20260506_0701.zip
+ibm-java-sdk-8.0-8.71-linux-x64-installmgr.zip
+special_87984_v11.5.9_linuxx64_universal_fixpack.tar.gz

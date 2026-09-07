@@ -1,0 +1,14 @@
+---
+# Nur explizit aktivieren: native tar/unzip/gzip-Werkzeuge werden benötigt.
+# Prüfung ohne Extraktion; bereits komprimierte IBM-Dateien nicht neu komprimieren.
+- name: Archivstruktur mit YaCompress prüfen
+  mraibo.yacompress.archive_verify:
+    path: "{{ item.path }}"
+    fail_on_error: true
+  loop: "{{ ibm_patch_scan_result.packages }}"
+  loop_control:
+    label: "{{ item.filename }}"
+  delegate_to: "{{ 'localhost' if ibm_patch_scan_location == 'controller' else inventory_hostname }}"
+  become: "{{ false if ibm_patch_scan_location == 'controller' else ibm_patch_scan_become }}"
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python if ibm_patch_scan_location == 'controller' else hostvars[inventory_hostname].ansible_python_interpreter }}"

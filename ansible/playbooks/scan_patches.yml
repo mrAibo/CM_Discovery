@@ -1,0 +1,10 @@
+---
+# Unabhängiges Lesen eines Downloadordners; kein Download und keine Installation.
+# Beispiel: --limit HB_TEST oder --limit NDD_PROD.
+- name: Vorhandene IBM-Patches inventarisieren
+  hosts: ibm_servers
+  gather_facts: false
+  tasks:
+    - name: Downloadverzeichnis durchsuchen
+      ansible.builtin.include_role:
+        name: ibm_patch_scan

@@ -1,25 +1,21 @@
 {
-  "checked_at": "2026-09-06",
-  "description": "Human-reviewed IBM source observations; dates are not advanced by automated catalog refresh.",
+  "checked_at": "2026-09-07",
+  "description": "IBM-Quellenprüfung und ausdrücklich gekennzeichnete Paketangaben des Betreibers.",
   "products": {
     "content_manager": {
       "for_available": {
-        "version": "8.7.00.400"
+        "version": "8.7.00.500"
       },
-      "availability_note": "FP4 Interim Fix 01 · 20.08.2026",
+      "availability_note": "FP5 · CM87FP5_lnx.zip",
       "notes": [
-        "IBM hat eigene Seiten für FP4 Interim Fix 01 und dessen Readme veröffentlicht. Aus dem Versionswert 8.7.00.400 allein lässt sich nicht erkennen, ob IF01 installiert ist.",
-        "Titel und Datum von IF01 wurden anhand indexierter IBM-Seiten bestätigt. Volltext und Paket konnten bei der Prüfung nicht geöffnet werden. Anwendbarkeit und Installation müssen mit der Readme abgeglichen werden."
+        "Korrigierter bekannter Fix-Pack-Stand: FP5. Historische FP1-/FP4-Einträge sind kein Beleg für den neuesten Stand. Die versionsgebundene Readme erkennt keine zukünftigen Fix Packs.",
+        "Vom Betreiber benannte Download-Datei: CM87FP5_lnx.zip"
       ],
       "links": [
         {
-          "label": "IBM: IF01-Paket",
-          "url": "https://www.ibm.com/support/pages/node/7280572",
+          "label": "IBM: FP5-Readme und Downloadhinweise",
+          "url": "https://www.ibm.com/docs/en/content-manager/8.7.0?topic=fp-content-manager-version-87-fix-pack-5-readme",
           "download": true
-        },
-        {
-          "label": "Readme zu IF01",
-          "url": "https://www.ibm.com/support/pages/node/7280570"
         }
       ]
     },
@@ -33,12 +29,13 @@
         "IF12 enthält Daeja ViewONE Virtual 26.0.0 iFix 1 und die CM 8.7 FP4 APIs. Die Aktualisierung des mitgelieferten Daeja ist gemeinsam mit ICN zu betrachten.",
         "Das ICN-Installationsprogramm benötigt Java 11 oder 17. Diese Anforderung gilt für den Installer; sie ist keine Anweisung, die von WebSphere verwendete Java-8-Installation zu ersetzen.",
         "IBM erlaubt die Aktualisierung von ICN 3.1.0.0 oder einem späteren Stand derselben Versionslinie. Danach muss die Anwendung erneut bereitgestellt werden. Die Tabelle empfiehlt keinen Wechsel auf ICN 3.2.",
-        "Paket für Linux x86: 3.1.0.0-ICN-IF012-LINUX; für Linux on Z: 3.1.0.0-ICN-IF012-zLINUX. Wählen Sie in Fix Central IBM Content Navigator und die passende Plattform."
+        "Linux-Archiv laut Betreiber: 3.1.0-IF012-ICN-Linux.tar. Der Link öffnet die passende Fix-Central-Auswahl für ICN 3.1.0/Linux; kein direkter Archiv-Download.",
+        "Vom Betreiber benannte Download-Datei: 3.1.0-IF012-ICN-Linux.tar"
       ],
       "links": [
         {
           "label": "Fix Central: ICN auswählen",
-          "url": "https://www.ibm.com/support/fixcentral/",
+          "url": "https://www.ibm.com/support/fixcentral/swg/selectFixes?parent=Enterprise%20Content%20Management&product=ibm/Other+software/Content+Navigator&release=3.1.0&platform=Linux&function=all",
           "download": true
         },
         {
@@ -78,7 +75,8 @@
       "notes": [
         "Zum Prüfdatum kennzeichnet IBM Update 87984 als neuestes veröffentlichtes Update für 11.5.9. Linux x86 PTF: DYN2607151721AMD64_87984; Build s2607151021.",
         "Die Updates auf der IBM-Seite sind kumulativ und zeitlich geordnet. Ihre Nummern geben keine zeitliche Reihenfolge an: special_63280 ist nicht allein deshalb älter, weil 63280 kleiner als 87984 ist. Bei einem individuellen Special Build muss der Inhalt geprüft werden.",
-        "Öffnen Sie auf der IBM-Seite den Bereich Downloads des gewünschten Updates und wählen Sie das passende Db2-Server-/Universal-Paket für Plattform und Edition."
+        "Öffnen Sie auf der IBM-Seite den Bereich Downloads des gewünschten Updates und wählen Sie das passende Db2-Server-/Universal-Paket für Plattform und Edition.",
+        "Vom Betreiber benannte Download-Datei: special_87984_v11.5.9_linuxx64_universal_fixpack.tar.gz"
       ],
       "links": [
         {
@@ -99,7 +97,8 @@
       "availability_note": "Java 8 SR8 FP71 · Installation-Manager-Paket für WAS",
       "notes": [
         "IBM stellt SDK 8.0.8.71 als Installation-Manager-Repository für WebSphere traditional bereit. Wählen Sie auf der Downloadseite die Architektur des Servers.",
-        "Das WebSphere-SDK und die mitgelieferte JRE von ICCSAP sind getrennte Installationen. Verwenden Sie für ICCSAP dessen eigenes Paket aus der entsprechenden Tabellenzeile."
+        "Das WebSphere-SDK und die mitgelieferte JRE von ICCSAP sind getrennte Installationen. Verwenden Sie für ICCSAP dessen eigenes Paket aus der entsprechenden Tabellenzeile.",
+        "Vom Betreiber benannte Download-Datei: ibm-java-sdk-8.0-8.71-linux-x64-installmgr.zip"
       ],
       "links": [
         {
@@ -118,10 +117,12 @@
         "version": "4.0.0.4",
         "jre_version": "8.0.8.70"
       },
-      "availability_note": "4.0.0.4-ICCSAP-Base-JRE-8.0.8.70",
+      "availability_note": "4.0.0.4-ICCSAP-Base-JRE-8.0.8.70 · Binaries IF21 (Betreiberangabe)",
       "notes": [
         "Das IBM-Bulletin zu ICCSAP 4.0.0.4 nennt ein eigenes Paket für die mitgelieferte JRE 8.0.8.70. Hier wird diese Java-Korrektur betrachtet, nicht die Gesamtheit aller ICCSAP-Komponenten.",
-        "Eine Kennung JRE_fix_YYYYMMDD und das Veröffentlichungsdatum eines Bulletins belegen keine genaue JRE-Version. Fehlen eine gemessene Version oder eine bestätigte Paketkennung im Inventar, ist eine manuelle Prüfung erforderlich."
+        "Eine Kennung JRE_fix_YYYYMMDD und das Veröffentlichungsdatum eines Bulletins belegen keine genaue JRE-Version. Fehlen eine gemessene Version oder eine bestätigte Paketkennung im Inventar, ist eine manuelle Prüfung erforderlich.",
+        "Vom Betreiber benannte Download-Datei: 4.0.0.4-ICCSAP-Base-JRE-8.0.8.70-LUX.zip",
+        "Vom Betreiber benannte Download-Datei: 4004-ICCSAP-FP4-IF21-Binaries-LUX.zip"
       ],
       "links": [
         {
@@ -142,7 +143,19 @@
       "availability_note": "FP28 · 16.06.2026",
       "notes": [
         "9.0.5.28 ist ein veröffentlichter Fix Pack. Für 9.0.5.29 nennt IBM den vorläufigen zukünftigen Termin 08.09.2026. Am Prüfdatum 06.09.2026 ist dieser Stand daher nicht als verfügbares Update enthalten.",
-        "FP28 setzt WAS 9.0 und Installation Manager 1.8.5 oder neuer voraus. IBM weist außerdem auf den Download des SDK-Pakets hin. Der Fix Pack ist kumulativ; spätere einzelne iFixes und Sicherheitskorrekturen müssen separat geprüft werden."
+        "FP28 setzt WAS 9.0 und Installation Manager 1.8.5 oder neuer voraus. IBM weist außerdem auf den Download des SDK-Pakets hin. Der Fix Pack ist kumulativ; spätere einzelne iFixes und Sicherheitskorrekturen müssen separat geprüft werden.",
+        "Vom Betreiber benannte Download-Datei: 9.0.5-WS-WAS-FP028.zip",
+        "Vom Betreiber benannte Download-Datei: 9.0.5.20-WS-WAS-IFPH72166.zip",
+        "Vom Betreiber benannte Download-Datei: 9.0.5.24-WS-WAS-IFDT496327.zip",
+        "Vom Betreiber benannte Download-Datei: 9.0.5.25-WS-WAS-IFDT496500.zip",
+        "Vom Betreiber benannte Download-Datei: 9.0.5.26-WS-WAS-IFPH71384.zip",
+        "Vom Betreiber benannte Download-Datei: 9.0.5.26-WS-WAS-IFPH71670.zip",
+        "Vom Betreiber benannte Download-Datei: 9.0.5.27-WS-WAS-IFPH71923.zip",
+        "Vom Betreiber benannte Download-Datei: 9.0.5.28-WS-WAS-IFDT495928.zip",
+        "Vom Betreiber benannte Download-Datei: 9.0.5.28-WS-WAS-IFDT496947.zip",
+        "Vom Betreiber benannte Download-Datei: 9.0.5.28-WS-WAS-IFPH72192.zip",
+        "Vom Betreiber benannte Download-Datei: agent.installer.linux.gtk.x86_64_1.10.1004.20260506_0701.zip",
+        "Die aufgeführten iFixes sind keine gemeinsame Installationsliste. Versionspräfixe belegen weder Anwendbarkeit auf FP28 noch Reihenfolge oder Ablösung. Vor Installation IBM-Readme und IM-Metadaten für jeden APAR prüfen."
       ],
       "links": [
         {

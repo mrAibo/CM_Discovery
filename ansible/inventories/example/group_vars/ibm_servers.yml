@@ -1,0 +1,15 @@
+---
+# Vor dem Einsatz: realen SSH-Benutzer und vorhandenen Python-3.12-Pfad eintragen.
+ansible_user: UNRESOLVED
+ansible_python_interpreter: /usr/bin/python3.12
+
+# Ordner mit bereits heruntergeladenen IBM-Paketen auf dem Controller.
+# Pro Host kann dieser Pfad bei Bedarf in host_vars überschrieben werden.
+ibm_patch_directory: /srv/ibm-updates
+ibm_patch_scan_location: controller
+ibm_patch_scan_recursive: true
+
+# Optional true: YaCompress-Collection muss bereits offline installiert sein.
+ibm_patch_verify_with_yacompress: false
+# Optional: absoluten privaten Berichtspfad setzen; niemals ins öffentliche Git.
+# ibm_patch_report_directory: /srv/ibm-reports
