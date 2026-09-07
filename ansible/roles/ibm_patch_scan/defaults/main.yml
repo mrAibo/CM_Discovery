@@ -1,4 +1,7 @@
 ---
+# Alle separat heruntergeladenen IBM-Archive liegen unter diesem absoluten Pfad.
+# Bei Bedarf in group_vars/host_vars oder mit -e überschreiben.
+ibm_patch_directory: /srv/ibm-updates
 # Standard: Der Downloadordner liegt auf dem Ansible-Controller.
 # Mit "target" lässt sich stattdessen ein Ordner auf dem ausgewählten Server prüfen.
 ibm_patch_scan_location: controller

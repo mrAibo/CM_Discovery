@@ -319,3 +319,9 @@ Fix Packs können kumulativ sein; daraus folgt keine kumulative Wirkung der iFix
 Diese bleiben unabhängige Einträge. Eine passende Basis oder JRE allein bedeutet
 nicht, dass alle Produktkorrekturen installiert sind. Die Ansible-Soll-Dateiliste
 bewahrt alle ausdrücklich gewählten iFixes und meldet fehlende Pakete.
+
+Die Ansible-Paketvorbereitung hat nun eigene Tasks je Produkt und erzeugt eine
+[Produktübersicht](ansible/README.md#produktbezogene-tasks-und-paketübersicht)
+mit getrennten Basis-/Fix-Pack-, Java/JRE- und iFix-Gruppen. Der gemeinsame
+Downloadordner wird über `ibm_patch_directory` festgelegt. Die Dateien bleiben
+am ursprünglichen Ort; die Übersicht enthält ihre Pfade und SHA-256-Prüfsummen.

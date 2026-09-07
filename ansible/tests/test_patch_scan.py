@@ -38,6 +38,25 @@ class PatchScanTests(unittest.TestCase):
         self.assertEqual(was['filename_metadata'], {'filename_baseline': '9.0.5.20', 'apar': 'PH72166'})
         self.assertEqual(scan_module.classify('4004-ICCSAP-FP4-IF21-Binaries-LUX.zip')['filename_metadata']['interim_fix'], 21)
 
+    def test_product_groups_preserve_all_media_and_separate_java(self):
+        with tempfile.TemporaryDirectory() as directory:
+            for name in FILENAMES + ['not-an-ibm-package.zip']:
+                (Path(directory) / name).write_bytes(b'fixture')
+            result = scan_module.scan(directory)
+            result['selected_packages'] = scan_module.select_packages(result, FILENAMES)
+            products = scan_module.organize_packages(result)
+        self.assertEqual(sum(p['package_count'] for p in products.values()), 17)
+        self.assertEqual(len(products['websphere']['packages_by_kind']['interim_fix']), 9)
+        self.assertEqual(len(products['websphere']['packages_by_kind']['fix_pack']), 1)
+        self.assertEqual(products['ibm_java']['package_count'], 1)
+        iccsap = products['iccsap']['packages_by_kind']
+        self.assertEqual(len(iccsap['jre_update']), 1)
+        self.assertEqual(len(iccsap['binary_interim_fix']), 1)
+        self.assertEqual(result['unknown_count'], 1)
+        self.assertTrue(all(p['applicability'] == 'not_verified' and p['installation_actions'] == [] for p in products.values()))
+        empty = scan_module.organize_packages({'packages': [], 'selected_packages': []})
+        self.assertTrue(all(p['status'] == 'no_local_packages' for p in empty.values()))
+
     def test_duplicates_unknown_empty_and_symlinks(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -93,6 +112,31 @@ class PatchScanTests(unittest.TestCase):
             inventory = json.loads(listing.stdout)
             self.assertEqual(set(inventory['_meta']['hostvars']), {'HB_TEST', 'HB_PROD', 'NDD_TEST', 'NDD_PROD'})
             self.assertEqual(set(inventory['production']['hosts']), {'HB_PROD', 'NDD_PROD'})
+
+    @unittest.skipUnless(shutil.which('ansible-playbook'), 'Ansible not installed')
+    def test_product_tasks_full_report_and_repeat_run(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for name in FILENAMES:
+                (root / name).write_bytes(b'fixture')
+            args = {'ibm_patch_directory': directory, 'ibm_patch_report_directory': str(root / 'reports'),
+                    'ibm_patch_required_filenames': FILENAMES}
+            command = ['ansible-playbook', '-i', 'inventories/example/hosts.yml', 'playbooks/scan_patches.yml', '--limit', 'HB_TEST', '-e', json.dumps(args)]
+            first = subprocess.run(command, cwd=ROOT, text=True, capture_output=True, timeout=60)
+            self.assertEqual(first.returncode, 0, first.stdout + first.stderr)
+            report = root / 'reports/HB_TEST-product-plan.json'
+            plan = json.loads(report.read_text())
+            self.assertEqual(plan['purpose'], 'package_preparation')
+            self.assertEqual(plan['archive_verification'], 'not_requested')
+            self.assertEqual(len(plan['products']['websphere']['packages_by_kind']['interim_fix']), 9)
+            self.assertEqual(sum(p['package_count'] for p in plan['products'].values()), 17)
+            self.assertEqual(plan['installation_actions'], [])
+            self.assertEqual(report.stat().st_mode & 0o777, 0o600)
+            second = subprocess.run(command, cwd=ROOT, text=True, capture_output=True, timeout=60)
+            self.assertEqual(second.returncode, 0, second.stdout + second.stderr)
+            self.assertIn('changed=0', second.stdout)
+            self.assertEqual(json.loads(report.read_text()), plan)
+            self.assertTrue(all((root / name).read_bytes() == b'fixture' for name in FILENAMES))
 
     @unittest.skipUnless(shutil.which('ansible-playbook') and os.environ.get('TEST_YACOMPRESS') == '1', 'optional collection test')
     def test_yacompress_good_and_bad_archives(self):

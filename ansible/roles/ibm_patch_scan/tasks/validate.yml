@@ -1,0 +1,16 @@
+---
+# Ein Scan benötigt weder Produktversionen noch Verbindung zu IBM.
+- name: Scan-Verzeichnis und Ausführungsort prüfen
+  ansible.builtin.assert:
+    that:
+      - ansible_playbook_python is defined
+      - (lookup('ansible.builtin.pipe', ansible_playbook_python | quote ~ ' --version')).startswith('Python 3.12.')
+      - ibm_patch_directory is defined
+      - ibm_patch_directory is string
+      - ibm_patch_directory.startswith('/')
+      - ibm_patch_directory != '/'
+      - ibm_patch_report_directory is not defined or (ibm_patch_report_directory is string and ibm_patch_report_directory.startswith('/') and ibm_patch_report_directory != '/')
+      - inventory_hostname is match('^[A-Za-z0-9_.-]+$')
+      - ibm_patch_scan_location in ['controller', 'target']
+    fail_msg: "ibm_patch_directory als absoluten Pfad und location als controller/target angeben."
+

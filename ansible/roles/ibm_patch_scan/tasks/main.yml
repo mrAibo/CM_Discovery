@@ -1,65 +1,65 @@
 ---
-# Ein Scan benötigt weder Produktversionen noch Verbindung zu IBM.
-- name: Scan-Verzeichnis und Ausführungsort prüfen
-  ansible.builtin.assert:
-    that:
-      - ansible_playbook_python is defined
-      - (lookup('ansible.builtin.pipe', ansible_playbook_python | quote ~ ' --version')).startswith('Python 3.12.')
-      - ibm_patch_directory is defined
-      - ibm_patch_directory is string
-      - ibm_patch_directory.startswith('/')
-      - ibm_patch_scan_location in ['controller', 'target']
-    fail_msg: "ibm_patch_directory als absoluten Pfad und location als controller/target angeben."
+# Gemeinsame Prüfung und genau ein Scan; danach verständliche Produkt-Tasks.
+- name: Eingaben für die Paketvorbereitung prüfen
+  ansible.builtin.import_tasks: validate.yml
 
-# Im Controller-Modus wird kein SSH-Aufruf auf dem IBM-Server ausgeführt.
-- name: Heruntergeladene IBM-Pakete erfassen
-  ibm_patch_scan:
-    directory: "{{ ibm_patch_directory }}"
-    recursive: "{{ ibm_patch_scan_recursive }}"
-    # Jeden gewünschten iFix verlangen; keine Reduktion auf den höchsten IF.
-    required_filenames: "{{ ibm_patch_required_filenames }}"
-  delegate_to: "{{ 'localhost' if ibm_patch_scan_location == 'controller' else inventory_hostname }}"
-  become: "{{ false if ibm_patch_scan_location == 'controller' else ibm_patch_scan_become }}"
-  vars:
-    ansible_python_interpreter: "{{ ansible_playbook_python if ibm_patch_scan_location == 'controller' else hostvars[inventory_hostname].ansible_python_interpreter }}"
-  register: ibm_patch_scan_result
+- name: Downloadverzeichnis einmal erfassen
+  ansible.builtin.import_tasks: scan.yml
 
-# Die vollständige Liste steht als ibm_patch_scan_result für weitere Rollen bereit.
-- name: Scan-Ergebnis ausgeben
+# Bei wiederholtem Rollenaufruf keine Ergebnisse eines älteren Scans behalten.
+- name: Produktübersicht initialisieren
+  ansible.builtin.set_fact:
+    ibm_patch_products: {}
+
+- name: IBM Installation Manager zuordnen
+  ansible.builtin.import_tasks: products/installation_manager.yml
+
+- name: IBM Db2 zuordnen
+  ansible.builtin.import_tasks: products/db2.yml
+
+- name: IBM WebSphere zuordnen
+  ansible.builtin.import_tasks: products/websphere.yml
+
+- name: IBM Java für WebSphere zuordnen
+  ansible.builtin.import_tasks: products/ibm_java.yml
+
+- name: IBM Content Manager zuordnen
+  ansible.builtin.import_tasks: products/content_manager.yml
+
+- name: IBM Content Navigator zuordnen
+  ansible.builtin.import_tasks: products/content_navigator.yml
+
+- name: IBM Content Collector for SAP zuordnen
+  ansible.builtin.import_tasks: products/iccsap.yml
+
+# Unbekannte Dateien und Probleme bleiben sichtbar und werden nicht zugeordnet.
+- name: Ungeklärte Dateien anzeigen
   ansible.builtin.debug:
     msg:
-      selected_filenames: "{{ ibm_patch_scan_result.selected_packages | map(attribute='filename') | list }}"
-      recognized: "{{ ibm_patch_scan_result.recognized_count }}"
-      unknown: "{{ ibm_patch_scan_result.unknown_count }}"
-      filenames: "{{ ibm_patch_scan_result.packages | map(attribute='filename') | list }}"
-      duplicates: "{{ ibm_patch_scan_result.duplicates }}"
-      rejected: "{{ ibm_patch_scan_result.rejected }}"
-      applicability: "Dateinamen sind keine Installationsfreigabe. iFix-Abhängigkeiten separat prüfen."
+      unbekannte_dateien: "{{ ibm_patch_scan_result.packages | selectattr('product', 'equalto', 'unknown') | map(attribute='filename') | list }}"
+      doppelte_dateinamen: "{{ ibm_patch_scan_result.duplicates }}"
+      abgelehnte_dateien: "{{ ibm_patch_scan_result.rejected }}"
 
-# Dynamisches Include: Die Collection bleibt für den normalen Scan optional.
+# Dynamisch, damit YaCompress für normale Scans keine Pflichtabhängigkeit wird.
 - name: Archive zusätzlich mit YaCompress prüfen
   ansible.builtin.include_tasks: verify_archives.yml
   when: ibm_patch_verify_with_yacompress | bool
 
-# Berichte sind optional und werden ausschließlich auf dem Controller gespeichert.
-- name: Privates Berichtsverzeichnis anlegen
-  ansible.builtin.file:
-    path: "{{ ibm_patch_report_directory }}"
-    state: directory
-    mode: '0700'
-  delegate_to: localhost
-  become: false
-  vars:
-    ansible_python_interpreter: "{{ ansible_playbook_python }}"
-  when: ibm_patch_report_directory is defined
+- name: Lesende Paketübersicht zusammenstellen
+  ansible.builtin.set_fact:
+    ibm_patch_plan:
+      schema_version: 1
+      purpose: package_preparation
+      inventory_host: "{{ inventory_hostname }}"
+      scan_location: "{{ ibm_patch_scan_location }}"
+      directory: "{{ ibm_patch_scan_result.directory }}"
+      products: "{{ ibm_patch_products }}"
+      unknown_packages: "{{ ibm_patch_scan_result.packages | selectattr('product', 'equalto', 'unknown') | list }}"
+      duplicates: "{{ ibm_patch_scan_result.duplicates }}"
+      rejected: "{{ ibm_patch_scan_result.rejected }}"
+      archive_verification: "{{ ('passed_for_scanned_packages' if ibm_patch_scan_result.packages | length > 0 else 'no_archives_tested') if ibm_patch_verify_with_yacompress | bool else 'not_requested' }}"
+      applicability: not_verified
+      installation_actions: []
 
-- name: Vollständigen Scan-Bericht speichern
-  ansible.builtin.copy:
-    content: "{{ ibm_patch_scan_result | to_nice_json }}\n"
-    dest: "{{ ibm_patch_report_directory }}/{{ inventory_hostname }}-patches.json"
-    mode: '0600'
-  delegate_to: localhost
-  become: false
-  vars:
-    ansible_python_interpreter: "{{ ansible_playbook_python }}"
-  when: ibm_patch_report_directory is defined
+- name: Private Scan- und Produktberichte schreiben
+  ansible.builtin.import_tasks: report.yml

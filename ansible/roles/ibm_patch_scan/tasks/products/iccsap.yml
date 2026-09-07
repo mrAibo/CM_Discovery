@@ -1,0 +1,15 @@
+---
+# JRE-Update und Binaries-iFix getrennt halten; eine JRE bestätigt keinen Binaries-Stand.
+# Keine Installation, keine automatische Auswahl einer höchsten Version.
+- name: IBM Content Collector for SAP – Paketgruppen übernehmen
+  ansible.builtin.set_fact:
+    ibm_patch_products: "{{ ibm_patch_products | combine({'iccsap': ibm_patch_scan_result.products.iccsap}) }}"
+
+- name: IBM Content Collector for SAP – vorhandene Dateien anzeigen
+  ansible.builtin.debug:
+    msg:
+      produkt: "IBM Content Collector for SAP"
+      status: "{{ ibm_patch_products.iccsap.status }}"
+      dateien: "{{ ibm_patch_scan_result.packages | selectattr('product', 'equalto', 'iccsap') | map(attribute='filename') | list }}"
+      explizit_ausgewaehlt: "{{ ibm_patch_products.iccsap.selected_filenames }}"
+      hinweis: "JRE-Update und Binaries-iFix getrennt halten; eine JRE bestätigt keinen Binaries-Stand."

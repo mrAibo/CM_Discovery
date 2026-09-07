@@ -1,7 +1,7 @@
 # IBM-Updates mit Ansible
 
 Eigenständige Automatisierung für bereits lokal vorhandene IBM-Pakete.
-**Aktueller Stand: Basis-Vorprüfung und Repository-Staging für WebSphere, noch keine Installation.**
+**Aktueller Stand: Paketvorbereitung für sieben Produkte sowie WAS-Vorprüfung und Staging; noch keine Installation.**
 Die Rolle lädt nichts herunter und benötigt weder Patchwatch noch dessen Katalog.
 
 ## Voraussetzungen
@@ -22,6 +22,8 @@ Die konkrete Python-3.12-Bereitstellung hängt von SLES-Version und Service Pack
 
 ## Struktur
 
+- `roles/ibm_patch_scan/`: einmaliger Verzeichnisscan, eigene Produkt-Tasks und JSON-Paketübersicht.
+- `playbooks/scan_patches.yml`: eigenständiger Einstieg für die Paketvorbereitung.
 - `roles/ibm_was_update/`: Rolle und eigenständiges lesendes Prüfmodul.
 - `playbooks/preflight_was.yml`: separater Einstieg für genau einen Host.
 - `playbooks/stage_was.yml`: erneute Vorprüfung, Übertragung und lokale Repository-Abfrage.
@@ -249,3 +251,51 @@ Beispiel: IBM verlangt bei DT496947 die vorherige Entfernung von PH71590, falls 
 Die Basis-/iFix-Zuordnung der Webseite verwendet separat datierte IBM-Referenzen.
 Ansible bleibt davon unabhängig und vertraut weder dem Katalog noch dem Dateipräfix
 als Nachweis der Installierbarkeit.
+
+## Produktbezogene Tasks und Paketübersicht
+
+Alle Downloads können gemeinsam unter `ibm_patch_directory` liegen; Standard ist
+`/srv/ibm-updates` auf dem Controller. Den Pfad zentral in
+`inventories/example/group_vars/ibm_servers.yml` beziehungsweise der privaten Kopie
+oder pro Host überschreiben. Der Scan liest den Ordner genau einmal je ausgewähltem Host.
+
+Die Rolle gliedert sich in `validate.yml`, `scan.yml`, verständlich benannte
+Produktdateien unter `tasks/products/` und `report.yml`:
+
+| Task-Datei | Getrennte Paketgruppen |
+| --- | --- |
+| `installation_manager.yml` | Installation-Manager-Installer |
+| `db2.yml` | Db2 Published Updates / Special Builds |
+| `websphere.yml` | Fix Packs und alle unabhängigen iFixes |
+| `ibm_java.yml` | Java-SDK für WAS |
+| `content_manager.yml` | CM-Fix-Pack-Medien |
+| `content_navigator.yml` | ICN-Interim-Fix-Medien |
+| `iccsap.yml` | Eingebettete JRE und Binaries-iFixes |
+
+```bash
+cd ansible
+ansible-playbook -i private/hosts.yml playbooks/scan_patches.yml \
+  --limit HB_TEST \
+  -e ibm_patch_directory=/srv/ibm-updates \
+  -e ibm_patch_report_directory="$PWD/private/reports"
+```
+
+Ergebnisse: `HB_TEST-patches.json` enthält den vollständigen Scan,
+`HB_TEST-product-plan.json` die Produktübersicht. Im Playbook stehen
+`ibm_patch_scan_result`, `ibm_patch_products` und `ibm_patch_plan` zur Verfügung.
+Die Sortierung ist logisch: Dateien werden nicht verschoben, kopiert oder entpackt.
+Jeder Eintrag behält Originalpfad, Dateigröße, SHA-256 und erkannte Metadaten.
+`packages_by_kind` trennt die Paketarten; `selected_filenames` enthält nur die
+explizit verlangte Soll-Dateiliste. Auch mehrere Versionen und alle iFixes bleiben erhalten.
+
+`no_local_packages` bedeutet ausschließlich, dass für dieses Produkt keine Medien
+gefunden wurden. Daraus wird nicht auf den installierten Produktbestand geschlossen.
+Unbekannte Archive, Duplikate und abgelehnte Dateien stehen separat im Bericht.
+Eine optionale erfolgreiche YaCompress-Prüfung gilt nur für die erfassten Archive.
+
+Diese Übersicht bereitet die Prüfung vor. Sie ist noch kein ausführbarer
+Installationsplan: Ist-Inventar, Offering-IDs, Voraussetzungen und Supersedence
+werden nicht aus Dateinamen abgeleitet. Daher bleiben `applicability: not_verified`
+und `installation_actions: []` ausdrücklich gesetzt. Download und Installation
+werden durch dieses Playbook nicht ausgelöst. Berichte haben Modus 0600, das
+Berichtsverzeichnis 0700. Ein identischer Wiederholungslauf verändert nichts.
