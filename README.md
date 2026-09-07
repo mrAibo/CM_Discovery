@@ -305,3 +305,17 @@ CM ist auf den bestätigten FP5-Stand korrigiert. Historische Readme-Treffer und
 Rückschritte werden abgelehnt. Die CM-Quelle ist weiterhin versionsgebunden; zukünftige
 Fix Packs brauchen eine Quellenaktualisierung. Die Tabelle kennzeichnet vom Betreiber
 benannte Paketdateien ausdrücklich und enthält den ICN-3.1.0/Linux-Auswahllink.
+
+### Basis und einzelne iFixes
+
+ICCSAP zeigt Basis 4.0.0.4, JRE 8.0.8.70 und Binaries IF21 getrennt, mit den
+zugehörigen Fix-Central-Auswahllinks. WebSphere zeigt einzelne iFix-Pakete mit
+IBM-Versionsbereichen für installierte Basis und Katalog-Zielbasis. Der Fix-Central-Link
+verwendet bei vorhandenem Inventar dessen WAS-Version und Linux x86_64.
+Die geprüfte Referenzliste ist keine vollständige automatische iFix-Erkennung;
+ihr Prüfdatum wird durch einen erneuten Basisabruf nicht verändert.
+
+Fix Packs können kumulativ sein; daraus folgt keine kumulative Wirkung der iFixes.
+Diese bleiben unabhängige Einträge. Eine passende Basis oder JRE allein bedeutet
+nicht, dass alle Produktkorrekturen installiert sind. Die Ansible-Soll-Dateiliste
+bewahrt alle ausdrücklich gewählten iFixes und meldet fehlende Pakete.

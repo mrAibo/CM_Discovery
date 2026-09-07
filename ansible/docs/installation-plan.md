@@ -9,7 +9,7 @@ Ein Scan erkennt Dateien; er beweist weder deren Herkunft noch Installierbarkeit
 | Content Navigator 3.1.0 IF12 | [IBM-Readme](https://www.ibm.com/support/pages/ibm-content-navigator-version-310-interim-fix-12-readme). Installer benötigt Java 11 oder 17; Konfiguration und erneute Bereitstellung gehören zum Update. Das ist kein Austausch des WAS-Java-8-SDK. |
 | WAS 9.0.5 FP28 | [FP28-Download und Voraussetzungen](https://www.ibm.com/support/pages/90528-websphere-application-server-traditional-version-90528). IM mindestens 1.8.5, vorhandenes WAS-9-Offering und passendes SDK prüfen. |
 | WAS iFixes | APAR-Readme und Paketmetadaten einzeln abgleichen. Beispiel: [PH71590 / DT496947](https://www.ibm.com/support/pages/ph71590ibm-websphere-application-server-vulnerable-identity-spoofing-cve-2026-8644) beschreibt Ablösungen und konkrete FP-Bereiche. Alle neun Dateien pauschal zu installieren wäre falsch. |
-| ICCSAP | JRE und Binaries IF21 getrennt erfassen. IF21 ist vorerst eine Betreiberangabe; dessen konkrete Voraussetzungen sind noch nicht öffentlich bestätigt. |
+| ICCSAP | JRE und Binaries IF21 getrennt erfassen. IF21 und das Base-JRE-Paket sind über die vom Betreiber bestätigten Fix-Central-Links getrennt verfügbar. Die vollständigen IF21-Voraussetzungen bleiben vor Installation zu prüfen. |
 | Db2 11.5.9 | [Published Updates](https://www.ibm.com/support/pages/node/7087189). Update 87984 nach IBM-Chronologie betrachten; Special-Build-Nummern nicht numerisch als Versionsreihenfolge interpretieren. |
 
 ## Getrennte Aktionen
@@ -36,3 +36,12 @@ Die IBM-Archive werden nicht neu komprimiert. Für spätere Dateisicherungen kö
 Manifestprüfung und Komprimierung nützlich sein; eine laufende Db2-Datenbank benötigt
 zusätzlich ein datenbankgerechtes Sicherungsverfahren. Lösch-/Rotationsfunktionen werden
 hier nicht verwendet. Der normale Scan funktioniert ohne diese Collection.
+
+## Verbindliche Behandlung von iFixes
+
+Jeder iFix bleibt ein eigener Eintrag. Weder Datum noch höhere IF-/APAR-Nummer
+berechtigen zum Weglassen anderer Fixes. IBM-Versionsbereiche werden separat vom
+Dateipräfix gespeichert. Eine dokumentierte Ablösung wird als Beziehung behandelt,
+nicht als allgemeine kumulative Eigenschaft. Vor Basis-Updates und danach den
+vollständigen erforderlichen APAR-Satz prüfen. Der Scanner wählt und entfernt
+keine Fixes automatisch; `ibm_patch_required_filenames` verlangt jede benannte Datei.

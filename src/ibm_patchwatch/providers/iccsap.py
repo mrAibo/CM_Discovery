@@ -5,6 +5,7 @@ from typing import Any
 
 from ..http import fetch_text
 from .common import html_to_text, version_tuple
+from .fix_references import references
 
 SOURCE_URL = (
     "https://www.ibm.com/support/pages/security-bulletin-multiple-vulnerabilities-"
@@ -35,10 +36,9 @@ def check(installed: dict[str, Any]) -> dict[str, Any]:
     bulletin_fix_date = f"202608{int(date_match.group(1)):02d}" if date_match else None
     installed_fix_date = _latest_installed_jre_fix(installed)
 
-    if installed_fix_date and bulletin_fix_date:
-        status = "current" if installed_fix_date >= bulletin_fix_date else "update_available"
-    else:
-        status = "review_required"
+    measured_jre = str(installed.get("jre_version") or "")
+    # A bulletin publication date does not measure the installed Java version.
+    status = "update_available" if re.fullmatch(r"8\.0\.\d+\.\d+", measured_jre) and version_tuple(measured_jre) < version_tuple(target_jre) else "review_required"
 
     return {
         "product_id": "iccsap",
@@ -50,16 +50,17 @@ def check(installed: dict[str, Any]) -> dict[str, Any]:
             "latest_jre_fix_date": installed_fix_date,
         },
         "available": {
-            "version": installed.get("version") or "4.0.0.4",
+            "version": "4.0.0.4",
             "jre_version": target_jre,
             "jre_fix_date": bulletin_fix_date,
             "fix_name": f"4.0.0.4-ICCSAP-Base-JRE-{target_jre}",
         },
+        **references("iccsap"),
         "cumulative": None,
-        "scope": "4.0.0.4_embedded_jre_security_fix",
+        "scope": "4.0.0.4_base_jre_and_binary_ifixes",
         "source_url": SOURCE_URL,
         "notes": [
             "This check targets the currently published ICCSAP embedded-JRE security remediation, not every ICCSAP component fix.",
-            "Installed state is correlated from Installation Manager JRE_fix_YYYYMMDD identifiers; if that identifier is unavailable, manual review is required.",
+            "JRE dates do not establish installed version. Binary interim fixes must be checked independently; no cumulative replacement is assumed.",
         ],
     }

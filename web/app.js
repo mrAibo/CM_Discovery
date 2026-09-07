@@ -60,6 +60,26 @@ function freshness(entry, catalog, now) {
   return "";
 }
 
+// iFixes are independent records. Package prefixes never define applicability.
+function fixAssociations(entry, installedVersion, targetVersion) {
+  return (Array.isArray(entry && entry.interim_fixes) ? entry.interim_fixes : []).filter(object).map(fix => {
+    const range = fix.applies_to || {};
+    function inRange(version) {
+      const low = compareVersions(version, range.min), high = compareVersions(version, range.max);
+      return low === null || high === null ? null : low >= 0 && high <= 0;
+    }
+    return {fix, installed:inRange(installedVersion), target:inRange(targetVersion)};
+  });
+}
+
+function downloadFor(id, entry, installed) {
+  const base = ibmUrl(entry && entry.download_url);
+  if (!base || id !== "websphere" || !installed || !/^9\.0\.5\.\d+$/.test(installed.version || "")) return base;
+  const url = new URL(base);
+  url.searchParams.set("release", installed.version);
+  return url.href;
+}
+
 function compareProduct(id, installed, entry, catalog, now = Date.now()) {
   if (!installed) return result("empty", "Keine Inventardaten", "Öffnen Sie die Datei vom Server. Ein fehlender Eintrag beweist nicht, dass das Produkt nicht installiert ist.");
   if (!entry || !object(entry.available) || !own(PRODUCTS, id)) return result("review", "Kein Katalogeintrag", "Für diesen Eintrag wird eine eigene IBM-Quelle benötigt.");
@@ -78,7 +98,7 @@ function compareProduct(id, installed, entry, catalog, now = Date.now()) {
   if (base > 0) return result("different", "Neuer als Katalog", "Der erfasste Stand ist neuer als der Katalogstand. Ein Downgrade wird nicht vorgeschlagen.");
   if (base < 0) return result("update", "Neuerer Stand verfügbar", "Prüfen Sie vor der Installation die Plattform und die IBM-Voraussetzungen.");
   if (id === "content_manager") return result("review", "Fix Pack gleich · iFix prüfen", "Die Erfassung über cmlevel bestätigt keine einzelnen Interim Fixes.");
-  if (id === "websphere") return result("level", "Fix Pack stimmt überein", "Einzelne iFixes und Sicherheitskorrekturen wurden nicht geprüft.");
+  if (id === "websphere") return result("level", "Fix Pack stimmt überein", "Die Basis stimmt überein. Nicht kumulative iFixes unten einzeln prüfen; daraus folgt kein vollständig aktueller Patchstand.");
   if (id === "db2") {
     if (typeof installed.special_build === "string" && installed.special_build === available.special_build) return result("match", "Update stimmt überein", "Der Stand stimmt mit dem veröffentlichten Update überein. Individuelle APARs wurden nicht separat geprüft.");
     return result("review", "Special Build prüfen", "Special-Build-Nummern werden nicht numerisch geordnet. Prüfen Sie den Inhalt anhand der IBM-Angaben.");
@@ -86,7 +106,7 @@ function compareProduct(id, installed, entry, catalog, now = Date.now()) {
   if (id === "iccsap") {
     const jre = compareVersions(installed.jre_version, available.jre_version);
     if (jre === null) return result("review", "Mitgelieferte JRE prüfen", "Das Inventar enthält keine gemessene JRE-Version. Datumsangaben in JRE_fix ersetzen keine Versionsnummer.");
-    return jre < 0 ? result("update", "JRE-Update verfügbar", "Verwenden Sie das ICCSAP-Paket aus dem IBM-Bulletin.") : jre > 0 ? result("different", "JRE neuer als Katalog", "Der Inhalt des installierten Pakets muss geprüft werden.") : result("match", "JRE stimmt überein", "Verglichen wurde ausschließlich die mitgelieferte JRE.");
+    return jre < 0 ? result("update", "JRE-Update verfügbar", "Verwenden Sie das ICCSAP-Paket aus dem IBM-Bulletin.") : jre > 0 ? result("different", "JRE neuer als Katalog", "Der Inhalt des installierten Pakets muss geprüft werden.") : result("review", "JRE gleich · Binaries-iFixes prüfen", "IF21 und weitere Binaries-iFixes werden unabhängig von der JRE geprüft. Ein höherer IF ersetzt andere nicht automatisch.");
   }
   if (id === "content_navigator" || id === "daeja_viewone_virtual") {
     const ix = ifixLevel(installed), iy = integer(available.interim_fix);
@@ -257,6 +277,23 @@ function startApp() {
         details.append(el("p", "Hinweise geprüft am: " + notes.checked_at, "muted"));
         availableCell.append(details);
       }
+      for (const association of fixAssociations(e, p && p.version, target.version)) {
+        const f = association.fix;
+        const block = el("div", undefined, "product-notes");
+        block.append(el("strong", f.fix_id || "Unbekannter iFix"));
+        metadata(block, "Nicht kumulativ · " + (f.filename || ""));
+        const range = f.applies_to || {};
+        metadata(block, "Basisbereich: " + (range.min || "unbekannt") + " bis " + (range.max || "unbekannt"));
+        if (p) metadata(block, "Installierte Basis: " + (association.installed === null ? "Zuordnung ungeprüft" : association.installed ? "im Versionsbereich" : "außerhalb des Versionsbereichs"));
+        metadata(block, "Katalog-Zielbasis: " + (association.target === null ? "Zuordnung ungeprüft" : association.target ? "im Versionsbereich" : "außerhalb des Versionsbereichs"));
+        metadata(block, "iFix im Inventar: " + (p && (p.installed_fixes || []).some(value => value === f.fix_id || value === f.apar) ? "Kennung vorhanden; Paketstand prüfen" : "nicht eindeutig nachgewiesen"));
+        metadata(block, "iFix-Quelle geprüft: " + (f.checked_at || "unbekannt"));
+        if (!f.checked_at || now - Date.parse(f.checked_at + "T00:00:00Z") > FRESH_HOURS * 3600000) metadata(block, "iFix-Quelle erneut prüfen; ein Basisabruf aktualisiert diese Prüfung nicht.");
+        if (f.note) metadata(block, f.note);
+        const source = link("IBM-Paket / Voraussetzungen", f.source_url);
+        if (source) block.append(source);
+        availableCell.append(block);
+      }
       cell(tr, "Bei IBM bestätigt", availableCell);
       const statusCell = el("div", undefined, "cell-content");
       statusCell.append(el("span", status.label, "status " + status.code), el("p", status.reason, "reason"));
@@ -264,7 +301,8 @@ function startApp() {
       const actions = el("div", undefined, "cell-content links");
       const links = note ? note.links.slice() : [];
       if (e && e.source_url && !links.some(l => l.url === e.source_url)) links.push({label:"IBM-Quelle des Katalogs", url:e.source_url});
-      if (e && e.download_url && !links.some(l => l.url === e.download_url)) links.unshift({label:"IBM: Downloadseite", url:e.download_url, download:true});
+      const download = downloadFor(id, e, p);
+      if (download && !links.some(l => l.url === download)) links.unshift({label:"Fix Central · installierte Basis und Updates", url:download, download:true});
       for (const item of links) { const a = link(item.label, item.url, item.download); if (a) actions.append(a); }
       if (!actions.childNodes.length) actions.append(el("span", "Keine Quelle angegeben", "metadata"));
       cell(tr, "Quellen und Downloads", actions);
@@ -294,7 +332,7 @@ function startApp() {
   render();
 }
 
-if (typeof module !== "undefined" && module.exports) module.exports = {versionParts, compareVersions, ifixLevel, freshness, compareProduct, validateInventory, validateCatalog, ibmUrl, matchingNote, iccsapFixes, rowsFor};
+if (typeof module !== "undefined" && module.exports) module.exports = {versionParts, compareVersions, ifixLevel, freshness, compareProduct, validateInventory, validateCatalog, ibmUrl, matchingNote, iccsapFixes, rowsFor, fixAssociations, downloadFor};
 if (typeof document !== "undefined") {
   try { startApp(); } catch (error) {
     const target = document.getElementById("error");

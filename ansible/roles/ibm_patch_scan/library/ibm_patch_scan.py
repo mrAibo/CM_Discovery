@@ -26,6 +26,11 @@ options:
     description: Include subdirectories without following symbolic links.
     type: bool
     default: true
+  required_filenames:
+    description: Explicit filenames to require, preserving every independent iFix.
+    type: list
+    elements: str
+    default: []
 supports_check_mode: true
 '''
 EXAMPLES = r'''
@@ -83,6 +88,8 @@ def classify(name):
         return {'product': product, 'kind': kind, 'platform_hint': platform,
                 'filename_metadata': metadata, 'recognition': 'filename_only',
                 'applicability': 'not_verified',
+                'cumulative': False if kind in ('interim_fix', 'binary_interim_fix') else None,
+                'supersedence': 'not_assumed',
                 'note': 'Dateiname erkannt; IBM-Metadaten, Voraussetzungen und installierten Stand gesondert prüfen.'}
     return {'product': 'unknown', 'kind': 'unknown', 'recognition': 'unknown',
             'applicability': 'not_verified', 'note': 'Unbekanntes Archiv; keine automatische Auswahl.'}
@@ -136,16 +143,33 @@ def scan(directory, recursive=True):
             'unknown_count': sum(p['recognition'] == 'unknown' for p in packages)}
 
 
+def select_packages(result, required_filenames):
+    """Keep every explicitly requested fix; never select a numeric 'latest IF'."""
+    if len(required_filenames) != len(set(required_filenames)):
+        raise ValueError('Doppelte Einträge in required_filenames sind nicht erlaubt.')
+    selected = []
+    for filename in required_filenames:
+        if Path(filename).name != filename:
+            raise ValueError('required_filenames muss reine Dateinamen enthalten.')
+        matches = [p for p in result['packages'] if p['filename'] == filename]
+        if len(matches) != 1 or matches[0]['recognition'] != 'filename_only':
+            raise ValueError('Benötigtes Paket fehlt, ist unbekannt oder mehrdeutig: ' + filename)
+        selected.append(matches[0])
+    return selected
+
+
 def main():
     from ansible.module_utils.basic import AnsibleModule
     module = AnsibleModule(argument_spec={
         'directory': {'type': 'path', 'required': True},
         'recursive': {'type': 'bool', 'default': True},
+        'required_filenames': {'type': 'list', 'elements': 'str', 'default': []},
     }, supports_check_mode=True)
     if sys.version_info[:2] != (3, 12):
         module.fail_json(changed=False, msg="Python 3.12 auf dem Scan-Host erforderlich.")
     try:
         result = scan(module.params['directory'], module.params['recursive'])
+        result['selected_packages'] = select_packages(result, module.params['required_filenames'])
     except (OSError, ValueError) as exc:
         module.fail_json(changed=False, msg=str(exc))
     module.exit_json(changed=False, **result)

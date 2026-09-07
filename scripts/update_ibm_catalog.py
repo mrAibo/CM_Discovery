@@ -35,6 +35,9 @@ def _entry(result: dict, refreshed_at: str) -> dict:
     # Providers may expose an explicitly verified Fix Central/package URL.
     if result.get("download_url"):
         entry["download_url"] = result["download_url"]
+    for key in ("interim_fixes", "fix_pack_cumulative"):
+        if key in result:
+            entry[key] = result[key]
     return entry
 
 

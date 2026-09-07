@@ -5,6 +5,7 @@ from typing import Any
 
 from ..http import fetch_text
 from .common import html_to_text, version_tuple
+from .fix_references import references
 
 SOURCE_URL = "https://www.ibm.com/support/pages/fix-list-ibm-websphere-application-server-traditional-v9-0"
 
@@ -20,7 +21,7 @@ def check(installed: dict[str, Any]) -> dict[str, Any]:
 
     latest = versions[-1]
     current = str(installed.get("version") or "")
-    status = "current" if version_tuple(current) >= version_tuple(latest) else "update_available"
+    status = "review_required" if version_tuple(current) >= version_tuple(latest) else "update_available"
 
     return {
         "product_id": "websphere",
@@ -32,8 +33,9 @@ def check(installed: dict[str, Any]) -> dict[str, Any]:
             "installed_fixes": installed.get("installed_fixes", []),
         },
         "available": {"version": latest},
-        "cumulative": True,
-        "scope": "fix_pack_only",
+        **references("websphere"),
+        "cumulative": None,
+        "scope": "fix_pack_and_reviewed_independent_ifixes",
         "source_url": SOURCE_URL,
         "ifx_audit": "pending",
         "notes": [

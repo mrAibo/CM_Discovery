@@ -8,3 +8,7 @@ ibm_patch_scan_recursive: true
 ibm_patch_scan_become: false
 # Optionale strukturelle Archivprüfung über die separat installierte Collection.
 ibm_patch_verify_with_yacompress: false
+# Optionale vollständige Soll-Dateiliste. Fehlende/mehrdeutige Dateien brechen ab.
+# IF-Pakete sind nicht kumulativ: höhere Nummern ersetzen keine anderen Einträge.
+# Listenreihenfolge ist keine bestätigte Installationsreihenfolge.
+ibm_patch_required_filenames: []
