@@ -1,0 +1,17 @@
+---
+# Explizite Dateiliste für die Vorbereitung einer Zielbasis 9.0.5.28.
+# Kein Installationsauftrag: IBM-Metadaten, Voraussetzungen und Bestand prüfen.
+# Die IFs sind nicht kumulativ. Kein Eintrag wird durch einen höheren IF ersetzt.
+# Nach einem Basis-Update alle iFixes erneut prüfen. Kein automatisches Löschen.
+# Einträge unabhängig auswählen; Reihenfolge ist keine Installationsreihenfolge.
+ibm_patch_required_filenames:
+  - 9.0.5-WS-WAS-FP028.zip
+  - 9.0.5.20-WS-WAS-IFPH72166.zip
+  - 9.0.5.24-WS-WAS-IFDT496327.zip
+  - 9.0.5.25-WS-WAS-IFDT496500.zip
+  - 9.0.5.26-WS-WAS-IFPH71384.zip
+  - 9.0.5.26-WS-WAS-IFPH71670.zip
+  - 9.0.5.27-WS-WAS-IFPH71923.zip
+  - 9.0.5.28-WS-WAS-IFDT495928.zip
+  - 9.0.5.28-WS-WAS-IFDT496947.zip
+  - 9.0.5.28-WS-WAS-IFPH72192.zip

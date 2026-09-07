@@ -223,3 +223,29 @@ ansible-playbook -i private/hosts.yml playbooks/scan_patches.yml \
 Auf dem Scan-Host müssen passende native Werkzeuge vorhanden sein, z. B. `unzip`,
 `tar` und `gzip`. Ein fehlerhaftes Archiv bricht diese optionale Prüfung ab.
 Ein erfolgreicher Archivtest ersetzt keine IBM-Paketprüfung.
+
+## Nicht kumulative iFixes einzeln verlangen
+
+Mit `ibm_patch_required_filenames` lässt sich eine ausdrücklich ausgewählte Liste
+lokaler Dateien prüfen. Die Rolle liefert alle Einträge in `selected_packages`;
+fehlende, unbekannte und mehrdeutige Dateien führen zum Abbruch. Sie reduziert die
+Liste weder auf den höchsten IF noch auf einen APAR pro Produkt. Ohne Soll-Liste
+bleibt es beim vollständigen Scan, ohne Vorauswahl.
+
+```bash
+ansible-playbook -i private/hosts.yml playbooks/scan_patches.yml \
+  --limit HB_TEST -e ibm_patch_directory=/srv/ibm-updates \
+  -e @examples/required-was-fixes.yml
+```
+
+Die Beispiel-Dateiliste bezieht sich auf die Vorbereitung für WAS 9.0.5.28.
+Sie ist keine automatische Installationsfreigabe oder Reihenfolge. Fix Packs und
+iFixes bleiben getrennt. Nach einem Basis-Update ist jeder gewünschte APAR erneut
+gegen Zielbasis und IBM-Metadaten zu prüfen. Ein höherer iFix ersetzt andere nicht.
+Nur eine ausdrücklich dokumentierte IBM-Ablösung darf im Installationsplan berücksichtigt
+werden; der Scanner entfernt oder überspringt auch solche Pakete nicht selbst.
+Beispiel: IBM verlangt bei DT496947 die vorherige Entfernung von PH71590, falls installiert.
+
+Die Basis-/iFix-Zuordnung der Webseite verwendet separat datierte IBM-Referenzen.
+Ansible bleibt davon unabhängig und vertraut weder dem Katalog noch dem Dateipräfix
+als Nachweis der Installierbarkeit.

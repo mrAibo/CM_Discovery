@@ -60,7 +60,18 @@ def test_iccsap_embedded_jre_security_fix(monkeypatch):
             "JRE update (com.ibm.im.iccsap.offering.JRE_fix_20241212)"
         ],
     })
-    assert result["status"] == "update_available"
+    assert result["status"] == "review_required"
     assert result["installed"]["latest_jre_fix_date"] == "20241212"
     assert result["available"]["jre_version"] == "8.0.8.70"
     assert result["available"]["jre_fix_date"] == "20260812"
+
+
+def test_iccsap_keeps_base_jre_and_binary_if_separate(monkeypatch):
+    monkeypatch.setattr(iccsap, 'fetch_text', lambda url: '4.0.0.4-ICCSAP-Base-JRE-8.0.8.70')
+    result = iccsap.check({'version': '4.0.0.4', 'jre_version': '8.0.8.70'})
+    assert result['status'] == 'review_required'
+    assert result['available']['version'] == '4.0.0.4'
+    assert result['available']['jre_version'] == '8.0.8.70'
+    assert result['interim_fixes'][0]['fix_id'] == '4004-ICCSAP-FP4-IF21'
+    assert result['interim_fixes'][0]['cumulative'] is False
+    assert 'platform=Linux+64-bit,x86_64' in result['download_url']

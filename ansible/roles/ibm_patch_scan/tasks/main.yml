@@ -16,6 +16,8 @@
   ibm_patch_scan:
     directory: "{{ ibm_patch_directory }}"
     recursive: "{{ ibm_patch_scan_recursive }}"
+    # Jeden gewünschten iFix verlangen; keine Reduktion auf den höchsten IF.
+    required_filenames: "{{ ibm_patch_required_filenames }}"
   delegate_to: "{{ 'localhost' if ibm_patch_scan_location == 'controller' else inventory_hostname }}"
   become: "{{ false if ibm_patch_scan_location == 'controller' else ibm_patch_scan_become }}"
   vars:
@@ -26,6 +28,7 @@
 - name: Scan-Ergebnis ausgeben
   ansible.builtin.debug:
     msg:
+      selected_filenames: "{{ ibm_patch_scan_result.selected_packages | map(attribute='filename') | list }}"
       recognized: "{{ ibm_patch_scan_result.recognized_count }}"
       unknown: "{{ ibm_patch_scan_result.unknown_count }}"
       filenames: "{{ ibm_patch_scan_result.packages | map(attribute='filename') | list }}"

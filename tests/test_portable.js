@@ -77,3 +77,15 @@ test("dated links for old target disappear after a catalog version change", () =
   assert.ok(api.matchingNote("websphere", entry({version:"9.0.5.28"}), notes));
   assert.equal(api.matchingNote("websphere", entry({version:"9.0.5.29"}), notes), null);
 });
+
+test("WAS base associations use IBM ranges and retain independent APARs", () => {
+  const data = require("../data/ibm/catalog.json");
+  const rows = api.fixAssociations(data.products.websphere, "9.0.5.25", "9.0.5.28");
+  assert.deepEqual(rows.filter(r => r.installed).map(r => r.fix.apar).sort(), ["DT496327", "DT496500", "DT496947", "PH72166"]);
+  assert.equal(rows.filter(r => r.target).length, 9);
+  assert.equal(rows.find(r => r.fix.apar === "PH71384").installed, false);
+  const unknown = api.fixAssociations({interim_fixes:[{fix_id:"9.0.5.25-WS-WAS-IFPH99999"}]}, "9.0.5.25", "9.0.5.28");
+  assert.equal(unknown[0].installed, null);
+  assert.equal(new URL(api.downloadFor("websphere", data.products.websphere, {version:"9.0.5.26"})).searchParams.get("release"), "9.0.5.26");
+  assert.equal(api.compareProduct("iccsap", {version:"4.0.0.4",jre_version:"8.0.8.70"}, entry({version:"4.0.0.4",jre_version:"8.0.8.70"}), catalog, now).code, "review");
+});

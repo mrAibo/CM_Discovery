@@ -57,18 +57,38 @@ class PatchScanTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 scan_module.scan(str(root / 'loop'))
 
+    def test_explicit_selection_keeps_every_non_cumulative_fix(self):
+        names = [n for n in FILENAMES if '-WS-WAS-IF' in n]
+        with tempfile.TemporaryDirectory() as directory:
+            for name in names:
+                (Path(directory) / name).write_bytes(b'fixture')
+            result = scan_module.scan(directory)
+            selected = scan_module.select_packages(result, names)
+            self.assertEqual([p['filename'] for p in selected], names)
+            self.assertEqual(len(selected), 9)
+            self.assertTrue(all(p['cumulative'] is False for p in selected))
+            with self.assertRaises(ValueError):
+                scan_module.select_packages(result, names + ['missing.zip'])
+            with self.assertRaises(ValueError):
+                scan_module.select_packages(result, [names[0], names[0]])
+            (Path(directory) / 'other').mkdir()
+            (Path(directory) / 'other' / names[0]).write_bytes(b'other')
+            with self.assertRaises(ValueError):
+                scan_module.select_packages(scan_module.scan(directory), names)
+
     @unittest.skipUnless(shutil.which('ansible-playbook'), 'Ansible not installed')
     def test_real_controller_scan_and_inventory(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             (root / 'CM87FP5_lnx.zip').write_bytes(b'fixture, not an IBM archive')
-            args = {'ibm_patch_directory': directory, 'ibm_patch_report_directory': str(root / 'reports')}
+            args = {'ibm_patch_directory': directory, 'ibm_patch_report_directory': str(root / 'reports'), 'ibm_patch_required_filenames': ['CM87FP5_lnx.zip']}
             command = ['ansible-playbook', '-i', 'inventories/example/hosts.yml', 'playbooks/scan_patches.yml', '--limit', 'HB_TEST', '-e', json.dumps(args)]
             result = subprocess.run(command, cwd=ROOT, text=True, capture_output=True)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             report = json.loads((root / 'reports/HB_TEST-patches.json').read_text())
             self.assertEqual(report['recognized_count'], 1)
             self.assertFalse(report['changed'])
+            self.assertEqual(report['selected_packages'][0]['filename'], 'CM87FP5_lnx.zip')
             listing = subprocess.run(['ansible-inventory', '-i', 'inventories/example/hosts.yml', '--list'], cwd=ROOT, text=True, capture_output=True, check=True)
             inventory = json.loads(listing.stdout)
             self.assertEqual(set(inventory['_meta']['hostvars']), {'HB_TEST', 'HB_PROD', 'NDD_TEST', 'NDD_PROD'})

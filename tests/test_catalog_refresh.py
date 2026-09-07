@@ -20,3 +20,12 @@ def test_cm_refresh_cannot_overwrite_fp5_with_historical_fp1(monkeypatch, tmp_pa
     assert result['products']['content_manager']['available'] == old['available']
     assert 'regressed' in result['products']['content_manager']['refresh_error']['message']
     assert result['refresh_status'] == 'partial'
+
+
+def test_refresh_preserves_independent_ifixes_and_their_review_date():
+    from ibm_patchwatch.providers.fix_references import references
+    result = {'available': {'version': '9.0.5.28'}, **references('websphere')}
+    entry = refresh._entry(result, '2026-09-08T00:00:00Z')
+    assert entry['fix_pack_cumulative'] is True
+    assert all(f['cumulative'] is False for f in entry['interim_fixes'])
+    assert all(f['checked_at'] == '2026-09-07' for f in entry['interim_fixes'])

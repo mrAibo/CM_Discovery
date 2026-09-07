@@ -97,13 +97,30 @@
         "This check targets the currently published ICCSAP embedded-JRE security remediation, not every ICCSAP component fix.",
         "Installed state is correlated from Installation Manager JRE_fix_YYYYMMDD identifiers; if that identifier is unavailable, manual review is required."
       ],
-      "refreshed_at": "2026-09-07T09:43:16.103910+00:00"
+      "refreshed_at": "2026-09-07T09:43:16.103910+00:00",
+      "download_url": "https://www.ibm.com/support/fixcentral/swg/selectFixes?parent=Enterprise%20Content%20Management&product=ibm/Information+Management/IBM+Content+Collector+for+SAP+Applications&release=4.0.0.4&platform=Linux+64-bit,x86_64&function=all",
+      "interim_fixes": [
+        {
+          "fix_id": "4004-ICCSAP-FP4-IF21",
+          "filename": "4004-ICCSAP-FP4-IF21-Binaries-LUX.zip",
+          "kind": "binary_interim_fix",
+          "cumulative": false,
+          "applies_to": {
+            "min": "4.0.0.4",
+            "max": "4.0.0.4"
+          },
+          "source_url": "https://www.ibm.com/support/fixcentral/swg/doSelectFixes?options.selectedFixes=4004-ICCSAP-FP4-IF21&continue=1",
+          "checked_at": "2026-09-07",
+          "evidence": "Operator-confirmed Fix Central package; additional prerequisites unverified",
+          "supersedence": "not_assumed"
+        }
+      ]
     },
     "websphere": {
       "available": {
         "version": "9.0.5.28"
       },
-      "cumulative": true,
+      "cumulative": null,
       "scope": "fix_pack_only",
       "source_url": "https://www.ibm.com/support/pages/fix-list-ibm-websphere-application-server-traditional-v9-0",
       "ifx_audit": "pending",
@@ -111,7 +128,165 @@
         "WebSphere traditional fix packs are cumulative.",
         "CURRENT here means current fix-pack level only; interim fixes are audited separately."
       ],
-      "refreshed_at": "2026-09-07T09:43:16.103910+00:00"
+      "refreshed_at": "2026-09-07T09:43:16.103910+00:00",
+      "download_url": "https://www.ibm.com/support/fixcentral/swg/selectFixes?parent=ibm%7EWebSphere&product=ibm/WebSphere/WebSphere+Application+Server&release=9.0.5.25&platform=Linux+64-bit,x86_64&function=all",
+      "interim_fixes": [
+        {
+          "fix_id": "9.0.5.20-WS-WAS-IFPH72166",
+          "apar": "PH72166",
+          "filename": "9.0.5.20-WS-WAS-IFPH72166.zip",
+          "kind": "interim_fix",
+          "cumulative": false,
+          "applies_to": {
+            "min": "9.0.5.20",
+            "max": "9.0.5.28"
+          },
+          "source_url": "https://www.ibm.com/support/pages/node/7281092",
+          "checked_at": "2026-09-07",
+          "evidence": "IBM download table; version range only, not installation approval",
+          "supersedence": "not_assumed"
+        },
+        {
+          "fix_id": "9.0.5.24-WS-WAS-IFDT496327",
+          "apar": "DT496327",
+          "filename": "9.0.5.24-WS-WAS-IFDT496327.zip",
+          "kind": "interim_fix",
+          "cumulative": false,
+          "applies_to": {
+            "min": "9.0.5.24",
+            "max": "9.0.5.28"
+          },
+          "source_url": "https://www.ibm.com/support/pages/node/7283472",
+          "checked_at": "2026-09-07",
+          "evidence": "IBM download table; version range only, not installation approval",
+          "supersedence": "not_assumed"
+        },
+        {
+          "fix_id": "9.0.5.25-WS-WAS-IFDT496500",
+          "apar": "DT496500",
+          "filename": "9.0.5.25-WS-WAS-IFDT496500.zip",
+          "kind": "interim_fix",
+          "cumulative": false,
+          "applies_to": {
+            "min": "9.0.5.25",
+            "max": "9.0.5.28"
+          },
+          "source_url": "https://www.ibm.com/support/pages/dt496500-ibm-websphere-application-server-vulnerable-broken-access-controlprivilege-escalation-administrative-console-cve-2026-14446",
+          "checked_at": "2026-09-07",
+          "evidence": "IBM download table; version range only, not installation approval",
+          "supersedence": "not_assumed"
+        },
+        {
+          "fix_id": "9.0.5.26-WS-WAS-IFPH71384",
+          "apar": "PH71384",
+          "filename": "9.0.5.26-WS-WAS-IFPH71384.zip",
+          "kind": "interim_fix",
+          "cumulative": false,
+          "applies_to": {
+            "min": "9.0.5.26",
+            "max": "9.0.5.28"
+          },
+          "source_url": "https://www.ibm.com/support/pages/ph71384ibm-websphere-application-server-affected-cross-site-request-forgery-vulnerability-cve-2026-8408",
+          "checked_at": "2026-09-07",
+          "evidence": "IBM download table; version range only, not installation approval",
+          "supersedence": "not_assumed"
+        },
+        {
+          "fix_id": "9.0.5.26-WS-WAS-IFPH71670",
+          "apar": "PH71670",
+          "filename": "9.0.5.26-WS-WAS-IFPH71670.zip",
+          "kind": "interim_fix",
+          "cumulative": false,
+          "applies_to": {
+            "min": "9.0.5.26",
+            "max": "9.0.5.28"
+          },
+          "source_url": "https://www.ibm.com/support/pages/node/7278552",
+          "checked_at": "2026-09-07",
+          "evidence": "IBM download table; version range only, not installation approval",
+          "supersedence": "not_assumed"
+        },
+        {
+          "fix_id": "9.0.5.27-WS-WAS-IFPH71923",
+          "apar": "PH71923",
+          "filename": "9.0.5.27-WS-WAS-IFPH71923.zip",
+          "kind": "interim_fix",
+          "cumulative": false,
+          "applies_to": {
+            "min": "9.0.5.27",
+            "max": "9.0.5.28"
+          },
+          "source_url": "https://www.ibm.com/support/pages/ph71714ph71923ibm-websphere-application-server-affected-remote-code-execution-vulnerability-cve-2026-11536",
+          "checked_at": "2026-09-07",
+          "evidence": "IBM download table; version range only, not installation approval",
+          "supersedence": "not_assumed",
+          "note": "IBM dokumentiert die Ablösung von PH71714; andere APARs bleiben unabhängig."
+        },
+        {
+          "fix_id": "9.0.5.28-WS-WAS-IFDT495928",
+          "apar": "DT495928",
+          "filename": "9.0.5.28-WS-WAS-IFDT495928.zip",
+          "kind": "interim_fix",
+          "cumulative": false,
+          "applies_to": {
+            "min": "9.0.5.28",
+            "max": "9.0.5.28"
+          },
+          "source_url": "https://www.ibm.com/support/pages/dt495928-websphere-application-server-vulnerable-ssrf-cve-2026-14529",
+          "checked_at": "2026-09-07",
+          "evidence": "IBM download table; version range only, not installation approval",
+          "supersedence": "not_assumed"
+        },
+        {
+          "fix_id": "9.0.5.28-WS-WAS-IFDT496947",
+          "apar": "DT496947",
+          "filename": "9.0.5.28-WS-WAS-IFDT496947.zip",
+          "kind": "interim_fix",
+          "cumulative": false,
+          "applies_to": {
+            "min": "9.0.5.28",
+            "max": "9.0.5.28"
+          },
+          "source_url": "https://www.ibm.com/support/pages/ph71590ibm-websphere-application-server-vulnerable-identity-spoofing-cve-2026-8644",
+          "checked_at": "2026-09-07",
+          "evidence": "IBM download table; version range only, not installation approval",
+          "supersedence": "not_assumed",
+          "note": "IBM verlangt: vorhandenes PH71590 vor DT496947 entfernen. Keine automatische Entfernung."
+        },
+        {
+          "fix_id": "9.0.5.28-WS-WAS-IFPH72192",
+          "apar": "PH72192",
+          "filename": "9.0.5.28-WS-WAS-IFPH72192.zip",
+          "kind": "interim_fix",
+          "cumulative": false,
+          "applies_to": {
+            "min": "9.0.5.28",
+            "max": "9.0.5.28"
+          },
+          "source_url": "https://www.ibm.com/support/pages/node/7281143",
+          "checked_at": "2026-09-07",
+          "evidence": "IBM download table; version range only, not installation approval",
+          "supersedence": "not_assumed",
+          "note": "IBM nennt PH71706 als enthalten, soweit anwendbar; andere APARs bleiben unabhängig."
+        },
+        {
+          "fix_id": "9.0.5.25-WS-WAS-IFDT496947",
+          "apar": "DT496947",
+          "filename": "9.0.5.25-WS-WAS-IFDT496947.zip",
+          "kind": "interim_fix",
+          "cumulative": false,
+          "applies_to": {
+            "min": "9.0.5.25",
+            "max": "9.0.5.26"
+          },
+          "source_url": "https://www.ibm.com/support/pages/ph71590ibm-websphere-application-server-vulnerable-identity-spoofing-cve-2026-8644",
+          "checked_at": "2026-09-07",
+          "evidence": "IBM download table; version range only, not installation approval",
+          "supersedence": "not_assumed",
+          "note": "IBM verlangt: vorhandenes PH71590 vor DT496947 entfernen. Keine automatische Entfernung."
+        }
+      ],
+      "fix_pack_cumulative": true
     }
   }
 }
