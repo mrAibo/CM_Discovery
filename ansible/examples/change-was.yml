@@ -1,6 +1,6 @@
 # Vorlage: UNRESOLVED ersetzen. Keine IBM-Pakete oder Zugangsdaten in Git.
 ibm_was:
-  target_inventory_host: cmtest
+  target_inventory_host: HB_TEST
   expected_fqdn: UNRESOLVED
   expected_os_version: UNRESOLVED
   expected_architecture: UNRESOLVED

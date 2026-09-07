@@ -293,3 +293,15 @@ Die Anwendung installiert keine Patches. Die tatsächliche Erfassung auf den
 IBM-Servern sowie authentifizierte Downloads und Voraussetzungen müssen in der
 Zielumgebung geprüft werden. Ein vollständiger Sicherheits- oder
 Kompatibilitätsaudit ist nicht Teil dieses Versionsvergleichs.
+
+### Lokale Update-Dateien
+
+Die [Ansible-Anleitung](ansible/README.md#heruntergeladene-pakete-scannen) beschreibt den
+separaten Verzeichnisscan, optionale YaCompress-Archivtests und das Inventory für
+HB-Test/Produktion sowie NDD-Test/Produktion. Download, Scan und WAS-Staging sind getrennte
+Aktionen. Die eigentliche Produktinstallation ist noch nicht implementiert.
+
+CM ist auf den bestätigten FP5-Stand korrigiert. Historische Readme-Treffer und
+Rückschritte werden abgelehnt. Die CM-Quelle ist weiterhin versionsgebunden; zukünftige
+Fix Packs brauchen eine Quellenaktualisierung. Die Tabelle kennzeichnet vom Betreiber
+benannte Paketdateien ausdrücklich und enthält den ICN-3.1.0/Linux-Auswahllink.

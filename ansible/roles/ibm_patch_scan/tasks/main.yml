@@ -1,0 +1,62 @@
+---
+# Ein Scan benötigt weder Produktversionen noch Verbindung zu IBM.
+- name: Scan-Verzeichnis und Ausführungsort prüfen
+  ansible.builtin.assert:
+    that:
+      - ansible_playbook_python is defined
+      - (lookup('ansible.builtin.pipe', ansible_playbook_python | quote ~ ' --version')).startswith('Python 3.12.')
+      - ibm_patch_directory is defined
+      - ibm_patch_directory is string
+      - ibm_patch_directory.startswith('/')
+      - ibm_patch_scan_location in ['controller', 'target']
+    fail_msg: "ibm_patch_directory als absoluten Pfad und location als controller/target angeben."
+
+# Im Controller-Modus wird kein SSH-Aufruf auf dem IBM-Server ausgeführt.
+- name: Heruntergeladene IBM-Pakete erfassen
+  ibm_patch_scan:
+    directory: "{{ ibm_patch_directory }}"
+    recursive: "{{ ibm_patch_scan_recursive }}"
+  delegate_to: "{{ 'localhost' if ibm_patch_scan_location == 'controller' else inventory_hostname }}"
+  become: "{{ false if ibm_patch_scan_location == 'controller' else ibm_patch_scan_become }}"
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python if ibm_patch_scan_location == 'controller' else hostvars[inventory_hostname].ansible_python_interpreter }}"
+  register: ibm_patch_scan_result
+
+# Die vollständige Liste steht als ibm_patch_scan_result für weitere Rollen bereit.
+- name: Scan-Ergebnis ausgeben
+  ansible.builtin.debug:
+    msg:
+      recognized: "{{ ibm_patch_scan_result.recognized_count }}"
+      unknown: "{{ ibm_patch_scan_result.unknown_count }}"
+      filenames: "{{ ibm_patch_scan_result.packages | map(attribute='filename') | list }}"
+      duplicates: "{{ ibm_patch_scan_result.duplicates }}"
+      rejected: "{{ ibm_patch_scan_result.rejected }}"
+      applicability: "Dateinamen sind keine Installationsfreigabe. iFix-Abhängigkeiten separat prüfen."
+
+# Dynamisches Include: Die Collection bleibt für den normalen Scan optional.
+- name: Archive zusätzlich mit YaCompress prüfen
+  ansible.builtin.include_tasks: verify_archives.yml
+  when: ibm_patch_verify_with_yacompress | bool
+
+# Berichte sind optional und werden ausschließlich auf dem Controller gespeichert.
+- name: Privates Berichtsverzeichnis anlegen
+  ansible.builtin.file:
+    path: "{{ ibm_patch_report_directory }}"
+    state: directory
+    mode: '0700'
+  delegate_to: localhost
+  become: false
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+  when: ibm_patch_report_directory is defined
+
+- name: Vollständigen Scan-Bericht speichern
+  ansible.builtin.copy:
+    content: "{{ ibm_patch_scan_result | to_nice_json }}\n"
+    dest: "{{ ibm_patch_report_directory }}/{{ inventory_hostname }}-patches.json"
+    mode: '0600'
+  delegate_to: localhost
+  become: false
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+  when: ibm_patch_report_directory is defined

@@ -6,6 +6,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable
 
+from ibm_patchwatch.providers.common import version_tuple
+
 from ibm_patchwatch.providers import (
     content_manager,
     content_navigator,
@@ -82,7 +84,12 @@ def main() -> None:
 
     for product_id, probe in probes.items():
         try:
-            products[product_id] = _entry(probe(), attempted_at)
+            candidate = _entry(probe(), attempted_at)
+            old = previous_products.get(product_id, {})
+            # Never silently replace a known CM fix pack with historical page content.
+            if product_id == "content_manager" and version_tuple(candidate["available"].get("version", "")) < version_tuple(old.get("available", {}).get("version", "")):
+                raise ValueError("CM source regressed below the previously confirmed fix pack")
+            products[product_id] = candidate
             print(f"[ok] {product_id}")
         except Exception as exc:  # Provider/network failures must be isolated.
             message = f"{type(exc).__name__}: {exc}"

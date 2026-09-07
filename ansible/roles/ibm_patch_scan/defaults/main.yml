@@ -1,0 +1,10 @@
+---
+# Standard: Der Downloadordner liegt auf dem Ansible-Controller.
+# Mit "target" lässt sich stattdessen ein Ordner auf dem ausgewählten Server prüfen.
+ibm_patch_scan_location: controller
+# Unterordner durchsuchen; symbolische Links werden nicht verfolgt.
+ibm_patch_scan_recursive: true
+# Ein Zielscan benötigt normalerweise nur Leserechte des SSH-Benutzers.
+ibm_patch_scan_become: false
+# Optionale strukturelle Archivprüfung über die separat installierte Collection.
+ibm_patch_verify_with_yacompress: false

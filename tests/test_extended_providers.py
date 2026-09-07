@@ -2,16 +2,19 @@ from ibm_patchwatch.providers import content_manager, content_navigator, daeja, 
 
 
 def test_content_manager_fixpack(monkeypatch):
-    html = """
-    <p>IBM Content Manager Version 8.7 Fix Pack 4 Readme</p>
-    <p>Update name: Fix Pack 4</p>
-    """
+    html = "<h1>IBM Content Manager Version 8.7 Fix Pack 5 Readme</h1><nav>Update name: Fix Pack 1</nav><script>Update name: Fix Pack 4</script><p>Update name: Fix Pack 5</p><p>Version 8.7 Fix Pack 1 history</p>"
     monkeypatch.setattr(content_manager, "fetch_text", lambda url: html)
-    result = content_manager.check({"version": "8.7.00.400", "fix_level": "400"})
-    assert result["status"] == "current"
-    assert result["available"]["version"] == "8.7.00.400"
-    assert result["available"]["fix_pack"] == 4
-    assert result["ifx_audit"] == "pending"
+    result = content_manager.check({"version": "8.7.00.400"})
+    assert result["status"] == "update_available"
+    assert result["available"] == {"version": "8.7.00.500", "fix_pack": 5}
+
+
+def test_content_manager_rejects_wrong_or_ambiguous_page(monkeypatch):
+    import pytest
+    for html in ["Update name: Fix Pack 1", "Version 8.7 Fix Pack 5 Readme", "Update name: Fix Pack 5 Update name: Fix Pack 1"]:
+        monkeypatch.setattr(content_manager, "fetch_text", lambda url: html)
+        with pytest.raises(ValueError):
+            content_manager.check({"version": "8.7.00.500"})
 
 
 def test_content_navigator_ifix(monkeypatch):

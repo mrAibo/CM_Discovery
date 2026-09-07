@@ -46,6 +46,7 @@ def check(installed: dict[str, Any]) -> dict[str, Any]:
         "cumulative": None,
         "scope": "3.1.0_interim_fix_stream",
         "source_url": SOURCE_URL,
+        "download_url": 'https://www.ibm.com/support/fixcentral/swg/selectFixes?parent=Enterprise%20Content%20Management&product=ibm/Other+software/Content+Navigator&release=3.1.0&platform=Linux&function=all',
         "notes": [
             "The target is restricted to the installed 3.1.0 maintenance stream; no 3.2 major upgrade is inferred.",
             "Supersedence/cumulative semantics remain conservative until explicitly proven from IBM metadata.",

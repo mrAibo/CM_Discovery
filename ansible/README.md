@@ -39,7 +39,7 @@ python3.12 -m venv .venv
 . .venv/bin/activate
 python -m pip install -r requirements-controller.txt
 mkdir -p private
-cp inventories/example/hosts.yml private/hosts.yml
+cp -R inventories/example/. private/
 cp examples/change-was.yml private/change-was.yml
 ```
 
@@ -67,7 +67,7 @@ Im Verzeichnis `ansible/`, mit aktivierter Umgebung:
 
 ```bash
 ansible-playbook -i private/hosts.yml playbooks/preflight_was.yml \
-  --limit cmtest -e @private/change-was.yml
+  --limit HB_TEST -e @private/change-was.yml
 ```
 
 Die Rolle prüft:
@@ -122,7 +122,7 @@ Die Unterstützung muss auf dem konkreten SLES-Host geprüft werden.
 
 ```bash
 ansible-playbook -i private/hosts.yml playbooks/stage_was.yml \
-  --limit cmtest -e @private/change-was.yml
+  --limit HB_TEST -e @private/change-was.yml
 ```
 
 Ablauf:
@@ -158,9 +158,10 @@ Die Abnahme des konkreten IBM-ZIP auf SLES steht weiterhin aus.
 
 ## Nächster Ausbauschritt
 
-Für ein separates `install_was.yml` fehlen noch die Readme des tatsächlichen
-Pakets, Voraussetzungen einschließlich vorhandener iFixes, Profile/Dienstplan,
-Healthchecks und eine geprüfte Wiederherstellung. Erst danach die passende
+Die öffentlichen IBM-Readmes werden selbst recherchiert (siehe
+[Quellen und Installationsplan](docs/installation-plan.md)). Für ein separates
+`install_was.yml` sind noch die Voraussetzungen einschließlich vorhandener iFixes, Profile/Dienstplan,
+Healthchecks und eine geprüfte Wiederherstellung am Ziel abzugleichen. Erst danach die passende
 Installationsprozedur implementieren. Kein `perform_installation=true`-Schalter
 und kein Installationsaufruf aus Patchwatch. BASE und ND lassen sich prüfen;
 für ND/Cluster ist später eine eigene geprüfte Prozedur erforderlich.
@@ -181,3 +182,44 @@ CI prüft Entscheidungen, Ansible-Modultransport und Staging mit synthetischen
 IBM-Dateien, abgelehnte Platzhalter/Zielhosts und beide Playbook-Syntaxen.
 Ein gesperrter Netzwerk-Namespace muss auch im Test zum Abbruch der Abfrage
 führen. Eine reale SSH-/IBM-Abnahme steht aus; synthetische Tests ersetzen sie nicht.
+
+## Heruntergeladene Pakete scannen
+
+Die eigenständige Rolle `roles/ibm_patch_scan/` erkennt die 17 benannten Dateien aus
+CM FP5, ICN IF12, ICCSAP JRE/Binaries, WAS FP/iFix, IM, Java und Db2. Sie berechnet
+SHA-256 und liefert `ibm_patch_scan_result`. Unbekannte Archive, doppelte Dateinamen,
+leere Dateien und abgelehnte Links bleiben sichtbar. Es wird nichts entpackt oder
+installiert. Dateinamen sind Hinweise; WAS-iFix-Präfixe sind keine Installationsreihenfolge.
+
+Die Inventory-Vorlage enthält genau **HB_TEST, HB_PROD, NDD_TEST und NDD_PROD**,
+mit Gruppen `hb`, `ndd`, `test`, `production`. Beispieladressen und Benutzer ersetzen.
+`group_vars/ibm_servers.yml` beim Kopieren mitnehmen. Pro Host lassen sich Verzeichnis
+und Scan-Ort überschreiben. Standard: Controller; dafür ist keine SSH-Verbindung nötig.
+Mit `ibm_patch_scan_location: target` wird das Verzeichnis auf dem Ziel über SSH gelesen;
+dort sind Python 3.12 und entsprechende Leserechte erforderlich.
+
+```bash
+ansible-playbook -i private/hosts.yml playbooks/scan_patches.yml \
+  --limit HB_TEST -e ibm_patch_directory=/srv/ibm-updates \
+  -e ibm_patch_report_directory="$PWD/private/reports"
+```
+
+`ibm_patch_scan_recursive: false` beschränkt den Scan auf dieses Verzeichnis.
+Bei gleichem Controller-Verzeichnis genügt ein Host für den Scan. Der Bericht enthält
+Dateipfade und Prüfsummen; gewünschtes WAS-Fix-Pack anschließend ausdrücklich als
+`artifact_path` und `artifact_sha256` in `private/change-was.yml` übernehmen.
+Unbekannte oder abgelehnte Dateien werden niemals automatisch zur Installation gewählt.
+Eine berechnete Prüfsumme belegt keine IBM-Herkunft.
+
+Optional YaCompress bei der Controller-Einrichtung installieren und beim Scan aktivieren:
+
+```bash
+ansible-galaxy collection install -r requirements-yacompress.yml
+ansible-playbook -i private/hosts.yml playbooks/scan_patches.yml \
+  --limit HB_TEST -e ibm_patch_directory=/srv/ibm-updates \
+  -e ibm_patch_verify_with_yacompress=true
+```
+
+Auf dem Scan-Host müssen passende native Werkzeuge vorhanden sein, z. B. `unzip`,
+`tar` und `gzip`. Ein fehlerhaftes Archiv bricht diese optionale Prüfung ab.
+Ein erfolgreicher Archivtest ersetzt keine IBM-Paketprüfung.

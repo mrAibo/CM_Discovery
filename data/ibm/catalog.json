@@ -7,18 +7,18 @@
   "products": {
     "content_manager": {
       "available": {
-        "version": "8.7.00.400",
-        "fix_pack": 4
+        "version": "8.7.00.500",
+        "fix_pack": 5
       },
       "cumulative": true,
       "scope": "8.7_fix_pack_level",
-      "source_url": "https://www.ibm.com/docs/en/content-manager/8.7.0?topic=fp-content-manager-version-87-fix-pack-4-readme",
+      "source_url": "https://www.ibm.com/docs/en/content-manager/8.7.0?topic=fp-content-manager-version-87-fix-pack-5-readme",
       "ifx_audit": "pending",
       "notes": [
-        "Fix-pack comparison only; interim/security fixes are audited separately.",
-        "The IBM Fix Pack 4 readme includes the cumulative fix list through Fix Pack 4."
+        "FP5 baseline corrected from operator package evidence and IBM FP5 readme; future fix packs require source maintenance."
       ],
-      "refreshed_at": "2026-09-07T08:25:28.209386+00:00"
+      "refreshed_at": "2026-09-07T09:39:48.510683+00:00",
+      "evidence": "Manually checked IBM FP5 readme search index and operator filename CM87FP5_lnx.zip, 2026-09-07; full-text fetch not confirmed."
     },
     "content_navigator": {
       "available": {
@@ -34,7 +34,8 @@
         "The target is restricted to the installed 3.1.0 maintenance stream; no 3.2 major upgrade is inferred.",
         "Supersedence/cumulative semantics remain conservative until explicitly proven from IBM metadata."
       ],
-      "refreshed_at": "2026-09-07T08:25:28.209386+00:00"
+      "refreshed_at": "2026-09-07T08:25:28.209386+00:00",
+      "download_url": "https://www.ibm.com/support/fixcentral/swg/selectFixes?parent=Enterprise%20Content%20Management&product=ibm/Other+software/Content+Navigator&release=3.1.0&platform=Linux&function=all"
     },
     "daeja_viewone_virtual": {
       "available": {
