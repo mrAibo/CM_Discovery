@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "generated_at": "2026-09-08T09:07:36.843918+00:00",
+  "generated_at": "2026-09-08T09:10:44.305011+00:00",
   "generator": "scripts/update_ibm_catalog.py",
   "refresh_status": "ok",
   "refresh_errors": {},
@@ -18,7 +18,7 @@
         "Fix-pack comparison only; interim/security fixes are audited separately.",
         "Known FP5 baseline; this release-specific readme does not discover future fix packs."
       ],
-      "refreshed_at": "2026-09-08T08:54:22.334920+00:00"
+      "refreshed_at": "2026-09-08T09:10:44.305011+00:00"
     },
     "content_navigator": {
       "available": {
@@ -34,7 +34,7 @@
         "The target is restricted to the installed 3.1.0 maintenance stream; no 3.2 major upgrade is inferred.",
         "Supersedence/cumulative semantics remain conservative until explicitly proven from IBM metadata."
       ],
-      "refreshed_at": "2026-09-08T08:54:22.334920+00:00",
+      "refreshed_at": "2026-09-08T09:10:44.305011+00:00",
       "download_url": "https://www.ibm.com/support/fixcentral/swg/selectFixes?parent=Enterprise%20Content%20Management&product=ibm/Other+software/Content+Navigator&release=3.1.0&platform=Linux&function=all"
     },
     "daeja_viewone_virtual": {
@@ -50,7 +50,7 @@
         "The iFix 6 readme explicitly carries forward fixes/features from previous 5.0.15 iFixes.",
         "IBM Daeja 26.0.0 is a newer release, but Patchwatch does not infer a major-version upgrade from a maintenance check."
       ],
-      "refreshed_at": "2026-09-08T08:54:22.334920+00:00"
+      "refreshed_at": "2026-09-08T09:10:44.305011+00:00"
     },
     "db2": {
       "available": {
@@ -67,7 +67,7 @@
         "IBM states that Db2 11.5.9 published updates are cumulative.",
         "Update numbers are not treated as chronological version numbers; IBM page order/most-recent marker is authoritative."
       ],
-      "refreshed_at": "2026-09-08T08:54:22.334920+00:00"
+      "refreshed_at": "2026-09-08T09:10:44.305011+00:00"
     },
     "ibm_java": {
       "available": {
@@ -80,7 +80,7 @@
       "source_url": "https://www.ibm.com/support/pages/ibm-sdk-java-technology-edition-refreshes",
       "ifx_audit": null,
       "notes": [],
-      "refreshed_at": "2026-09-08T08:54:22.334920+00:00"
+      "refreshed_at": "2026-09-08T09:10:44.305011+00:00"
     },
     "iccsap": {
       "available": {
@@ -97,7 +97,7 @@
         "This check targets the currently published ICCSAP embedded-JRE security remediation, not every ICCSAP component fix.",
         "JRE dates do not establish installed version. Binary interim fixes must be checked independently; no cumulative replacement is assumed."
       ],
-      "refreshed_at": "2026-09-08T08:54:22.334920+00:00",
+      "refreshed_at": "2026-09-08T09:10:44.305011+00:00",
       "download_url": "https://www.ibm.com/support/fixcentral/swg/selectFixes?parent=Enterprise%20Content%20Management&product=ibm/Information+Management/IBM+Content+Collector+for+SAP+Applications&release=4.0.0.4&platform=Linux+64-bit,x86_64&function=all",
       "interim_fixes": [
         {
@@ -128,7 +128,7 @@
         "WebSphere traditional fix packs are cumulative.",
         "CURRENT here means current fix-pack level only; interim fixes are audited separately."
       ],
-      "refreshed_at": "2026-09-08T09:06:30.256536+00:00",
+      "refreshed_at": "2026-09-08T09:10:44.305011+00:00",
       "download_url": "https://www.ibm.com/support/fixcentral/swg/selectFixes?parent=ibm%7EWebSphere&product=ibm/WebSphere/WebSphere+Application+Server&release=9.0.5.25&platform=Linux+64-bit,x86_64&function=all",
       "interim_fixes": [
         {
@@ -288,14 +288,14 @@
       ],
       "fix_pack_cumulative": true,
       "fix_pack_url": "https://www.ibm.com/support/fixcentral/swg/doSelectFixes?options.selectedFixes=9.0.5-WS-WAS-FP029&continue=1",
-      "index_source_url": "https://www.ibm.com/support/pages/fix-list-ibm-websphere-application-server-traditional-v9-0",
       "availability_evidence": {
         "version": "9.0.5.29",
         "fix_id": "9.0.5-WS-WAS-FP029",
         "checked_at": "2026-09-08",
         "kind": "operator_confirmed",
         "source_url": "https://www.ibm.com/support/fixcentral/swg/doSelectFixes?options.selectedFixes=9.0.5-WS-WAS-FP029&continue=1"
-      }
+      },
+      "index_source_url": "https://www.ibm.com/support/pages/fix-list-ibm-websphere-application-server-traditional-v9-0"
     }
   }
 }
