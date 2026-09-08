@@ -75,6 +75,11 @@ function fixAssociations(entry, installedVersion, targetVersion) {
   });
 }
 
+// Hide packages outside the target range; retain unknown ranges for review.
+function visibleFixAssociations(entry, installedVersion, targetVersion) {
+  return fixAssociations(entry, installedVersion, targetVersion).filter(a => a.target !== false);
+}
+
 function downloadFor(id, entry, installed) {
   const base = ibmUrl(entry && entry.download_url);
   if (!base || id !== "websphere" || !installed || !/^9\.0\.5\.\d+$/.test(installed.version || "")) return base;
@@ -284,12 +289,11 @@ function startApp() {
         details.append(el("p", "Hinweise geprüft am: " + (note.checked_at || notes.checked_at), "muted"));
         availableCell.append(details);
       }
-      for (const association of fixAssociations(e, p && p.version, target.version)) {
+      for (const association of visibleFixAssociations(e, p && p.version, target.version)) {
         const f = association.fix;
         const block = el("div", undefined, "product-notes");
         block.append(el("strong", f.fix_id || "Unbekannter iFix"));
         metadata(block, "Nicht kumulativ · " + (f.filename || ""));
-        if (association.target === false) metadata(block, "Kein Paket für die Zielbasis " + target.version + "; enthaltene APARs separat prüfen.");
         const range = f.applies_to || {};
         metadata(block, "Basisbereich: " + (range.min || "unbekannt") + " bis " + (range.max || "unbekannt"));
         if (p) metadata(block, "Installierte Basis: " + (association.installed === null ? "Zuordnung ungeprüft" : association.installed ? "im Versionsbereich" : "außerhalb des Versionsbereichs"));
@@ -341,7 +345,7 @@ function startApp() {
   render();
 }
 
-if (typeof module !== "undefined" && module.exports) module.exports = {versionParts, compareVersions, ifixLevel, freshness, compareProduct, validateInventory, validateCatalog, ibmUrl, matchingNote, iccsapFixes, rowsFor, fixAssociations, downloadFor};
+if (typeof module !== "undefined" && module.exports) module.exports = {versionParts, compareVersions, ifixLevel, freshness, compareProduct, validateInventory, validateCatalog, ibmUrl, matchingNote, iccsapFixes, rowsFor, fixAssociations, visibleFixAssociations, downloadFor};
 if (typeof document !== "undefined") {
   try { startApp(); } catch (error) {
     const target = document.getElementById("error");
