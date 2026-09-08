@@ -1,0 +1,103 @@
+---
+# Vorlage: Nur benötigte Produkte behalten. UNRESOLVED vor Verwendung ersetzen.
+# Pfade, Dienstnamen, Response-Dateien und Prüfungen sind umgebungsspezifisch.
+ibm_install_target: HB_TEST
+ibm_install_expected_fqdn: UNRESOLVED
+ibm_patch_directory: /srv/ibm-updates
+ibm_install_jobs:
+  - product: installation_manager
+    user: root
+    installation_directory: /opt/IBM/InstallationManager
+    # Ohne files-Liste werden die IM-Archive aus dem Downloadverzeichnis gewählt.
+    # Genau ein passendes Agent-Archiv bereithalten; installc wird darin gesucht.
+    stop_services: []
+    start_services: []
+    before: []
+    after: []
+    verify:
+      - argv: [/opt/IBM/InstallationManager/eclipse/tools/imcl, version]
+        match: 'UNRESOLVED_EXAKTER_ZIEL_BUILD'
+    healthchecks: []
+
+  - product: db2
+    user: root
+    installation_directory: /opt/ibm/db2/V11.5
+    instances: [db2inst1]
+    # Alle Nutzer dieser Db2-Kopie vorher stilllegen, auch auf anderen Hosts.
+    stop_services: []
+    start_services: []
+    before:
+      - argv: [/UNRESOLVED/backup-and-quiesce-ecm]
+      # Kein db2stop force und kein ignore_errors. Instanzprofil als Login-Shell.
+      - user: db2inst1
+        argv: [/bin/bash, -lc, '. "$HOME/sqllib/db2profile"; db2stop']
+    after:
+      # installFixPack und db2iupdt laufen davor als root für jede Instanz.
+      - user: db2inst1
+        argv: [/bin/bash, -lc, '. "$HOME/sqllib/db2profile"; db2start']
+    verify:
+      - user: db2inst1
+        argv: [/bin/bash, -lc, '. "$HOME/sqllib/db2profile"; db2level']
+        # Special Build prüfen, nicht nur 11.5.9: zwei Builds können diese Version tragen.
+        match: 'UNRESOLVED_EXAKTER_SPECIAL_BUILD'
+    healthchecks:
+      - argv: [/UNRESOLVED/check-db-and-ecm]
+
+  - product: content_manager
+    user: root
+    # Lokale Response-Datei wird geschützt auf das Ziel übertragen.
+    response_src: /UNRESOLVED/cm8-install.rsp
+    stop_services: [UNRESOLVED]
+    start_services: [UNRESOLVED]
+    before:
+      - argv: [/UNRESOLVED/backup-cm]
+    # CM-Konfiguration/DB-Anpassungen gemäß FP5-Readme für die installierten Komponenten.
+    after:
+      - argv: [/UNRESOLVED/configure-cm-fp5]
+    verify:
+      - argv: [/UNRESOLVED/read-installed-cm-version]
+        match: 'UNRESOLVED_EXAKTER_FP5_STAND'
+    healthchecks:
+      - argv: [/UNRESOLVED/check-cm]
+
+  - product: content_navigator
+    user: UNRESOLVED
+    response_src: /UNRESOLVED/icn-response.txt
+    # ICN-Installer benötigt Java 11 oder 17; nicht das WAS Java-8-SDK verwenden.
+    environment:
+      JAVA_HOME: /UNRESOLVED/java17
+    stop_services: [UNRESOLVED]
+    start_services: [UNRESOLVED]
+    before:
+      - argv: [/UNRESOLVED/backup-icn-including-master-key]
+    after:
+      # Vorhandenes ICN-Konfigurationsprofil konfigurieren, bauen und bereitstellen.
+      - argv: [/UNRESOLVED/configure-build-deploy-icn]
+    verify:
+      - argv: [/UNRESOLVED/read-installed-and-deployed-icn-version]
+        match: 'UNRESOLVED_EXAKTER_IF012_STAND'
+    healthchecks:
+      - argv: [/UNRESOLVED/check-icn]
+
+  - product: iccsap
+    user: UNRESOLVED
+    engine: commands
+    # Beide Downloads bleiben getrennt. Keine Repository- oder Installerform erfinden.
+    files:
+      - 4.0.0.4-ICCSAP-Base-JRE-8.0.8.70-LUX.zip
+      - 4004-ICCSAP-FP4-IF21-Binaries-LUX.zip
+    stop_services: [UNRESOLVED]
+    start_services: [UNRESOLVED]
+    before:
+      - argv: [/UNRESOLVED/backup-iccsap]
+    # Diese zwei argv-Listen durch die konkreten Installationsbefehle der Paket-Readmes ersetzen.
+    # Medienplatzhalter werden durch den jeweiligen entpackten Pfad ersetzt.
+    commands:
+      - argv: [/UNRESOLVED/install-iccsap-jre, '{media:4.0.0.4-ICCSAP-Base-JRE-8.0.8.70-LUX.zip}']
+      - argv: [/UNRESOLVED/install-iccsap-binaries, '{media:4004-ICCSAP-FP4-IF21-Binaries-LUX.zip}']
+    after: []
+    verify:
+      - argv: [/UNRESOLVED/read-iccsap-jre-and-if-version]
+        match: 'UNRESOLVED_EXAKTER_JRE_UND_IF21_STAND'
+    healthchecks:
+      - argv: [/UNRESOLVED/check-sap-archive-roundtrip]

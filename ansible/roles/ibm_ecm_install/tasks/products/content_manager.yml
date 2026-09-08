@@ -1,0 +1,14 @@
+---
+# Tatsächlicher Installationsaufruf; vorhandenen vollständigen Zielstand überspringen.
+# Fehler stoppen den Ablauf. Dienste werden dann nicht pauschal neu gestartet.
+- name: Content Manager FP5 installieren und prüfen
+  ibm_install_product:
+    job: "{{ ibm_install_prepared.content_manager.job }}"
+    media: "{{ ibm_install_prepared.content_manager.media }}"
+    log_directory: "{{ ibm_install_run_directory }}/content_manager/install-logs"
+  become: true
+  register: product_result
+
+- name: Ergebnis für Content Manager FP5 festhalten
+  ansible.builtin.set_fact:
+    ibm_install_results: "{{ ibm_install_results | combine({'content_manager': product_result}) }}"

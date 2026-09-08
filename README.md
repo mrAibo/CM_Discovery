@@ -142,14 +142,15 @@ neueste ist. Die Tabelle zeigt deshalb bestätigte Stände mit Quellen und Datum
 Die Suche nach neuen Releases muss für diese Provider noch um Produktindizes
 oder andere belegte IBM-Metadatenquellen erweitert werden.
 
-## Unabhängige Ansible-Vorprüfung
+## Unabhängige Ansible-Installation
 
 Der neue Bereich [ansible/](ansible/README.md) enthält eine eigenständige
 WebSphere-Rolle für Python **3.12** auf Controller und Zielhost. Er prüft ein
 lokal bereitgestelltes Paket und die genaue Installation anhand von IM-Paket-ID,
 Installationspfad und `versionInfo.sh`. Download und Ausführung bleiben getrennt.
-Implementiert sind Basis-Vorprüfung und separates Repository-Staging mit
-SHA-256- und Ziel-Offering-Prüfung; eine Installation wird noch nicht ausgeführt. Der bestehende Offline-Collector bleibt mit Python 3.6+ nutzbar.
+Die Rolle `ibm_ecm_install` installiert ausgewählte lokale Pakete mit produktbezogenen
+Tasks, Dienststeuerung und Zielprüfungen. Scan, WAS-Vorprüfung und Staging bleiben
+auch einzeln verfügbar. Der bestehende Offline-Collector bleibt mit Python 3.6+ nutzbar.
 
 ## Optional: vorhandenes zentrales LAN-Prüfprogramm
 
@@ -298,8 +299,9 @@ Kompatibilitätsaudit ist nicht Teil dieses Versionsvergleichs.
 
 Die [Ansible-Anleitung](ansible/README.md#heruntergeladene-pakete-scannen) beschreibt den
 separaten Verzeichnisscan, optionale YaCompress-Archivtests und das Inventory für
-HB-Test/Produktion sowie NDD-Test/Produktion. Download, Scan und WAS-Staging sind getrennte
-Aktionen. Die eigentliche Produktinstallation ist noch nicht implementiert.
+HB-Test/Produktion sowie NDD-Test/Produktion. Nach dem manuellen Download startet
+`playbooks/install_patches.yml` die Installation auf genau einem ausgewählten Server.
+Siehe [Installationsanleitung](ansible/INSTALLATION.md) für Produktparameter und Grenzen.
 
 CM ist auf den bestätigten FP5-Stand korrigiert. Historische Readme-Treffer und
 Rückschritte werden abgelehnt. Die CM-Quelle ist weiterhin versionsgebunden; zukünftige

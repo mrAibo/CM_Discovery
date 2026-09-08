@@ -1,0 +1,11 @@
+---
+# Tatsächliche Installation: bewusst getrennt von scan_patches.yml starten.
+# Beispiel: --limit HB_TEST -e @private/install.yml
+- name: Heruntergeladene IBM-Updates installieren
+  hosts: ibm_servers
+  gather_facts: false
+  any_errors_fatal: true
+  tasks:
+    - name: Ausgewählte Produkte auf genau einem Server aktualisieren
+      ansible.builtin.include_role:
+        name: ibm_ecm_install

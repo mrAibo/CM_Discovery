@@ -1,7 +1,9 @@
 # IBM-Updates mit Ansible
 
 Eigenständige Automatisierung für bereits lokal vorhandene IBM-Pakete.
-**Aktueller Stand: Paketvorbereitung für sieben Produkte sowie WAS-Vorprüfung und Staging; noch keine Installation.**
+**Installation verfügbar:** `playbooks/install_patches.yml` führt die konfigurierten
+Produktinstaller aus. [Installation einrichten und starten](INSTALLATION.md).
+Die folgenden Scan- und WAS-Prüfplaybooks bleiben eigenständig und installieren nichts.
 Die Rolle lädt nichts herunter und benötigt weder Patchwatch noch dessen Katalog.
 
 ## Voraussetzungen
@@ -22,6 +24,9 @@ Die konkrete Python-3.12-Bereitstellung hängt von SLES-Version und Service Pack
 
 ## Struktur
 
+- `roles/ibm_ecm_install/`: Installation mit eigenen Tasks für sieben Produkte.
+- `playbooks/install_patches.yml`: Scan, Übertragung und Installation bereits heruntergeladener Pakete.
+- `examples/install-was.yml`, `examples/install-native.yml`: kommentierte Installationsvorlagen.
 - `roles/ibm_patch_scan/`: einmaliger Verzeichnisscan, eigene Produkt-Tasks und JSON-Paketübersicht.
 - `playbooks/scan_patches.yml`: eigenständiger Einstieg für die Paketvorbereitung.
 - `roles/ibm_was_update/`: Rolle und eigenständiges lesendes Prüfmodul.

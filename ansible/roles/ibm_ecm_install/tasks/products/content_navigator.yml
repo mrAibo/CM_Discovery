@@ -1,0 +1,14 @@
+---
+# Tatsächlicher Installationsaufruf; vorhandenen vollständigen Zielstand überspringen.
+# Fehler stoppen den Ablauf. Dienste werden dann nicht pauschal neu gestartet.
+- name: Content Navigator inklusive Nacharbeiten installieren und prüfen
+  ibm_install_product:
+    job: "{{ ibm_install_prepared.content_navigator.job }}"
+    media: "{{ ibm_install_prepared.content_navigator.media }}"
+    log_directory: "{{ ibm_install_run_directory }}/content_navigator/install-logs"
+  become: true
+  register: product_result
+
+- name: Ergebnis für Content Navigator inklusive Nacharbeiten festhalten
+  ansible.builtin.set_fact:
+    ibm_install_results: "{{ ibm_install_results | combine({'content_navigator': product_result}) }}"

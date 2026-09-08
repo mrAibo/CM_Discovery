@@ -1,0 +1,14 @@
+---
+# Tatsächlicher Installationsaufruf; vorhandenen vollständigen Zielstand überspringen.
+# Fehler stoppen den Ablauf. Dienste werden dann nicht pauschal neu gestartet.
+- name: Content Collector for SAP installieren und prüfen
+  ibm_install_product:
+    job: "{{ ibm_install_prepared.iccsap.job }}"
+    media: "{{ ibm_install_prepared.iccsap.media }}"
+    log_directory: "{{ ibm_install_run_directory }}/iccsap/install-logs"
+  become: true
+  register: product_result
+
+- name: Ergebnis für Content Collector for SAP festhalten
+  ansible.builtin.set_fact:
+    ibm_install_results: "{{ ibm_install_results | combine({'iccsap': product_result}) }}"

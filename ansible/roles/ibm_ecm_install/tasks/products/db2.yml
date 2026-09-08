@@ -1,0 +1,14 @@
+---
+# Tatsächlicher Installationsaufruf; vorhandenen vollständigen Zielstand überspringen.
+# Fehler stoppen den Ablauf. Dienste werden dann nicht pauschal neu gestartet.
+- name: Db2 inklusive Instanzpflege installieren und prüfen
+  ibm_install_product:
+    job: "{{ ibm_install_prepared.db2.job }}"
+    media: "{{ ibm_install_prepared.db2.media }}"
+    log_directory: "{{ ibm_install_run_directory }}/db2/install-logs"
+  become: true
+  register: product_result
+
+- name: Ergebnis für Db2 inklusive Instanzpflege festhalten
+  ansible.builtin.set_fact:
+    ibm_install_results: "{{ ibm_install_results | combine({'db2': product_result}) }}"

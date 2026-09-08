@@ -1,0 +1,61 @@
+---
+- name: Produkt und Medienzuordnung bestätigen
+  ansible.builtin.assert:
+    that:
+      - install_job.product in ['installation_manager', 'db2', 'websphere', 'ibm_java', 'content_manager', 'content_navigator', 'iccsap']
+      - install_job.user is string
+      - install_job.files | length > 0
+      - "'UNRESOLVED' not in (install_job | to_json)"
+
+# Kein iFix-Archiv darf lediglich entpackt und danach stillschweigend ignoriert werden.
+- name: Exakte IM-Fix-IDs für gewählte WAS-iFix-Medien verlangen
+  ansible.builtin.assert:
+    that:
+      - (install_job.fix_ids | default([]) | length) >= (ibm_patch_scan_result.packages | selectattr('filename', 'in', install_job.files) | selectattr('product', 'equalto', 'websphere') | selectattr('kind', 'equalto', 'interim_fix') | list | length)
+    fail_msg: "Für jedes gewählte WAS-iFix-Archiv die exakte IM-Fix-ID angeben."
+  when: install_job.product == 'websphere'
+
+- name: Privates Produktverzeichnis anlegen
+  ansible.builtin.file:
+    path: "{{ ibm_install_run_directory }}/{{ install_job.product }}"
+    state: directory
+    owner: "{{ install_job.user }}"
+    mode: '0700'
+  become: true
+
+- name: Medienzuordnung für das Produkt initialisieren
+  ansible.builtin.set_fact:
+    install_media: {}
+
+- name: Archive einzeln übertragen und getrennt entpacken
+  ansible.builtin.include_tasks: prepare_archive.yml
+  loop: "{{ install_job.files }}"
+  loop_control:
+    loop_var: install_filename
+    label: "{{ install_filename }}"
+
+- name: Lokale Response-Datei übertragen
+  ansible.builtin.copy:
+    src: "{{ install_job.response_src }}"
+    dest: "{{ ibm_install_run_directory }}/{{ install_job.product }}/response.rsp"
+    owner: "{{ install_job.user }}"
+    mode: '0600'
+  become: true
+  no_log: true
+  when: install_job.response_src is defined
+
+- name: Effektive Produktparameter speichern
+  ansible.builtin.set_fact:
+    install_effective_job: "{{ install_job | combine({'response_file': ibm_install_run_directory ~ '/' ~ install_job.product ~ '/response.rsp'} if install_job.response_src is defined else {}) }}"
+
+- name: Installer und Zielprüfungen vor allen Dienststopps validieren
+  ibm_install_product:
+    job: "{{ install_effective_job }}"
+    media: "{{ install_media }}"
+    log_directory: "{{ ibm_install_run_directory }}/{{ install_job.product }}/precheck-logs"
+    validate_only: true
+  become: true
+
+- name: Vorbereitete Produktparameter übernehmen
+  ansible.builtin.set_fact:
+    ibm_install_prepared: "{{ ibm_install_prepared | combine({install_job.product: {'job': install_effective_job, 'media': install_media}}) }}"

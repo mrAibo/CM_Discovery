@@ -1,0 +1,39 @@
+---
+# Einmalig an den tatsächlichen Server anpassen und unter private/ ablegen.
+ibm_install_target: HB_TEST
+ibm_install_expected_fqdn: UNRESOLVED
+# Manuell heruntergeladene Dateien auf dem Ansible-Controller.
+ibm_patch_directory: /srv/ibm-updates
+ibm_install_stage_directory: /srv/ibm-install
+ibm_install_jobs:
+  - product: websphere
+    user: UNRESOLVED
+    installation_directory: /opt/IBM/WebSphere/AppServer
+    imcl_path: /opt/IBM/InstallationManager/eclipse/tools/imcl
+    # BASE durch ND ersetzen, wenn diese vorhandene Installation WAS ND ist.
+    # Vollständige interne Zielversionen werden aus den lokalen Repositories gelesen.
+    offerings:
+      - com.ibm.websphere.BASE.v90
+      - com.ibm.java.jdk.v8
+    # Dieses Beispiel aktualisiert FP und SDK. Gewünschte iFix-Archive ergänzen.
+    # Ohne files werden alle WAS- und (wegen Offering oben) Java-Archive zugeordnet.
+    files:
+      - 9.0.5-WS-WAS-FP028.zip
+      - ibm-java-sdk-8.0-8.71-linux-x64-installmgr.zip
+    # Exakte IM-Fix-IDs aus den Medien eintragen; keine APAR- oder Dateinamen raten.
+    # Alle gewünschten iFixes einzeln ergänzen, auch versionsübergreifend freigegebene.
+    fix_ids: []
+    # Dienste in Stopp-/Startreihenfolge; Namen stammen aus der eigenen Umgebung.
+    stop_services: [UNRESOLVED]
+    start_services: [UNRESOLVED]
+    # Bereits vorhandenen Backup-/Quiesce-Befehl hier aufrufen.
+    before:
+      - argv: [/UNRESOLVED/backup-was]
+    # Zusätzliche Konfigurationsschritte bei Bedarf ergänzen.
+    after: []
+    verify:
+      - argv: [/opt/IBM/WebSphere/AppServer/bin/versionInfo.sh]
+        match: '(?m)^\s*Version\s+9\.0\.5\.28\s*$'
+    # Zusätzlich prüft die Rolle exakte Offering-Versionen und alle fix_ids über IM.
+    healthchecks:
+      - argv: [/UNRESOLVED/check-ecm-application]
