@@ -64,6 +64,12 @@ zusätzlich bei den im Workflow definierten Quellcode- und Release-Ereignissen.
 Er aktualisiert `data/ibm/catalog.json`, erzeugt danach
 `docs/IBM-Patchwatch.html` neu und übernimmt beide Dateien in `main`.
 
+Für WAS werden veröffentlichte Download-Verweise ausgewertet. Ein separat vom
+Betreiber bestätigtes Fix-Central-Paket (aktuell FP29) bleibt erhalten, wenn eine
+IBM-Übersicht noch zurückliegt. Herkunft und Bestätigungsdatum werden angezeigt;
+ein erneuter Katalogabruf erneuert diese Bestätigung nicht. Geplante Termine
+allein gelten nicht als Veröffentlichung.
+
 Ist eine IBM-Quelle nicht erreichbar, bleibt ein vorhandener Katalogeintrag mit
 seinem bisherigen Abrufdatum und einem Fehlerhinweis erhalten. Fehlt für eine
 fehlgeschlagene Quelle ein früherer Eintrag, bricht der Workflow ab. Ein

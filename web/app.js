@@ -52,7 +52,10 @@ function ifixLevel(p) {
 
 function freshness(entry, catalog, now) {
   if (entry.refresh_error) return "Die Quelle konnte nicht aktualisiert werden; der bisherige Stand bleibt erhalten.";
-  const date = entry.refreshed_at || catalog.generated_at;
+  const evidence = entry.availability_evidence;
+  const date = evidence && evidence.kind === "operator_confirmed"
+    ? (evidence.checked_at ? evidence.checked_at + "T00:00:00Z" : null)
+    : entry.refreshed_at || catalog.generated_at;
   if (typeof date !== "string" || !/^\d{4}-\d\d-\d\dT/.test(date)) return "Das Abrufdatum der IBM-Daten fehlt.";
   const timestamp = Date.parse(date);
   if (!Number.isFinite(timestamp) || timestamp > now + 300000) return "Das Katalogdatum fehlt, ist ungültig oder liegt in der Zukunft.";
@@ -269,12 +272,16 @@ function startApp() {
       availableCell.append(el("span", targetText, "version"));
       metadata(availableCell, target.special_build);
       if (note) metadata(availableCell, note.availability_note);
-      if (e) metadata(availableCell, "Quelle abgerufen: " + date(e.refreshed_at || catalog.generated_at));
+      if (e) {
+        const evidence = e.availability_evidence;
+        if (evidence && evidence.kind === "operator_confirmed") metadata(availableCell, "Paketverfügbarkeit vom Betreiber bestätigt: " + (evidence.checked_at || "Datum fehlt"));
+        metadata(availableCell, (evidence && evidence.kind === "operator_confirmed" ? "Katalogabgleich: " : "Quelle abgerufen: ") + date(e.refreshed_at || catalog.generated_at));
+      }
       if (note) {
         const details = el("details", undefined, "product-notes");
         details.append(el("summary", "Voraussetzungen und Hinweise"));
         for (const text of note.notes) details.append(el("p", text));
-        details.append(el("p", "Hinweise geprüft am: " + notes.checked_at, "muted"));
+        details.append(el("p", "Hinweise geprüft am: " + (note.checked_at || notes.checked_at), "muted"));
         availableCell.append(details);
       }
       for (const association of fixAssociations(e, p && p.version, target.version)) {
@@ -282,6 +289,7 @@ function startApp() {
         const block = el("div", undefined, "product-notes");
         block.append(el("strong", f.fix_id || "Unbekannter iFix"));
         metadata(block, "Nicht kumulativ · " + (f.filename || ""));
+        if (association.target === false) metadata(block, "Kein Paket für die Zielbasis " + target.version + "; enthaltene APARs separat prüfen.");
         const range = f.applies_to || {};
         metadata(block, "Basisbereich: " + (range.min || "unbekannt") + " bis " + (range.max || "unbekannt"));
         if (p) metadata(block, "Installierte Basis: " + (association.installed === null ? "Zuordnung ungeprüft" : association.installed ? "im Versionsbereich" : "außerhalb des Versionsbereichs"));
@@ -300,6 +308,7 @@ function startApp() {
       cell(tr, "Vergleich", statusCell);
       const actions = el("div", undefined, "cell-content links");
       const links = note ? note.links.slice() : [];
+      if (e && e.fix_pack_url) links.unshift({label:"Fix Pack " + target.version + " · Paket auswählen", url:e.fix_pack_url, download:true});
       if (e && e.source_url && !links.some(l => l.url === e.source_url)) links.push({label:"IBM-Quelle des Katalogs", url:e.source_url});
       const download = downloadFor(id, e, p);
       if (download && !links.some(l => l.url === download)) links.unshift({label:"Fix Central · installierte Basis und Updates", url:download, download:true});

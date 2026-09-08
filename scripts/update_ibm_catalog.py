@@ -35,7 +35,7 @@ def _entry(result: dict, refreshed_at: str) -> dict:
     # Providers may expose an explicitly verified Fix Central/package URL.
     if result.get("download_url"):
         entry["download_url"] = result["download_url"]
-    for key in ("interim_fixes", "fix_pack_cumulative"):
+    for key in ("interim_fixes", "fix_pack_cumulative", "fix_pack_url", "availability_evidence", "index_source_url"):
         if key in result:
             entry[key] = result[key]
     return entry
@@ -89,9 +89,9 @@ def main() -> None:
         try:
             candidate = _entry(probe(), attempted_at)
             old = previous_products.get(product_id, {})
-            # Never silently replace a known CM fix pack with historical page content.
-            if product_id == "content_manager" and version_tuple(candidate["available"].get("version", "")) < version_tuple(old.get("available", {}).get("version", "")):
-                raise ValueError("CM source regressed below the previously confirmed fix pack")
+            # Never replace a confirmed CM/WAS fix pack with a lagging source.
+            if product_id in ("content_manager", "websphere") and version_tuple(candidate["available"].get("version", "")) < version_tuple(old.get("available", {}).get("version", "")):
+                raise ValueError(f"{product_id} source regressed below the previously confirmed fix pack")
             products[product_id] = candidate
             print(f"[ok] {product_id}")
         except Exception as exc:  # Provider/network failures must be isolated.

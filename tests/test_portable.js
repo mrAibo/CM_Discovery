@@ -89,3 +89,24 @@ test("WAS base associations use IBM ranges and retain independent APARs", () => 
   assert.equal(new URL(api.downloadFor("websphere", data.products.websphere, {version:"9.0.5.26"})).searchParams.get("release"), "9.0.5.26");
   assert.equal(api.compareProduct("iccsap", {version:"4.0.0.4",jre_version:"8.0.8.70"}, entry({version:"4.0.0.4",jre_version:"8.0.8.70"}), catalog, now).code, "review");
 });
+
+
+test("FP29 does not inherit FP28 iFix applicability or dated instructions", () => {
+  const data = require("../data/ibm/catalog.json");
+  const notes = require("../web/verified-notes.json");
+  const was = data.products.websphere;
+  const fp29 = {...was, available:{version:"9.0.5.29"}, interim_fixes:was.interim_fixes.filter(f => f.applies_to.max === "9.0.5.28")};
+  assert.equal(was.fix_pack_cumulative, true);
+  assert.equal(api.fixAssociations(fp29, "9.0.5.25", "9.0.5.29").filter(r => r.target).length, 0);
+  assert.ok(api.ibmUrl(was.fix_pack_url));
+  const note = notes.products.websphere;
+  assert.ok(note.checked_at);
+  assert.ok(!JSON.stringify(note).includes("zukünftigen Termin"));
+});
+
+test("index refresh cannot renew operator confirmation", () => {
+  const was = entry({version:"9.0.5.29"}, {availability_evidence:{kind:"operator_confirmed",checked_at:"2026-09-08"}});
+  was.availability_evidence = {kind:"operator_confirmed",checked_at:"2026-09-08"};
+  was.refreshed_at = "2026-09-15T00:00:00Z";
+  assert.ok(api.freshness(was, catalog, Date.parse("2026-09-15T01:00:00Z")));
+});
