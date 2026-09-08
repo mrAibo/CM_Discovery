@@ -149,7 +149,7 @@
       "notes": [
         "9.0.5-WS-WAS-FP029 ist laut Betreiber in Fix Central verfügbar. Die separat abgerufenen IBM-Übersichten können noch einen älteren Stand oder einen geplanten Termin anzeigen. Die Paketbestätigung hat ihr eigenes Datum; sie ist keine automatische Live-Prüfung von Fix Central.",
         "Der Fix Pack ist kumulativ: Für den Wechsel auf FP29 muss FP28 nicht zusätzlich installiert werden. Voraussetzungen und unterstützten Ausgangsstand anhand der IBM-Paketanleitung prüfen.",
-        "Die unten dokumentierten iFix-Pakete gelten nach den bisher geprüften Versionsbereichen höchstens bis FP28. Sie sind keine Installationsliste für FP29. Ob ein APAR in FP29 enthalten ist oder ein neues iFix benötigt, muss anhand der FP29-Fix-Liste und der jeweiligen Readme geprüft werden.",
+        "iFix-Pakete außerhalb des dokumentierten Versionsbereichs der Zielbasis werden ausgeblendet. Ob ein bestimmter APAR in FP29 enthalten ist oder ein neues iFix benötigt, ergibt sich aus der FP29-Fix-Liste und der jeweiligen Readme.",
         "Die iFix-Referenzen behalten ihr eigenes Prüfdatum. Eine kumulative Basis ersetzt keinen Nachweis für alle später veröffentlichten Sicherheitskorrekturen."
       ],
       "links": [

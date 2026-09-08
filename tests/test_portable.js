@@ -110,3 +110,15 @@ test("index refresh cannot renew operator confirmation", () => {
   was.refreshed_at = "2026-09-15T00:00:00Z";
   assert.ok(api.freshness(was, catalog, Date.parse("2026-09-15T01:00:00Z")));
 });
+
+
+test("visible fixes exclude older target ranges but retain applicable and unknown packages", () => {
+  const entry = {interim_fixes:[
+    {fix_id:"old", applies_to:{min:"9.0.5.20",max:"9.0.5.28"}},
+    {fix_id:"current", applies_to:{min:"9.0.5.29",max:"9.0.5.29"}},
+    {fix_id:"unknown"}
+  ]};
+  assert.deepEqual(api.visibleFixAssociations(entry, "9.0.5.25", "9.0.5.29").map(a => a.fix.fix_id), ["current", "unknown"]);
+  assert.equal(entry.interim_fixes.length, 3);
+  assert.deepEqual(api.visibleFixAssociations({interim_fixes:[entry.interim_fixes[0]]}, "9.0.5.25", "9.0.5.29"), []);
+});
