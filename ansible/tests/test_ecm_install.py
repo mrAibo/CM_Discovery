@@ -1,7 +1,6 @@
 """Real local installer execution using synthetic media; no IBM host or package required."""
 import hashlib
 import importlib.util
-import io
 import json
 import os
 from pathlib import Path

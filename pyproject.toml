@@ -5,14 +5,11 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "ibm-patchwatch"
 version = "0.5.0"
-description = "IBM product discovery and patch intelligence for Content Manager environments"
+description = "IBM metadata providers for the portable Patchwatch catalog"
 readme = "README.md"
 requires-python = ">=3.11"
 authors = [{name = "CM Discovery contributors"}]
 dependencies = []
-
-[project.scripts]
-ibm-patchwatch = "ibm_patchwatch.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

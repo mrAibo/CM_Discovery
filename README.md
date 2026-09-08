@@ -47,15 +47,14 @@ entfernt es aus dem Vergleich; beim Schließen der Seite wird es verworfen.
 | Installierte Produkte auf dem CM-Server erfassen | Linux, Python 3.6+, lokale IBM-Kommandos und ausreichende Leserechte |
 | HTML-Datei aus einem vorhandenen Katalog erzeugen | Python 3.6+, nur Standardbibliothek; Repository mit `web/` und `data/ibm/` |
 | Katalog aus IBM-Quellen aktualisieren | Python 3.11+ und Zugriff auf IBM; der GitHub-Workflow verwendet Python 3.12 |
-| Optionales zentrales LAN-Prüfprogramm betreiben | Python 3.11+, Git/OpenSSH und SSH-Zugriff auf den CM-Server |
+| Heruntergeladene Updates installieren | Ansible-Controller und Ziel mit Python 3.12; siehe [Ansible-Anleitung](ansible/README.md) |
 
 Der CM-Server benötigt für die Erfassung keinen Internetzugang. Der Collector
 verwendet die in `collectors/ibm_discovery.py` unter `P` hinterlegten Pfade,
 beispielsweise für `cmlevel`, `db2level`, WebSphere `versionInfo.sh`, ICN
 `version.txt` und Installation Manager. Prüfen Sie diese Pfade für Ihre Umgebung.
-Die vorhandene zentrale SSH-Konfiguration verwendet root; der Collector selbst
-erzwingt keine bestimmte Benutzerkennung. Fehlende Rechte oder Pfade müssen im
-Discovery-Ergebnis beachtet werden.
+Der Collector erzwingt keine bestimmte Benutzerkennung. Fehlende Rechte oder
+Pfade müssen im Discovery-Ergebnis beachtet werden.
 
 ## Katalog und HTML aktualisieren
 
@@ -83,9 +82,9 @@ Nur die HTML-Datei aus dem vorhandenen Katalog neu erzeugen:
 python3 scripts/build_static_page.py
 ```
 
-Der Builder benötigt weder die installierte zentrale Anwendung noch einen
-Internetzugang. Um auf einem Rechner mit IBM-Zugriff auch den Katalog zu
-aktualisieren, verwenden Sie dort Python 3.11 oder neuer:
+Der Builder benötigt keine Paketinstallation und keinen Internetzugang. Um auf
+einem Rechner mit IBM-Zugriff auch den Katalog zu aktualisieren, verwenden Sie
+dort Python 3.11 oder neuer:
 
 ```bash
 PYTHONPATH=src python3 scripts/update_ibm_catalog.py
@@ -144,121 +143,20 @@ oder andere belegte IBM-Metadatenquellen erweitert werden.
 
 ## Unabhängige Ansible-Installation
 
-Der neue Bereich [ansible/](ansible/README.md) enthält eine eigenständige
-WebSphere-Rolle für Python **3.12** auf Controller und Zielhost. Er prüft ein
-lokal bereitgestelltes Paket und die genaue Installation anhand von IM-Paket-ID,
-Installationspfad und `versionInfo.sh`. Download und Ausführung bleiben getrennt.
-Die Rolle `ibm_ecm_install` installiert ausgewählte lokale Pakete mit produktbezogenen
-Tasks, Dienststeuerung und Zielprüfungen. Scan, WAS-Vorprüfung und Staging bleiben
-auch einzeln verfügbar. Der bestehende Offline-Collector bleibt mit Python 3.6+ nutzbar.
+Nach dem manuellen Download installiert [Ansible](ansible/INSTALLATION.md) die
+lokalen Pakete mit eigenen Tasks je Produkt. `ibm_patch_directory` legt den
+Downloadordner fest. Inventory-Beispiele für HB/NDD Test und Produktion stehen
+unter `ansible/inventories/example/`.
 
-## Optional: vorhandenes zentrales LAN-Prüfprogramm
+Scan und Installation sind getrennte Aktionen. Die Installation übernimmt ihren
+Scan und die Übertragung selbst; ein vorheriger WAS-Staging-Lauf ist nicht nötig.
+Die zusätzlichen [WAS-Diagnoseplaybooks](ansible/docs/was-diagnostics.md) bleiben
+für gezielte Bestands- und Repository-Prüfungen verfügbar.
 
-Der Befehl `ibm-patchwatch serve` bleibt für den bisherigen LAN-Ablauf verfügbar.
-Dieser Modus verwendet eine separate englische Oberfläche und die bisherige
-Vergleichslogik. Die oben beschriebenen erweiterten Statusregeln gelten für die
-portable HTML-Datei. Für den empfohlenen portablen Ablauf ist der LAN-Modus
-nicht erforderlich.
-
-Im LAN-Modus erfasst ein zentraler Linux-Rechner das Inventar über SSH. Der
-Windows-Browser lädt es von diesem Rechner und holt den öffentlichen Katalog
-von `raw.githubusercontent.com`. IBM-Zugangsdaten bleiben auf IBM-Seiten.
-
-### Collector und SSH vorbereiten
-
-Auf dem zentralen Linux-Rechner:
-
-```bash
-git clone https://github.com/mrAibo/CM_Discovery.git
-cd CM_Discovery
-ssh root@cmserver 'mkdir -p /root/bin && chmod 700 /root/bin'
-scp collectors/ibm_discovery.py root@cmserver:/root/bin/
-ssh root@cmserver 'chmod 700 /root/bin/ibm_discovery.py'
-ssh-keygen -t ed25519 -f ~/.ssh/id_cm_discovery -C ibm-cm-discovery
-```
-
-Den erzeugten öffentlichen Schlüssel auf dem CM-Server in
-`/root/.ssh/authorized_keys` auf Quelladresse und Collector beschränken.
-Ersetzen Sie die Platzhalter durch die tatsächliche LAN-IP und den vollständigen
-öffentlichen Schlüssel:
-
-```text
-from="<CENTRAL_LINUX_LAN_IP>",restrict,command="/usr/bin/python3 /root/bin/ibm_discovery.py --json" ssh-ed25519 <PUBLIC_KEY_DATA>
-```
-
-Alias auf dem zentralen Rechner in `~/.ssh/config`:
-
-```sshconfig
-Host cmtest
-    HostName <IBM_CM_LAN_IP_OR_NAME>
-    User root
-    IdentityFile ~/.ssh/id_cm_discovery
-    IdentitiesOnly yes
-```
-
-Der eingeschränkte Schlüssel erlaubt nur den Collector-Aufruf. Prüfen Sie die
-JSON-Ausgabe:
-
-```bash
-ssh -T cmtest | python3 -m json.tool >/dev/null
-```
-
-### Anwendung installieren und starten
-
-Im Repository auf dem zentralen Rechner mit Python 3.11 oder neuer:
-
-```bash
-python3 -m venv .venv
-. .venv/bin/activate
-python -m pip install -e .
-cp config.example.toml config.toml
-```
-
-`config.toml` bleibt außerhalb von Git. Beispiel:
-
-```toml
-[ssh]
-command = "ssh"
-connect_timeout = 15
-collector_timeout = 60
-
-[hosts.cmtest]
-collector = "/root/bin/ibm_discovery.py"
-```
-
-Den temporären Dienst starten:
-
-```bash
-. .venv/bin/activate
-IBM_CHECK_USER=admin \
-IBM_CHECK_PASSWORD=admin \
-ibm-patchwatch --config config.toml serve cmtest \
-  --bind <CENTRAL_LINUX_LAN_IP> \
-  --port 8765
-```
-
-Öffnen Sie unter Windows `http://<CENTRAL_LINUX_LAN_IP>:8765/`. Ohne `--bind`
-lauscht der Dienst nur auf `127.0.0.1`. Beenden Sie ihn nach der Prüfung mit
-`Ctrl+C`.
-
-`admin/admin` ist der vorhandene Standardwert. HTTP Basic Auth verschlüsselt die
-Verbindung nicht. Dieser Modus ist für das vereinbarte vertrauenswürdige LAN
-vorgesehen; setzen Sie bei Bedarf eigene Zugangsdaten oder verwenden Sie einen
-vorhandenen HTTPS-Reverse-Proxy. Binden Sie den Dienst an eine private LAN-Adresse.
-SSH-Schlüssel, IBM-Zugangsdaten, Konfigurationen und Inventardateien gehören
-nicht in Git.
-
-Zum Aktualisieren der zentralen Anwendung:
-
-```bash
-git pull --ff-only
-. .venv/bin/activate
-python -m pip install -e .
-```
-
-Bei Collector-Änderungen dessen Datei erneut auf den CM-Server übertragen.
-`scripts/update_env.sh` kann die virtuelle Umgebung der zentralen Anwendung
-reparieren; dieses Skript wird für die portable HTML-Datei nicht benötigt.
+Der frühere zentrale LAN-Server mit `ibm-patchwatch serve`, `config.toml` und
+SSH-Wrapper wurde entfernt. Für den aktuellen Ablauf genügen Collector,
+portable HTML-Datei, manuelle Downloads und Ansible. Frühere Fassungen bleiben
+in der Git-Historie erhalten.
 
 ## Entwicklung und Prüfungen
 
@@ -288,9 +186,9 @@ Skripteinbettung und CSP-Hashes.
 | `scripts/build_static_page.py` | Netzwerkfreier Builder für eine einzelne HTML-Datei |
 | `docs/IBM-Patchwatch.html` | Generierte öffentliche HTML-Datei ohne Serverinventar |
 | `scripts/update_ibm_catalog.py` und `src/ibm_patchwatch/providers/` | Abruf der IBM-Quellen |
-| `src/ibm_patchwatch/` | Bestehende zentrale CLI-/LAN-Anwendung |
+| `ansible/` | Verzeichnisscan, Produktinstallation und optionale WAS-Diagnose |
 
-Die Anwendung installiert keine Patches. Die tatsächliche Erfassung auf den
+Die HTML-Seite installiert keine Patches; dafür wird Ansible separat gestartet. Die tatsächliche Erfassung auf den
 IBM-Servern sowie authentifizierte Downloads und Voraussetzungen müssen in der
 Zielumgebung geprüft werden. Ein vollständiger Sicherheits- oder
 Kompatibilitätsaudit ist nicht Teil dieses Versionsvergleichs.
