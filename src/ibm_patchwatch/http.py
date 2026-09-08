@@ -12,7 +12,7 @@ def fetch_text(url: str, timeout: int = 30) -> str:
     """Fetch a public IBM page using stdlib urllib.
 
     urllib's default opener honors HTTP_PROXY/HTTPS_PROXY/NO_PROXY from the
-    environment, which is important for the central scanner in enterprise
+    environment, which is important for the catalog refresh in enterprise
     networks.
     """
     request = urllib.request.Request(
