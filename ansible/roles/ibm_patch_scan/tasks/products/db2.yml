@@ -1,0 +1,15 @@
+---
+# Special-Build-Nummern nicht numerisch als Aktualitätsreihenfolge bewerten.
+# Keine Installation, keine automatische Auswahl einer höchsten Version.
+- name: IBM Db2 – Paketgruppen übernehmen
+  ansible.builtin.set_fact:
+    ibm_patch_products: "{{ ibm_patch_products | combine({'db2': ibm_patch_scan_result.products.db2}) }}"
+
+- name: IBM Db2 – vorhandene Dateien anzeigen
+  ansible.builtin.debug:
+    msg:
+      produkt: "IBM Db2"
+      status: "{{ ibm_patch_products.db2.status }}"
+      dateien: "{{ ibm_patch_scan_result.packages | selectattr('product', 'equalto', 'db2') | map(attribute='filename') | list }}"
+      explizit_ausgewaehlt: "{{ ibm_patch_products.db2.selected_filenames }}"
+      hinweis: "Special-Build-Nummern nicht numerisch als Aktualitätsreihenfolge bewerten."

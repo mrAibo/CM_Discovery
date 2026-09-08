@@ -39,6 +39,10 @@ EXAMPLES = r'''
   register: patches
 '''
 RETURN = r'''
+products:
+  description: Per-product groups with independent package kinds; not an installation plan.
+  type: dict
+  returned: success
 packages:
   description: Recognized and unknown archives, including hashes and filename hints.
   type: list
@@ -158,6 +162,33 @@ def select_packages(result, required_filenames):
     return selected
 
 
+PRODUCT_KINDS = {
+    'installation_manager': ('installer_update',),
+    'db2': ('published_update',),
+    'websphere': ('fix_pack', 'interim_fix'),
+    'ibm_java': ('sdk_update',),
+    'content_manager': ('fix_pack',),
+    'content_navigator': ('interim_fix',),
+    'iccsap': ('jre_update', 'binary_interim_fix'),
+}
+
+
+def organize_packages(result):
+    """Group media only: no installation, ordering or supersedence inference."""
+    groups = {}
+    for product, kinds in PRODUCT_KINDS.items():
+        packages = [p for p in result['packages'] if p['product'] == product]
+        groups[product] = {
+            'status': 'files_found' if packages else 'no_local_packages',
+            'packages_by_kind': {kind: [p for p in packages if p['kind'] == kind] for kind in kinds},
+            'selected_filenames': [p['filename'] for p in result.get('selected_packages', []) if p['product'] == product],
+            'package_count': len(packages),
+            'applicability': 'not_verified',
+            'installation_actions': [],
+        }
+    return groups
+
+
 def main():
     from ansible.module_utils.basic import AnsibleModule
     module = AnsibleModule(argument_spec={
@@ -170,6 +201,7 @@ def main():
     try:
         result = scan(module.params['directory'], module.params['recursive'])
         result['selected_packages'] = select_packages(result, module.params['required_filenames'])
+        result['products'] = organize_packages(result)
     except (OSError, ValueError) as exc:
         module.fail_json(changed=False, msg=str(exc))
     module.exit_json(changed=False, **result)

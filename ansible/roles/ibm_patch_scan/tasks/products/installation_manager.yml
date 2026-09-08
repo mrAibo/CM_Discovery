@@ -1,0 +1,15 @@
+---
+# Installer getrennt von den Produkt-Offerings erfassen.
+# Keine Installation, keine automatische Auswahl einer höchsten Version.
+- name: IBM Installation Manager – Paketgruppen übernehmen
+  ansible.builtin.set_fact:
+    ibm_patch_products: "{{ ibm_patch_products | combine({'installation_manager': ibm_patch_scan_result.products.installation_manager}) }}"
+
+- name: IBM Installation Manager – vorhandene Dateien anzeigen
+  ansible.builtin.debug:
+    msg:
+      produkt: "IBM Installation Manager"
+      status: "{{ ibm_patch_products.installation_manager.status }}"
+      dateien: "{{ ibm_patch_scan_result.packages | selectattr('product', 'equalto', 'installation_manager') | map(attribute='filename') | list }}"
+      explizit_ausgewaehlt: "{{ ibm_patch_products.installation_manager.selected_filenames }}"
+      hinweis: "Installer getrennt von den Produkt-Offerings erfassen."

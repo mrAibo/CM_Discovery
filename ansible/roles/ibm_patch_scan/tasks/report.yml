@@ -1,0 +1,35 @@
+---
+# Berichte sind optional und werden ausschließlich auf dem Controller gespeichert.
+- name: Privates Berichtsverzeichnis anlegen
+  ansible.builtin.file:
+    path: "{{ ibm_patch_report_directory }}"
+    state: directory
+    mode: '0700'
+  delegate_to: localhost
+  become: false
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+  when: ibm_patch_report_directory is defined
+
+- name: Vollständigen Scan-Bericht speichern
+  ansible.builtin.copy:
+    content: "{{ ibm_patch_scan_result | to_nice_json }}\n"
+    dest: "{{ ibm_patch_report_directory }}/{{ inventory_hostname }}-patches.json"
+    mode: '0600'
+  delegate_to: localhost
+  become: false
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+  when: ibm_patch_report_directory is defined
+
+# Produktübersicht separat: keine erneute Erfassung und keine Installationsaktion.
+- name: Produktübersicht als JSON speichern
+  ansible.builtin.copy:
+    content: "{{ ibm_patch_plan | to_nice_json }}\n"
+    dest: "{{ ibm_patch_report_directory }}/{{ inventory_hostname }}-product-plan.json"
+    mode: '0600'
+  delegate_to: localhost
+  become: false
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+  when: ibm_patch_report_directory is defined

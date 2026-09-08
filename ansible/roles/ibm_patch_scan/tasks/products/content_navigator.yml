@@ -1,0 +1,15 @@
+---
+# ICN-Paket erfassen; Installer-Java und erneutes Deployment bleiben separate Voraussetzungen.
+# Keine Installation, keine automatische Auswahl einer höchsten Version.
+- name: IBM Content Navigator – Paketgruppen übernehmen
+  ansible.builtin.set_fact:
+    ibm_patch_products: "{{ ibm_patch_products | combine({'content_navigator': ibm_patch_scan_result.products.content_navigator}) }}"
+
+- name: IBM Content Navigator – vorhandene Dateien anzeigen
+  ansible.builtin.debug:
+    msg:
+      produkt: "IBM Content Navigator"
+      status: "{{ ibm_patch_products.content_navigator.status }}"
+      dateien: "{{ ibm_patch_scan_result.packages | selectattr('product', 'equalto', 'content_navigator') | map(attribute='filename') | list }}"
+      explizit_ausgewaehlt: "{{ ibm_patch_products.content_navigator.selected_filenames }}"
+      hinweis: "ICN-Paket erfassen; Installer-Java und erneutes Deployment bleiben separate Voraussetzungen."
