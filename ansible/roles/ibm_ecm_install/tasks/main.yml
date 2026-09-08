@@ -1,0 +1,123 @@
+---
+- name: Ziel und Installationskonfiguration prüfen
+  ansible.builtin.assert:
+    that:
+      - not ansible_check_mode
+      - ansible_play_hosts_all | length == 1
+      - inventory_hostname == ibm_install_target
+      - ibm_install_jobs | length > 0
+      - ibm_install_jobs | map(attribute='product') | unique | length == ibm_install_jobs | length
+      - ibm_install_stage_directory.startswith('/') and ibm_install_stage_directory != '/'
+      - ibm_install_lock_directory.startswith('/') and ibm_install_lock_directory != '/'
+      - ansible_python_interpreter is defined
+    fail_msg: "Genau einen Host und dessen Installationsparameter angeben. Kein --check für Installationsläufe."
+
+- name: Python 3.12 auf dem Ziel prüfen
+  ansible.builtin.raw: "{{ ansible_python_interpreter | quote }} -c 'import sys; sys.exit(0 if sys.version_info[:2] == (3,12) else 1)'"
+  changed_when: false
+
+- name: Zielidentität erfassen
+  ansible.builtin.setup:
+    gather_subset: ['!all', min]
+
+- name: Erwarteten Linux-Server bestätigen
+  ansible.builtin.assert:
+    that:
+      - ansible_facts.system == 'Linux'
+      - ansible_facts.fqdn == ibm_install_expected_fqdn
+
+# Die bestehende Rolle prüft Hashes und erkennt die Produktzugehörigkeit.
+- name: Lokale Pakete auf dem Controller erfassen
+  ansible.builtin.include_role:
+    name: ibm_patch_scan
+  vars:
+    ibm_patch_scan_location: controller
+    ibm_patch_required_filenames: "{{ ibm_install_jobs | map(attribute='files', default=[]) | flatten | unique | list }}"
+
+# Ohne files-Liste werden alle erkannten Downloads dieses Produkts verwendet.
+- name: Produktauswahl initialisieren
+  ansible.builtin.set_fact:
+    ibm_install_selected_jobs: []
+
+- name: Erkannte Archive den gewünschten Produkten zuordnen
+  ansible.builtin.set_fact:
+    ibm_install_selected_jobs: "{{ ibm_install_selected_jobs + [item | combine({'files': item.files | default(ibm_patch_scan_result.packages | selectattr('product', 'in', [item.product] + (['ibm_java'] if item.product == 'websphere' and 'com.ibm.java.jdk.v8' in (item.offerings | default([])) else [])) | map(attribute='filename') | list)})] }}"
+  loop: "{{ ibm_install_jobs }}"
+  loop_control:
+    label: "{{ item.product }}"
+
+- name: Laufverzeichnis festlegen
+  ansible.builtin.set_fact:
+    ibm_install_run_directory: "{{ ibm_install_stage_directory }}/{{ now(utc=true, fmt='%Y%m%dT%H%M%S%f') }}"
+    ibm_install_prepared: {}
+    ibm_install_results: {}
+
+# Durchsuchbar für die Installationsbenutzer; Produktverzeichnisse bleiben 0700.
+- name: Staging für diesen Lauf anlegen
+  ansible.builtin.file:
+    path: "{{ ibm_install_run_directory }}"
+    state: directory
+    mode: '0711'
+  become: true
+
+- name: Jedes ausgewählte Produkt vor Dienststopps vorbereiten
+  ansible.builtin.include_tasks: prepare_product.yml
+  loop: "{{ ibm_install_selected_jobs }}"
+  loop_control:
+    loop_var: install_job
+    label: "{{ install_job.product }}"
+
+# mkdir ist atomar. Existierende Sperren werden niemals automatisch übernommen.
+- name: Exklusive Installationssperre setzen
+  ansible.builtin.command:
+    argv: [/usr/bin/mkdir, -m, '0700', "{{ ibm_install_lock_directory }}"]
+  become: true
+  changed_when: true
+
+- name: Aktiven Wartungslauf hinterlegen
+  ansible.builtin.copy:
+    content: "{{ ibm_install_run_directory }}\n"
+    dest: "{{ ibm_install_lock_directory }}/run"
+    mode: '0600'
+  become: true
+
+# Absichtlich explizite, produktbezogene Task-Dateien; keine Installation über Scan-Tags.
+- name: IBM Installation Manager aktualisieren
+  ansible.builtin.include_tasks: products/installation_manager.yml
+  when: "'installation_manager' in ibm_install_prepared"
+- name: IBM Db2 aktualisieren
+  ansible.builtin.include_tasks: products/db2.yml
+  when: "'db2' in ibm_install_prepared"
+- name: IBM Java aktualisieren
+  ansible.builtin.include_tasks: products/ibm_java.yml
+  when: "'ibm_java' in ibm_install_prepared"
+- name: IBM WebSphere und gewählte iFixes aktualisieren
+  ansible.builtin.include_tasks: products/websphere.yml
+  when: "'websphere' in ibm_install_prepared"
+- name: IBM Content Manager aktualisieren
+  ansible.builtin.include_tasks: products/content_manager.yml
+  when: "'content_manager' in ibm_install_prepared"
+- name: IBM Content Navigator installieren und bereitstellen
+  ansible.builtin.include_tasks: products/content_navigator.yml
+  when: "'content_navigator' in ibm_install_prepared"
+- name: IBM Content Collector for SAP aktualisieren
+  ansible.builtin.include_tasks: products/iccsap.yml
+  when: "'iccsap' in ibm_install_prepared"
+
+- name: Erfolgreichen Installationslauf dokumentieren
+  ansible.builtin.copy:
+    content: "{{ ibm_install_results | to_nice_json }}\n"
+    dest: "{{ ibm_install_run_directory }}/result.json"
+    mode: '0600'
+  become: true
+
+# Bei Fehlern wird dieser Task nicht erreicht: keine Freigabe eines unklaren Zustands.
+- name: Sperre nach erfolgreicher Abnahme freigeben
+  ansible.builtin.file:
+    path: "{{ ibm_install_lock_directory }}"
+    state: absent
+  become: true
+
+- name: Installationsergebnis anzeigen
+  ansible.builtin.debug:
+    var: ibm_install_results

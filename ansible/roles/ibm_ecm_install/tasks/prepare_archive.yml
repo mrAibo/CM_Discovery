@@ -1,0 +1,44 @@
+---
+- name: Fehlende oder doppelte Download-Dateien ablehnen
+  ansible.builtin.assert:
+    that:
+      - ibm_patch_scan_result.packages | selectattr('filename', 'equalto', install_filename) | list | length == 1
+
+- name: Eindeutiges Archiv aus dem Scan übernehmen
+  ansible.builtin.set_fact:
+    install_archive: "{{ ibm_patch_scan_result.packages | selectattr('filename', 'equalto', install_filename) | first }}"
+
+# WAS kann sein separates SDK im selben IM-Aufruf aktualisieren.
+- name: Produktfremde Medien ablehnen
+  ansible.builtin.assert:
+    that:
+      - install_archive.recognition == 'filename_only'
+      - install_archive.product == install_job.product or (install_job.product == 'websphere' and install_archive.product == 'ibm_java')
+
+- name: Separates Archivverzeichnis anlegen
+  ansible.builtin.file:
+    path: "{{ ibm_install_run_directory }}/{{ install_job.product }}/{{ install_archive.sha256 }}"
+    state: directory
+    owner: "{{ install_job.user }}"
+    mode: '0700'
+  become: true
+
+- name: Gewähltes Downloadarchiv übertragen
+  ansible.builtin.copy:
+    src: "{{ install_archive.path }}"
+    dest: "{{ ibm_install_run_directory }}/{{ install_job.product }}/{{ install_archive.sha256 }}/archive"
+    owner: "{{ install_job.user }}"
+    mode: '0600'
+  become: true
+
+- name: SHA-256 prüfen und Medium ohne Überschreiben anderer Pakete entpacken
+  ibm_install_media:
+    archive: "{{ ibm_install_run_directory }}/{{ install_job.product }}/{{ install_archive.sha256 }}/archive"
+    destination: "{{ ibm_install_run_directory }}/{{ install_job.product }}/{{ install_archive.sha256 }}/payload"
+    sha256: "{{ install_archive.sha256 }}"
+  become: true
+  become_user: "{{ install_job.user }}"
+
+- name: Archiv und Nutzdaten dem Produkt zuordnen
+  ansible.builtin.set_fact:
+    install_media: "{{ install_media | combine({install_filename: {'archive': ibm_install_run_directory ~ '/' ~ install_job.product ~ '/' ~ install_archive.sha256 ~ '/archive', 'path': ibm_install_run_directory ~ '/' ~ install_job.product ~ '/' ~ install_archive.sha256 ~ '/payload'}}) }}"

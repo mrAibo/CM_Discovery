@@ -1,0 +1,8 @@
+---
+# Nur bereits heruntergeladene Archive; der Download bleibt ein eigener Vorgang.
+ibm_patch_directory: /srv/ibm-updates
+ibm_install_stage_directory: /srv/ibm-install
+# Eine Sperre pro Host verhindert überlappende Produkt-/IM-Änderungen.
+ibm_install_lock_directory: /var/lock/ibm-ecm-install
+# Explizite Produktauswahl mit Benutzer, Diensten und Zielprüfungen.
+ibm_install_jobs: []
