@@ -29,3 +29,18 @@ def test_refresh_preserves_independent_ifixes_and_their_review_date():
     assert entry['fix_pack_cumulative'] is True
     assert all(f['cumulative'] is False for f in entry['interim_fixes'])
     assert all(f['checked_at'] == '2026-09-07' for f in entry['interim_fixes'])
+
+
+def test_was_refresh_cannot_regress_to_fp28(monkeypatch, tmp_path):
+    output = tmp_path / 'catalog.json'
+    old = {'available': {'version': '9.0.5.29'}, 'availability_evidence': {'kind': 'operator_confirmed', 'checked_at': '2026-09-08'}}
+    output.write_text(json.dumps({'products': {'websphere': old}}))
+    monkeypatch.setattr(refresh, 'OUTPUT', output)
+    for provider in (refresh.content_manager, refresh.content_navigator, refresh.daeja, refresh.db2, refresh.java, refresh.iccsap):
+        monkeypatch.setattr(provider, 'check', lambda installed: {'available': {'version': '1'}})
+    monkeypatch.setattr(refresh.websphere, 'check', lambda installed: {'available': {'version': '9.0.5.28'}})
+    refresh.main()
+    entry = json.loads(output.read_text())['products']['websphere']
+    assert entry['available'] == old['available']
+    assert entry['availability_evidence'] == old['availability_evidence']
+    assert 'regressed' in entry['refresh_error']['message']

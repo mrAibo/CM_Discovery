@@ -12,7 +12,13 @@ REFERENCES = {'iccsap': {'download_url': 'https://www.ibm.com/support/fixcentral
                                'evidence': 'Operator-confirmed Fix Central package; additional '
                                            'prerequisites unverified',
                                'supersedence': 'not_assumed'}]},
- 'websphere': {'download_url': 'https://www.ibm.com/support/fixcentral/swg/selectFixes?parent=ibm%7EWebSphere&product=ibm/WebSphere/WebSphere+Application+Server&release=9.0.5.25&platform=Linux+64-bit,x86_64&function=all',
+ 'websphere': {'confirmed_fix_packs': [
+                  {'version': '9.0.5.29',
+                   'fix_id': '9.0.5-WS-WAS-FP029',
+                   'checked_at': '2026-09-08',
+                   'kind': 'operator_confirmed',
+                   'source_url': 'https://www.ibm.com/support/fixcentral/swg/doSelectFixes?options.selectedFixes=9.0.5-WS-WAS-FP029&continue=1'}],
+               'download_url': 'https://www.ibm.com/support/fixcentral/swg/selectFixes?parent=ibm%7EWebSphere&product=ibm/WebSphere/WebSphere+Application+Server&release=9.0.5.25&platform=Linux+64-bit,x86_64&function=all',
                'interim_fixes': [{'fix_id': '9.0.5.20-WS-WAS-IFPH72166',
                                   'apar': 'PH72166',
                                   'filename': '9.0.5.20-WS-WAS-IFPH72166.zip',
