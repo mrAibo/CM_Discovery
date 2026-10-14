@@ -1,0 +1,163 @@
+{
+  "checked_at": "2026-09-07",
+  "description": "IBM-Quellenprüfung und ausdrücklich gekennzeichnete Paketangaben des Betreibers.",
+  "products": {
+    "content_manager": {
+      "for_available": {
+        "version": "8.7.00.500"
+      },
+      "availability_note": "FP5 · CM87FP5_lnx.zip",
+      "notes": [
+        "Korrigierter bekannter Fix-Pack-Stand: FP5. Historische FP1-/FP4-Einträge sind kein Beleg für den neuesten Stand. Die versionsgebundene Readme erkennt keine zukünftigen Fix Packs.",
+        "Vom Betreiber benannte Download-Datei: CM87FP5_lnx.zip"
+      ],
+      "links": [
+        {
+          "label": "IBM: FP5-Readme und Downloadhinweise",
+          "url": "https://www.ibm.com/docs/en/content-manager/8.7.0?topic=fp-content-manager-version-87-fix-pack-5-readme",
+          "download": true
+        }
+      ]
+    },
+    "content_navigator": {
+      "for_available": {
+        "version": "3.1.0",
+        "interim_fix": 12
+      },
+      "availability_note": "IF12 · 27.08.2026 · icn310.012.703",
+      "notes": [
+        "IF12 enthält Daeja ViewONE Virtual 26.0.0 iFix 1 und die CM 8.7 FP4 APIs. Die Aktualisierung des mitgelieferten Daeja ist gemeinsam mit ICN zu betrachten.",
+        "Das ICN-Installationsprogramm benötigt Java 11 oder 17. Diese Anforderung gilt für den Installer; sie ist keine Anweisung, die von WebSphere verwendete Java-8-Installation zu ersetzen.",
+        "IBM erlaubt die Aktualisierung von ICN 3.1.0.0 oder einem späteren Stand derselben Versionslinie. Danach muss die Anwendung erneut bereitgestellt werden. Die Tabelle empfiehlt keinen Wechsel auf ICN 3.2.",
+        "Linux-Archiv laut Betreiber: 3.1.0-IF012-ICN-Linux.tar. Der Link öffnet die passende Fix-Central-Auswahl für ICN 3.1.0/Linux; kein direkter Archiv-Download.",
+        "Vom Betreiber benannte Download-Datei: 3.1.0-IF012-ICN-Linux.tar"
+      ],
+      "links": [
+        {
+          "label": "Fix Central: ICN auswählen",
+          "url": "https://www.ibm.com/support/fixcentral/swg/selectFixes?parent=Enterprise%20Content%20Management&product=ibm/Other+software/Content+Navigator&release=3.1.0&platform=Linux&function=all",
+          "download": true
+        },
+        {
+          "label": "Readme und Lieferumfang IF12",
+          "url": "https://www.ibm.com/support/pages/ibm-content-navigator-version-310-interim-fix-12-readme"
+        }
+      ]
+    },
+    "daeja_viewone_virtual": {
+      "for_available": {
+        "version": "5.0.15",
+        "interim_fix": 6
+      },
+      "availability_note": "Separate Versionslinie 5.0.15; mitgeliefertes Daeja gemeinsam mit ICN prüfen",
+      "notes": [
+        "iFix 6 setzt Daeja 5.0.15 voraus und enthält die Korrekturen früherer iFixes dieser Versionslinie.",
+        "IBM weist auf eine möglicherweise abweichende Verfügbarkeit der Korrekturen hin, wenn Daeja zusammen mit einem anderen Produkt geliefert wurde. Stammt der Inventareintrag aus der version.txt von ICN, handelt es sich um eine mitgelieferte Komponente. Prüfen Sie vor einer separaten Aktualisierung die IBM-Anleitung."
+      ],
+      "links": [
+        {
+          "label": "Fix Central · 5.0.15",
+          "url": "https://www.ibm.com/support/fixcentral/swg/selectFixes?function=all&parent=Enterprise+Content+Management&platform=All&product=ibm%2FOther+software%2FDaeja+ViewONE+Virtual&release=5.0.15",
+          "download": true
+        },
+        {
+          "label": "Readme zu iFix 6",
+          "url": "https://delivery04.dhe.ibm.com/sar/CMA/OSA/0dx21/0/5.0.15_DAEJA_VIEWONE_IFIX006_Readme.htm"
+        }
+      ]
+    },
+    "db2": {
+      "for_available": {
+        "version": "11.5.9.0",
+        "update_number": "87984"
+      },
+      "availability_note": "Published Update 87984 · 06.08.2026",
+      "notes": [
+        "Zum Prüfdatum kennzeichnet IBM Update 87984 als neuestes veröffentlichtes Update für 11.5.9. Linux x86 PTF: DYN2607151721AMD64_87984; Build s2607151021.",
+        "Die Updates auf der IBM-Seite sind kumulativ und zeitlich geordnet. Ihre Nummern geben keine zeitliche Reihenfolge an: special_63280 ist nicht allein deshalb älter, weil 63280 kleiner als 87984 ist. Bei einem individuellen Special Build muss der Inhalt geprüft werden.",
+        "Öffnen Sie auf der IBM-Seite den Bereich Downloads des gewünschten Updates und wählen Sie das passende Db2-Server-/Universal-Paket für Plattform und Edition.",
+        "Vom Betreiber benannte Download-Datei: special_87984_v11.5.9_linuxx64_universal_fixpack.tar.gz"
+      ],
+      "links": [
+        {
+          "label": "IBM: Db2-Paket auswählen",
+          "url": "https://www.ibm.com/support/pages/node/7087189",
+          "download": true
+        },
+        {
+          "label": "Sicherheitskorrekturen für Db2",
+          "url": "https://www.ibm.com/support/pages/published-security-vulnerabilities-db2-linux-unix-and-windows-including-security-update-information"
+        }
+      ]
+    },
+    "ibm_java": {
+      "for_available": {
+        "version": "8.0.8.71"
+      },
+      "availability_note": "Java 8 SR8 FP71 · Installation-Manager-Paket für WAS",
+      "notes": [
+        "IBM stellt SDK 8.0.8.71 als Installation-Manager-Repository für WebSphere traditional bereit. Wählen Sie auf der Downloadseite die Architektur des Servers.",
+        "Das WebSphere-SDK und die mitgelieferte JRE von ICCSAP sind getrennte Installationen. Verwenden Sie für ICCSAP dessen eigenes Paket aus der entsprechenden Tabellenzeile.",
+        "Vom Betreiber benannte Download-Datei: ibm-java-sdk-8.0-8.71-linux-x64-installmgr.zip"
+      ],
+      "links": [
+        {
+          "label": "IBM: SDK für WAS / IM",
+          "url": "https://www.ibm.com/support/pages/ibm-sdk-java-technology-edition-version-80-websphere-application-server-v9-and-websphere-liberty-using-installation-manager",
+          "download": true
+        },
+        {
+          "label": "Fix Central · Linux x64",
+          "url": "https://www.ibm.com/support/fixcentral/swg/selectFixes?fixids=8.0.8.71-JavaSE-SDK-linux-x64-repo&function=fixId&parent=ibm%2FWebSphere&product=ibm%2FWebSphere%2FWebSphere+Liberty"
+        }
+      ]
+    },
+    "iccsap": {
+      "for_available": {
+        "version": "4.0.0.4",
+        "jre_version": "8.0.8.70"
+      },
+      "availability_note": "Basis 4.0.0.4 · JRE 8.0.8.70 · separater Binaries-iFix IF21",
+      "notes": [
+        "Basisprodukt, JRE-Paket und Binaries IF21 sind getrennte Stände. Das Base-JRE-Paket ist kein Nachweis, dass IF21 installiert ist.",
+        "Eine Kennung JRE_fix_YYYYMMDD und das Veröffentlichungsdatum eines Bulletins belegen keine genaue JRE-Version. Fehlen eine gemessene Version oder eine bestätigte Paketkennung im Inventar, ist eine manuelle Prüfung erforderlich."
+      ],
+      "links": [
+        {
+          "label": "Fix Central · ICCSAP 4.0.0.4 / Linux x86_64",
+          "url": "https://www.ibm.com/support/fixcentral/swg/selectFixes?parent=Enterprise%20Content%20Management&product=ibm/Information+Management/IBM+Content+Collector+for+SAP+Applications&release=4.0.0.4&platform=Linux+64-bit,x86_64&function=all",
+          "download": true
+        },
+        {
+          "label": "Basispaket · JRE 8.0.8.70",
+          "url": "https://www.ibm.com/support/fixcentral/swg/doSelectFixes?options.selectedFixes=4.0.0.4-ICCSAP-Base-JRE-8.0.8.70&continue=1",
+          "download": true
+        },
+        {
+          "label": "Vorläufiger Fix · IF21 Binaries",
+          "url": "https://www.ibm.com/support/fixcentral/swg/doSelectFixes?options.selectedFixes=4004-ICCSAP-FP4-IF21&continue=1",
+          "download": true
+        }
+      ]
+    },
+    "websphere": {
+      "checked_at": "2026-09-08",
+      "for_available": {
+        "version": "9.0.5.29"
+      },
+      "availability_note": "FP29 · kumulativ · Fix-Central-Paket vom Betreiber bestätigt am 08.09.2026",
+      "notes": [
+        "9.0.5-WS-WAS-FP029 ist laut Betreiber in Fix Central verfügbar. Die separat abgerufenen IBM-Übersichten können noch einen älteren Stand oder einen geplanten Termin anzeigen. Die Paketbestätigung hat ihr eigenes Datum; sie ist keine automatische Live-Prüfung von Fix Central.",
+        "Der Fix Pack ist kumulativ: Für den Wechsel auf FP29 muss FP28 nicht zusätzlich installiert werden. Voraussetzungen und unterstützten Ausgangsstand anhand der IBM-Paketanleitung prüfen.",
+        "iFix-Pakete außerhalb des dokumentierten Versionsbereichs der Zielbasis werden ausgeblendet. Ob ein bestimmter APAR in FP29 enthalten ist oder ein neues iFix benötigt, ergibt sich aus der FP29-Fix-Liste und der jeweiligen Readme.",
+        "Die iFix-Referenzen behalten ihr eigenes Prüfdatum. Eine kumulative Basis ersetzt keinen Nachweis für alle später veröffentlichten Sicherheitskorrekturen."
+      ],
+      "links": [
+        {
+          "label": "Aktuelle IBM-Releases",
+          "url": "https://www.ibm.com/support/pages/recommended-updates-websphere-application-server"
+        }
+      ]
+    }
+  }
+}
