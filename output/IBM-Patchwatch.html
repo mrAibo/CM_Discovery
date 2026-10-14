@@ -4,25 +4,173 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="referrer" content="no-referrer">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; base-uri 'none'; object-src 'none'; form-action 'none'; connect-src 'none'; style-src 'sha256-/85WtMPg43yHjLfCBhEGznlgRA93rpEIcQoxTR6nDWQ='; script-src 'sha256-S5hjrUDWzDaO0Brv54jDqw4FkUZtYd81oHu+cTSp3fo='">
-  <title>IBM Patchwatch — Versionsstände und Updates</title>
-  <meta name="description" content="Installierte IBM-Versionen und bestätigte Updates. Lokaler Vergleich mit inventory.json, offizielle Quellen und Downloadseiten.">
-  <style>:root{color-scheme:light;--ink:#172333;--muted:#526174;--blue:#0756cf;--line:#dce3ec;--paper:#fff;--soft:#f2f5f9;--navy:#12263e}*{box-sizing:border-box}body{margin:0;background:#f5f7fa;color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}button,input{font:inherit}button,a,summary{touch-action:manipulation}button{border:1px solid var(--blue);border-radius:4px;background:var(--blue);color:#fff;font-weight:600;padding:.72rem 1rem;cursor:pointer;min-height:44px}button:hover{background:#0047b6}button.secondary{background:white;color:var(--blue);border-color:#bac8dc}button.secondary:hover{background:#eef4ff}button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid #2178eb;outline-offset:4px}[hidden]{display:none!important}.topbar{background:var(--navy);color:white;display:flex;align-items:center;justify-content:space-between;padding:1.1rem max(2rem,calc((100vw - 1520px)/2))}.brand{font-size:1.2rem;letter-spacing:.02em}.brand strong{font-weight:500;border-left:1px solid #61728a;margin-left:.6rem;padding-left:.9rem}.edition{font-size:.875rem;color:#c2cfdf}main{max-width:1520px;margin:auto;padding:2rem}.heading{display:flex;justify-content:space-between;align-items:center;gap:1.5rem;margin-bottom:1.5rem}.eyebrow{font-size:.8rem;letter-spacing:.12em;font-weight:700;color:var(--blue);margin:0 0 .4rem}h1{font-size:clamp(1.7rem,2.4vw,2.25rem);line-height:1.2;letter-spacing:-.025em;margin:0 0 .6rem}h2{font-size:1.15rem;margin:0}p{margin:.35rem 0}.muted{color:var(--muted);font-size:.875rem}.controls{display:flex;flex-wrap:wrap;gap:.6rem}.inventory-banner{display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:1rem 1.25rem;background:#eaf1fc;border-left:4px solid var(--blue)}.inventory-banner p{color:#354963;font-size:.875rem;overflow-wrap:anywhere}.local-label{font-size:.8rem;color:#354963;white-space:nowrap}.table-heading{display:flex;justify-content:space-between;align-items:baseline;gap:1rem;margin:1.6rem 0 .7rem}.table-heading p{font-size:.875rem;color:var(--muted)}table{width:100%;border-collapse:collapse;table-layout:fixed;background:var(--paper);border:1px solid var(--line)}.col-product{width:20%}.col-installed{width:19%}.col-available{width:22%}.col-status{width:20%}.col-links{width:19%}th{text-align:left;font-weight:600;background:#edf1f6;font-size:.875rem;padding:.85rem 1rem;color:#3d4d62}td{vertical-align:top;padding:1.15rem 1rem;border-top:1px solid var(--line);overflow-wrap:anywhere}td strong{font-weight:600}.product-name{display:block;font-size:1rem;line-height:1.4}.stream{display:block;color:var(--muted);font-size:.8rem;margin-top:.45rem}.version{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.98rem;font-weight:600;line-height:1.45;display:block;overflow-wrap:anywhere}.metadata{display:block;font-size:.8rem;color:var(--muted);margin-top:.35rem}.status{display:inline-block;font-size:.875rem;font-weight:600;line-height:1.35;border-radius:3px;padding:.35rem .55rem;background:var(--soft);color:#495467}.status.update{background:#fff0d3;color:#794200}.status.review,.status.stale,.status.error{background:#fff1ee;color:#9a3423}.status.match{background:#e7f4ec;color:#1a613c}.status.level,.status.different{background:#e9f0fa;color:#28568d}.reason{font-size:.8rem;color:var(--muted);margin-top:.5rem}.links{display:flex;align-items:flex-start;flex-direction:column;gap:.6rem}.links a{font-size:.875rem;color:var(--blue);text-decoration:none;line-height:1.4}.links a:hover{text-decoration:underline}.links a.download{border:1px solid #b7c9e2;border-radius:3px;padding:.4rem .6rem;font-weight:600}.product-notes{margin-top:.75rem;font-size:.875rem}.product-notes summary{color:var(--blue);cursor:pointer}.product-notes p{color:var(--muted);margin-top:.6rem;line-height:1.5}.product-notes a{color:var(--blue)}.notice,.error{padding:.85rem 1rem;margin:1rem 0;background:#fff1de;color:#754200;font-size:.875rem}.error{background:#fff0ee;color:#972c22}.table-note{font-size:.875rem;max-width:1100px;color:var(--muted);margin-top:1rem}.help{margin-top:1.5rem;background:white;border:1px solid var(--line);padding:1rem 1.25rem}.help>summary{cursor:pointer;font-size:.95rem;font-weight:600}.help-content{max-width:980px;padding:.5rem 0;font-size:.95rem}.help-content li{margin:.5rem 0}.help-content p{margin:1rem 0}.help code{font-family:ui-monospace,Consolas,monospace;font-size:.9em;overflow-wrap:anywhere}footer{display:flex;justify-content:space-between;gap:1rem;margin-top:1.75rem;font-size:.8rem;color:var(--muted)}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}@media(max-width:1050px){main{padding:1.3rem}.heading{align-items:flex-start;flex-direction:column}.local-label{white-space:normal}td,th{padding:.85rem .7rem}.col-product{width:19%}.col-installed{width:18%}.col-available{width:23%}.col-status{width:20%}.col-links{width:20%}}@media(max-width:760px){.topbar{padding:1rem}.edition{display:none}main{padding:1rem}.inventory-banner{align-items:flex-start;flex-direction:column}.table-heading{align-items:flex-start;flex-direction:column;gap:.1rem}table,tbody,tr,td{display:block;width:100%}table{border:0;background:transparent}colgroup,thead{display:none}tr{background:white;border:1px solid var(--line);border-top:3px solid #b6cbe7;margin-bottom:1rem;padding:.4rem .8rem}td{display:grid;grid-template-columns:minmax(100px,32%) minmax(0,1fr);gap:.65rem;border:0;padding:.65rem 0}td::before{content:attr(data-label);font-size:.8rem;color:var(--muted);font-weight:600}.cell-content{min-width:0}.product-notes{grid-column:2}.links{gap:.7rem}footer{flex-direction:column;gap:.2rem}}@media print{body{background:white}.topbar{background:white;color:#172333;border-bottom:2px solid #172333;padding:0 0 1rem}.edition{color:#526174}main{padding:1rem 0}.controls,.local-label,.help,footer{display:none}table{font-size:10pt}tr{break-inside:avoid}.links a{font-size:9pt}.heading{margin-bottom:1rem}.version{font-size:10pt}.status{border:1px solid #bbb}}
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; base-uri 'none'; object-src 'none'; form-action 'none'; connect-src 'none'; style-src 'sha256-J0bvYUraHYuTPkkNhtdoh5XkYDJTjAy1egaMaiJrRLo='; script-src 'sha256-A6jrFjxcxlNn+YCpEK8ZU2+xgtPfKAuCxgpkm6QQxuw='">
+  <title>IBM Patchwatch — Ihre Update-Übersicht</title>
+  <meta name="description" content="IBM-Versionen lokal vergleichen, Updates erkennen und passende IBM-Downloadseiten öffnen.">
+  <style>:root {color-scheme:light;--ink:#192b40;--muted:#536379;--blue:#1458c2;--line:#dce4ed;--paper:#fff;--navy:#152e4a}
+* {box-sizing:border-box}
+body {margin:0;background:#f4f7fb;color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+button,input,select {font:inherit}
+button,a,summary {touch-action:manipulation}
+button {border:1px solid var(--blue);border-radius:7px;background:var(--blue);color:#fff;font-weight:600;padding:.7rem 1rem;cursor:pointer;min-height:44px}
+button:hover {background:#0847a7}
+button.secondary {background:white;color:var(--blue);border-color:#bac8dc}
+button.secondary:hover {background:#edf3fd}
+button:focus-visible,a:focus-visible,summary:focus-visible,input:focus-visible,select:focus-visible {outline:3px solid #2178eb;outline-offset:3px}
+button:disabled {cursor:default;opacity:.7}
+.stat[aria-pressed=true] {border-color:var(--blue);box-shadow:inset 0 0 0 1px var(--blue)}
+[hidden] {display:none!important}
+.topbar {background:var(--navy);color:white;display:flex;align-items:center;justify-content:space-between;padding:1rem max(2rem,calc((100vw - 1520px)/2))}
+.brand {font-size:1.2rem;letter-spacing:.02em}
+.brand strong {font-weight:500;border-left:1px solid #61728a;margin-left:.6rem;padding-left:.9rem}
+.edition {font-size:.875rem;color:#c2cfdf}
+main {max-width:1520px;margin:auto;padding:2rem}
+.heading {display:flex;justify-content:space-between;align-items:center;gap:1.5rem;margin-bottom:1.5rem}
+.eyebrow {font-size:.75rem;letter-spacing:.1em;font-weight:700;color:var(--blue);margin:0 0 .45rem}
+h1 {font-size:clamp(1.7rem,2.5vw,2.35rem);line-height:1.2;letter-spacing:-.03em;margin:0 0 .6rem}
+h2 {font-size:1.2rem;margin:0}
+p {margin:.35rem 0}
+.muted {color:var(--muted);font-size:.875rem}
+.controls {display:flex;flex-wrap:wrap;gap:.6rem}
+.onboarding {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem;margin-bottom:1.25rem}
+.onboarding>div {display:grid;grid-template-columns:32px 1fr;column-gap:.7rem;align-items:start;background:#fff;border:1px solid var(--line);border-radius:8px;padding:1rem}
+.step {grid-row:span 2;display:grid;place-items:center;border-radius:50%;background:#eaf1fd;color:var(--blue);font-size:.9rem;font-weight:700;width:30px;height:30px}
+.onboarding strong {font-size:.92rem}
+.onboarding p {grid-column:2;color:var(--muted);font-size:.83rem;margin:.2rem 0 0}
+.inventory-banner {display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:1rem 1.25rem;background:#eaf1fc;border:1px dashed #a6bce0;border-radius:8px;transition:background .1s}
+.inventory-banner p {color:#354963;font-size:.875rem;overflow-wrap:anywhere}
+.inventory-banner.drag-active {background:#d8e7ff;outline:3px solid var(--blue)}
+.local-label {font-size:.8rem;color:#354963;white-space:nowrap}
+.load-message {font-size:.875rem;color:#245843;min-height:1.1rem;margin:.4rem 0}
+.stats {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem;margin:1.25rem 0}
+.stat {border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);text-align:left;padding:1rem 1.25rem;display:grid;grid-template-columns:52px 1fr;column-gap:1rem;align-items:center}
+.stat:hover {background:#edf3fc;border-color:#adc4e5}
+.stat>span {grid-row:span 2;font-size:2rem;line-height:1;font-weight:700}
+.stat strong {font-size:.95rem}
+.stat small {font-size:.77rem;color:var(--muted);font-weight:400;margin-top:.2rem}
+.stat-update>span {color:#966000}
+.stat-review>span {color:#a14230}
+.stat-match>span {color:#286a48}
+.table-heading {display:flex;align-items:center;gap:1rem;margin:1.6rem 0 .8rem}
+.table-heading p {font-size:.875rem;color:var(--muted);margin-left:auto}
+.table-heading button {font-size:.85rem;padding:.4rem .75rem}
+.filters {display:flex;gap:1rem;align-items:end;background:#fff;border:1px solid var(--line);border-bottom:0;border-radius:8px 8px 0 0;padding:1rem}
+.filters label {display:block;font-size:.8rem;font-weight:600;color:#3c4f67;margin-bottom:.3rem}
+.search-field {flex:1}
+input[type=search],select {width:100%;min-height:44px;border:1px solid #bac8dc;border-radius:5px;background:#fff;padding:.55rem .7rem;color:var(--ink)}
+select {min-width:230px}
+table {width:100%;border-collapse:collapse;table-layout:fixed;background:var(--paper);border:1px solid var(--line)}
+.col-product {width:21%}.col-installed {width:13%}.col-available {width:24%}.col-status {width:21%}.col-links {width:21%}
+th {text-align:left;font-weight:600;background:#edf1f6;font-size:.83rem;padding:.85rem 1rem;color:#3d4d62}
+td {vertical-align:top;padding:1.15rem 1rem;border-top:1px solid var(--line);overflow-wrap:anywhere}
+td strong {font-weight:600}
+.product-name {display:block;font-size:.98rem;line-height:1.4}
+.version {font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:1rem;font-weight:650;line-height:1.45;display:block;overflow-wrap:anywhere}
+.metadata {display:block;font-size:.78rem;color:var(--muted);margin-top:.35rem}
+.status {display:inline-block;font-size:.85rem;font-weight:600;line-height:1.35;border-radius:4px;padding:.35rem .55rem;background:#f0f3f7;color:#495467}
+.status.update {background:#fff0d3;color:#794200}
+.status.review,.status.stale,.status.error {background:#fff1ee;color:#9a3423}
+.status.match {background:#e7f4ec;color:#1a613c}
+.status.level,.status.different {background:#e9f0fa;color:#28568d}
+.reason {font-size:.8rem;color:var(--muted);margin-top:.5rem}
+.links {display:flex;align-items:flex-start;flex-direction:column;gap:.55rem}
+.links a {font-size:.8rem;color:var(--blue);text-decoration:none;line-height:1.4}
+.links a:hover {text-decoration:underline}
+.links a.download {border:1px solid #b7c9e2;background:#edf4ff;border-radius:5px;padding:.5rem .65rem;font-size:.86rem;font-weight:600}
+.product-notes {margin-top:.65rem;font-size:.83rem}
+.product-notes summary {color:var(--blue);cursor:pointer}
+.product-notes p {color:var(--muted);margin-top:.6rem;line-height:1.5}
+.product-notes a {color:var(--blue)}
+.ifix-item {margin-top:.75rem;padding-top:.7rem;border-top:1px solid var(--line)}
+.notice {display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:1rem;border:1px solid #ebd3a8;border-radius:7px;background:#fff7e9;color:#754200;font-size:.875rem;margin:1rem 0}
+.notice strong {font-size:.9rem}
+.notice button {flex-shrink:0;font-size:.85rem}
+.error {padding:.85rem 1rem;border-radius:7px;border:1px solid #e8c6c0;background:#fff0ee;color:#972c22;font-size:.875rem;margin:1rem 0}
+.empty-results {padding:2rem;text-align:center;background:#fff;border:1px solid var(--line);border-top:0}
+.empty-results p,.table-note {font-size:.875rem;color:var(--muted)}
+.table-note {max-width:1100px;margin-top:1rem}
+.help {margin-top:1.5rem;background:white;border:1px solid var(--line);border-radius:8px;padding:1rem 1.25rem}
+.help>summary {cursor:pointer;font-size:.95rem;font-weight:600}
+.help-content {max-width:980px;padding:.5rem 0;font-size:.95rem}
+.help-content li {margin:.5rem 0}
+.help-content p {margin:1rem 0}
+.help code {font-family:ui-monospace,Consolas,monospace;font-size:.9em;overflow-wrap:anywhere}
+footer {display:flex;justify-content:space-between;gap:1rem;margin-top:1.75rem;font-size:.8rem;color:var(--muted)}
+.sr-only {position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.skip-link {position:absolute;left:1rem;top:-100px;background:#fff;padding:.7rem;z-index:2;color:var(--blue)}
+.skip-link:focus {top:.5rem}
+@media(max-width:1050px) {
+  main {padding:1.3rem}.heading {align-items:flex-start;flex-direction:column}.local-label {white-space:normal}
+  td,th {padding:.85rem .7rem}.stat {grid-template-columns:35px 1fr;padding:.8rem}.stat>span {font-size:1.7rem}
+}
+@media(max-width:760px) {
+  .topbar {padding:1rem}.edition {display:none}main {padding:1rem}
+  .inventory-banner,.notice {align-items:flex-start;flex-direction:column}.onboarding {grid-template-columns:1fr;gap:.5rem}
+  .stats {gap:.5rem}.stat {display:flex;flex-direction:column;align-items:flex-start;gap:.4rem}.stat strong {font-size:.8rem}.stat small {display:none}
+  .table-heading {flex-wrap:wrap;gap:.5rem}.table-heading p {order:2;width:100%;margin:0}.table-heading button {margin-left:auto}
+  .filters {flex-direction:column;align-items:stretch}.filters select {min-width:0}
+  table,tbody,tr,td {display:block;width:100%}table {border:0;background:transparent}colgroup,thead {display:none}
+  tr {background:white;border:1px solid var(--line);border-top:3px solid #b6cbe7;margin-bottom:1rem;padding:.4rem .8rem}
+  td {display:grid;grid-template-columns:minmax(100px,32%) minmax(0,1fr);gap:.65rem;border:0;padding:.65rem 0}
+  td::before {content:attr(data-label);font-size:.8rem;color:var(--muted);font-weight:600}.cell-content {min-width:0}
+  .links {gap:.7rem}footer {flex-direction:column;gap:.2rem}
+}
+@media print {
+  body {background:white}.topbar {background:white;color:#172333;border-bottom:2px solid #172333;padding:0 0 1rem}.edition {color:#526174}main {padding:1rem 0}
+  .controls,.onboarding,.stats,.filters,.local-label,.help,footer,#print,#refresh-catalog,.load-message,.skip-link {display:none}
+  .inventory-banner {background:white;border:1px solid #bbb}table {font-size:10pt}tr {break-inside:avoid}
+  .links a {font-size:9pt}.heading {margin-bottom:1rem}.version {font-size:10pt}.status {border:1px solid #bbb}
+}
 </style>
 </head>
 <body>
-  <header class="topbar"><span class="brand">IBM <strong>Patchwatch</strong></span><span class="edition">Content-Manager-Umgebung</span></header>
+  <a class="skip-link" href="#products-heading">Zur Produktübersicht</a>
+  <header class="topbar"><span class="brand">IBM <strong>Patchwatch</strong></span><span class="edition">Ihre Content-Manager-Umgebung</span></header>
   <main>
-    <div class="heading"><div><p class="eyebrow">UPDATE-ÜBERSICHT</p><h1>Versionsstände und Updates</h1><p class="muted" id="catalog-date"></p></div><div class="controls"><button type="button" id="load-inventory">inventory.json öffnen</button><button type="button" id="clear-inventory" class="secondary" hidden>Inventar ausblenden</button><input type="file" id="inventory-file" accept=".json,application/json" hidden></div></div>
-    <div class="inventory-banner"><div><strong id="inventory-title">IBM-Katalog</strong><p id="inventory-meta">Öffnen Sie inventory.json für den Vergleich mit Ihrem Server.</p></div><span class="local-label">Lokale Dateiverarbeitung</span></div>
-    <p class="notice" id="freshness" hidden></p>
+    <div class="heading">
+      <div><p class="eyebrow">VERSIONEN VERGLEICHEN · UPDATES FINDEN</p><h1>Ihre IBM-Updates im Überblick</h1><p class="muted" id="catalog-date"></p></div>
+      <div class="controls">
+        <button type="button" id="load-inventory">Inventar öffnen</button>
+        <button type="button" id="load-catalog" class="secondary">Katalog aktualisieren</button>
+        <button type="button" id="clear-inventory" class="secondary" hidden>Inventar entfernen</button>
+        <input type="file" id="inventory-file" accept=".json,application/json" hidden>
+        <input type="file" id="catalog-file" accept=".json,application/json" hidden>
+      </div>
+    </div>
+    <section id="onboarding" class="onboarding" aria-label="So funktioniert es">
+      <div><span class="step">1</span><strong>Inventar laden</strong><p>inventory.json vom IBM-Server öffnen.</p></div>
+      <div><span class="step">2</span><strong>Stände vergleichen</strong><p>Updates und offene Prüfungen erkennen.</p></div>
+      <div><span class="step">3</span><strong>Pakete herunterladen</strong><p>IBM-Link öffnen; Installation separat mit Ansible.</p></div>
+    </section>
+    <section class="inventory-banner" id="drop-zone" aria-label="Dateien per Drag-and-drop laden">
+      <div><strong id="inventory-title">Inventar laden und Updates vergleichen</strong><p id="inventory-meta">inventory.json auswählen oder hier ablegen. Die Datei bleibt in diesem Browser.</p></div>
+      <span class="local-label">JSON hier ablegen · Verarbeitung lokal</span>
+    </section>
+    <p id="load-message" class="load-message" role="status" aria-live="polite"></p>
+    <div class="notice" id="freshness" hidden><div><strong>Aktualität prüfen</strong><p id="freshness-message"></p></div><button type="button" id="refresh-catalog" class="secondary">Neueren Katalog öffnen</button></div>
     <p class="error" id="error" role="alert" hidden></p>
-    <div class="table-heading"><h2>Produkte</h2><p id="summary" role="status" aria-live="polite"></p></div>
-    <table><caption class="sr-only">Vergleich installierter Versionen mit den bei IBM bestätigten Ständen der jeweiligen Versionslinie</caption><colgroup><col class="col-product"><col class="col-installed"><col class="col-available"><col class="col-status"><col class="col-links"></colgroup><thead><tr><th scope="col">Produkt / Versionslinie</th><th scope="col">Installiert</th><th scope="col">Bei IBM bestätigt</th><th scope="col">Vergleich</th><th scope="col">Quellen und Downloads</th></tr></thead><tbody id="products"></tbody></table>
-    <p class="table-note">Der Vergleich gilt für die angegebene Versionslinie und Komponente. Eine übereinstimmende Version bestätigt weder die Abdeckung aller Sicherheitskorrekturen noch die Kompatibilität der gesamten Umgebung.</p>
-    <details class="help"><summary>Bedienung und Aktualisierung</summary><div class="help-content"><ol><li>Öffnen Sie diese HTML-Datei in einem normalen Windows-Browser.</li><li>Erzeugen Sie auf dem CM-Server im Verzeichnis des Collectors die Datei mit <code>python3 ibm_discovery.py --json &gt; inventory.json</code> und übertragen Sie sie über einen vorhandenen Dateitransferweg nach Windows.</li><li>Klicken Sie auf „inventory.json öffnen“. Der Vergleich erfolgt im Browser; die Datei wird nicht hochgeladen.</li><li>Die Links öffnen IBM Support oder Fix Central. Dort wählen Sie die Plattform aus, melden sich bei Bedarf mit Ihrer IBMid an und laden das Paket herunter. Downloads mit IBM-Anmeldung wurden hier nicht geprüft.</li></ol><p>Der Katalog ist in die Seite eingebettet und wird beim Öffnen nicht automatisch aktualisiert. Laden Sie eine neue HTML-Datei aus dem Repository herunter oder öffnen Sie eine neuere catalog.json. GitHub Actions erstellt nach der Katalogaktualisierung alle fertigen Dateien im Ordner output/ neu.</p><button type="button" id="load-catalog" class="secondary">catalog.json öffnen</button><input type="file" id="catalog-file" accept=".json,application/json" hidden><p class="muted">Einige vorhandene Provider prüfen eine fest hinterlegte Seite eines bereits bekannten Releases. Ein erneuter Abruf beweist nicht, dass es keine neueren Korrekturen gibt. Die ergänzenden Hinweise behalten ihr eigenes, in der jeweiligen Produktzeile angezeigtes Prüfdatum.</p></div></details>
-    <footer><span>IBM Patchwatch · portable</span><span>Ohne Webserver oder zusätzliche Windows-Installation</span></footer>
-    <noscript><p>Aktivieren Sie JavaScript im Browser, um die Tabelle anzuzeigen und JSON-Dateien einzulesen.</p></noscript>
+    <section class="stats" aria-label="Ergebnis des Versionsvergleichs">
+      <button type="button" class="stat stat-update" data-filter="update"><span id="count-update">—</span><strong>Updates verfügbar</strong><small>Neuere bestätigte Stände</small></button>
+      <button type="button" class="stat stat-review" data-filter="review"><span id="count-review">—</span><strong>Prüfung erforderlich</strong><small>Quellen, Erfassung oder Kompatibilität</small></button>
+      <button type="button" class="stat stat-match" data-filter="match"><span id="count-match">—</span><strong>Verglichener Stand gleich</strong><small>Keine vollständige Sicherheitsprüfung</small></button>
+    </section>
+    <div class="table-heading"><h2 id="products-heading">Produkte und Downloads</h2><p id="summary" role="status" aria-live="polite"></p><button type="button" id="print" class="secondary">Drucken / PDF</button></div>
+    <div class="filters" role="search" aria-label="Produktübersicht filtern">
+      <div class="search-field"><label for="search">Produkt oder Installationspfad suchen</label><input id="search" type="search" placeholder="z. B. WebSphere, Db2 oder /opt/IBM" autocomplete="off"></div>
+      <div><label for="status-filter">Anzeige</label><select id="status-filter"><option value="all">Alle Produkte</option><option value="attention">Updates und Prüfungen</option><option value="update">Nur verfügbare Updates</option><option value="review">Nur offene Prüfungen</option><option value="match">Verglichener Stand gleich</option><option value="missing">Ohne Produkteintrag</option></select></div>
+      <button type="button" id="reset-filter" class="secondary">Filter zurücksetzen</button>
+    </div>
+    <table><caption class="sr-only">Installierte IBM-Versionen, bekannte Zielstände und passende Downloadseiten</caption><colgroup><col class="col-product"><col class="col-installed"><col class="col-available"><col class="col-status"><col class="col-links"></colgroup><thead><tr><th scope="col">Produkt</th><th scope="col">Installiert</th><th scope="col">Bekannter Zielstand</th><th scope="col">Vergleich</th><th scope="col">Downloads und Quellen</th></tr></thead><tbody id="products"></tbody></table>
+    <div class="empty-results" id="empty-results" hidden><strong>Keine passenden Produkte</strong><p>Ändern Sie den Suchbegriff oder setzen Sie die Filter zurück.</p></div>
+    <p class="table-note">Verglichen werden die Versionen aus Ihrer Datei. Eine gleiche Basisversion bestätigt nicht, dass alle Sicherheitskorrekturen und iFixes installiert sind.</p>
+    <details class="help"><summary>Hilfe: Inventar erstellen und Daten aktualisieren</summary><div class="help-content">
+      <ol><li>Auf dem IBM-Server den Collector ausführen: <code>python3 ibm_discovery.py --json &gt; inventory.json</code>.</li><li>Die Datei nach Windows übertragen und über <strong>Inventar öffnen</strong> laden oder auf die Seite ziehen. Inventar und Katalog können gemeinsam abgelegt werden.</li><li>Nach Produkt oder Status filtern. Voraussetzungen und iFix-Details lassen sich in der jeweiligen Zeile aufklappen.</li><li>IBM-Link öffnen, bei Bedarf anmelden und das Paket manuell herunterladen. Die Ansible-Installation wird separat gestartet.</li></ol>
+      <p>Alle fertigen Dateien liegen im Repository im Ordner <strong>output/</strong>. Für neue Stände das aktuelle Paket herunterladen oder über <strong>Katalog aktualisieren</strong> eine neuere catalog.json öffnen. Neue fachliche Hinweise benötigen auch eine neue HTML-Datei.</p>
+      <p>Beim Schließen der Seite werden die geladenen Inventardaten verworfen. Es erfolgt kein Upload und kein automatischer Zugriff auf den IBM-Server.</p>
+      <p class="muted">Einige Provider prüfen eine versionsgebundene IBM-Seite. Ein neuer Abruf beweist nicht, dass es keine neueren Releases gibt. Fachliche Hinweise und Paketbestätigungen behalten ihr eigenes Prüfdatum.</p>
+    </div></details>
+    <footer><span>IBM Patchwatch · portable</span><span>Eine HTML-Datei · keine zusätzliche Windows-Installation</span></footer>
+    <noscript><p>Aktivieren Sie JavaScript, um Versionen zu vergleichen und JSON-Dateien einzulesen.</p></noscript>
   </main>
   <script id="catalog-data" type="application/json">{"schema_version":2,"generated_at":"2026-10-14T11:52:21.172229+00:00","generator":"scripts/update_ibm_catalog.py","refresh_status":"ok","refresh_errors":{},"products":{"content_manager":{"available":{"version":"8.7.00.500","fix_pack":5},"cumulative":true,"scope":"8.7_fix_pack_level","source_url":"https://www.ibm.com/docs/en/content-manager/8.7.0?topic=fp-content-manager-version-87-fix-pack-5-readme","ifx_audit":"pending","notes":["Fix-pack comparison only; interim/security fixes are audited separately.","Known FP5 baseline; this release-specific readme does not discover future fix packs."],"refreshed_at":"2026-10-14T11:52:21.172229+00:00"},"content_navigator":{"available":{"version":"3.1.0","interim_fix":12,"build_level":"icn310.012.703"},"cumulative":null,"scope":"3.1.0_interim_fix_stream","source_url":"https://www.ibm.com/support/pages/ibm-content-navigator-version-310-interim-fix-12-readme","ifx_audit":null,"notes":["The target is restricted to the installed 3.1.0 maintenance stream; no 3.2 major upgrade is inferred.","Supersedence/cumulative semantics remain conservative until explicitly proven from IBM metadata."],"refreshed_at":"2026-10-14T11:52:21.172229+00:00","download_url":"https://www.ibm.com/support/fixcentral/swg/selectFixes?parent=Enterprise%20Content%20Management&product=ibm/Other+software/Content+Navigator&release=3.1.0&platform=Linux&function=all"},"daeja_viewone_virtual":{"available":{"version":"5.0.15","interim_fix":6},"cumulative":true,"scope":"5.0.15_ifix_stream","source_url":"https://delivery04.dhe.ibm.com/sar/CMA/OSA/0dx21/0/5.0.15_DAEJA_VIEWONE_IFIX006_Readme.htm","ifx_audit":null,"notes":["The iFix 6 readme explicitly carries forward fixes/features from previous 5.0.15 iFixes.","IBM Daeja 26.0.0 is a newer release, but Patchwatch does not infer a major-version upgrade from a maintenance check."],"refreshed_at":"2026-10-14T11:52:21.172229+00:00"},"db2":{"available":{"version":"11.5.9.0","update_number":"94236","special_build":"special_94236","ptf":"DYN2609251941AMD64_94236"},"cumulative":true,"scope":"published_cumulative_updates","source_url":"https://www.ibm.com/support/pages/node/7087189","ifx_audit":null,"notes":["IBM states that Db2 11.5.9 published updates are cumulative.","Update numbers are not treated as chronological version numbers; IBM page order/most-recent marker is authoritative."],"refreshed_at":"2026-10-14T11:52:21.172229+00:00"},"ibm_java":{"available":{"version":"8.0.8.71","service_refresh":8,"fix_pack":71},"cumulative":true,"scope":"java8_refresh_stream","source_url":"https://www.ibm.com/support/pages/ibm-sdk-java-technology-edition-refreshes","ifx_audit":null,"notes":[],"refreshed_at":"2026-10-14T11:52:21.172229+00:00"},"iccsap":{"available":{"version":"4.0.0.4","jre_version":"8.0.8.70","jre_fix_date":"20260812","fix_name":"4.0.0.4-ICCSAP-Base-JRE-8.0.8.70"},"cumulative":null,"scope":"4.0.0.4_base_jre_and_binary_ifixes","source_url":"https://www.ibm.com/support/pages/security-bulletin-multiple-vulnerabilities-may-affect-ibm%C2%AE-sdk-java%E2%84%A2-technology-edition-ibm-content-collector-sap-applications-16","ifx_audit":null,"notes":["This check targets the currently published ICCSAP embedded-JRE security remediation, not every ICCSAP component fix.","JRE dates do not establish installed version. Binary interim fixes must be checked independently; no cumulative replacement is assumed."],"refreshed_at":"2026-10-14T11:52:21.172229+00:00","download_url":"https://www.ibm.com/support/fixcentral/swg/selectFixes?parent=Enterprise%20Content%20Management&product=ibm/Information+Management/IBM+Content+Collector+for+SAP+Applications&release=4.0.0.4&platform=Linux+64-bit,x86_64&function=all","interim_fixes":[{"fix_id":"4004-ICCSAP-FP4-IF21","filename":"4004-ICCSAP-FP4-IF21-Binaries-LUX.zip","kind":"binary_interim_fix","cumulative":false,"applies_to":{"min":"4.0.0.4","max":"4.0.0.4"},"source_url":"https://www.ibm.com/support/fixcentral/swg/doSelectFixes?options.selectedFixes=4004-ICCSAP-FP4-IF21&continue=1","checked_at":"2026-09-07","evidence":"Operator-confirmed Fix Central package; additional prerequisites unverified","supersedence":"not_assumed"}]},"websphere":{"available":{"version":"9.0.5.29"},"cumulative":true,"scope":"fix_pack_and_reviewed_independent_ifixes","source_url":"https://www.ibm.com/support/pages/fix-list-ibm-websphere-application-server-traditional-v9-0","ifx_audit":"pending","notes":["WebSphere traditional fix packs are cumulative.","CURRENT here means current fix-pack level only; interim fixes are audited separately."],"refreshed_at":"2026-10-14T11:52:21.172229+00:00","download_url":"https://www.ibm.com/support/fixcentral/swg/selectFixes?parent=ibm%7EWebSphere&product=ibm/WebSphere/WebSphere+Application+Server&release=9.0.5.25&platform=Linux+64-bit,x86_64&function=all","interim_fixes":[{"fix_id":"9.0.5.20-WS-WAS-IFPH72166","apar":"PH72166","filename":"9.0.5.20-WS-WAS-IFPH72166.zip","kind":"interim_fix","cumulative":false,"applies_to":{"min":"9.0.5.20","max":"9.0.5.28"},"source_url":"https://www.ibm.com/support/pages/node/7281092","checked_at":"2026-09-07","evidence":"IBM download table; version range only, not installation approval","supersedence":"not_assumed"},{"fix_id":"9.0.5.24-WS-WAS-IFDT496327","apar":"DT496327","filename":"9.0.5.24-WS-WAS-IFDT496327.zip","kind":"interim_fix","cumulative":false,"applies_to":{"min":"9.0.5.24","max":"9.0.5.28"},"source_url":"https://www.ibm.com/support/pages/node/7283472","checked_at":"2026-09-07","evidence":"IBM download table; version range only, not installation approval","supersedence":"not_assumed"},{"fix_id":"9.0.5.25-WS-WAS-IFDT496500","apar":"DT496500","filename":"9.0.5.25-WS-WAS-IFDT496500.zip","kind":"interim_fix","cumulative":false,"applies_to":{"min":"9.0.5.25","max":"9.0.5.28"},"source_url":"https://www.ibm.com/support/pages/dt496500-ibm-websphere-application-server-vulnerable-broken-access-controlprivilege-escalation-administrative-console-cve-2026-14446","checked_at":"2026-09-07","evidence":"IBM download table; version range only, not installation approval","supersedence":"not_assumed"},{"fix_id":"9.0.5.26-WS-WAS-IFPH71384","apar":"PH71384","filename":"9.0.5.26-WS-WAS-IFPH71384.zip","kind":"interim_fix","cumulative":false,"applies_to":{"min":"9.0.5.26","max":"9.0.5.28"},"source_url":"https://www.ibm.com/support/pages/ph71384ibm-websphere-application-server-affected-cross-site-request-forgery-vulnerability-cve-2026-8408","checked_at":"2026-09-07","evidence":"IBM download table; version range only, not installation approval","supersedence":"not_assumed"},{"fix_id":"9.0.5.26-WS-WAS-IFPH71670","apar":"PH71670","filename":"9.0.5.26-WS-WAS-IFPH71670.zip","kind":"interim_fix","cumulative":false,"applies_to":{"min":"9.0.5.26","max":"9.0.5.28"},"source_url":"https://www.ibm.com/support/pages/node/7278552","checked_at":"2026-09-07","evidence":"IBM download table; version range only, not installation approval","supersedence":"not_assumed"},{"fix_id":"9.0.5.27-WS-WAS-IFPH71923","apar":"PH71923","filename":"9.0.5.27-WS-WAS-IFPH71923.zip","kind":"interim_fix","cumulative":false,"applies_to":{"min":"9.0.5.27","max":"9.0.5.28"},"source_url":"https://www.ibm.com/support/pages/ph71714ph71923ibm-websphere-application-server-affected-remote-code-execution-vulnerability-cve-2026-11536","checked_at":"2026-09-07","evidence":"IBM download table; version range only, not installation approval","supersedence":"not_assumed","note":"IBM dokumentiert die Ablösung von PH71714; andere APARs bleiben unabhängig."},{"fix_id":"9.0.5.28-WS-WAS-IFDT495928","apar":"DT495928","filename":"9.0.5.28-WS-WAS-IFDT495928.zip","kind":"interim_fix","cumulative":false,"applies_to":{"min":"9.0.5.28","max":"9.0.5.28"},"source_url":"https://www.ibm.com/support/pages/dt495928-websphere-application-server-vulnerable-ssrf-cve-2026-14529","checked_at":"2026-09-07","evidence":"IBM download table; version range only, not installation approval","supersedence":"not_assumed"},{"fix_id":"9.0.5.28-WS-WAS-IFDT496947","apar":"DT496947","filename":"9.0.5.28-WS-WAS-IFDT496947.zip","kind":"interim_fix","cumulative":false,"applies_to":{"min":"9.0.5.28","max":"9.0.5.28"},"source_url":"https://www.ibm.com/support/pages/ph71590ibm-websphere-application-server-vulnerable-identity-spoofing-cve-2026-8644","checked_at":"2026-09-07","evidence":"IBM download table; version range only, not installation approval","supersedence":"not_assumed","note":"IBM verlangt: vorhandenes PH71590 vor DT496947 entfernen. Keine automatische Entfernung."},{"fix_id":"9.0.5.28-WS-WAS-IFPH72192","apar":"PH72192","filename":"9.0.5.28-WS-WAS-IFPH72192.zip","kind":"interim_fix","cumulative":false,"applies_to":{"min":"9.0.5.28","max":"9.0.5.28"},"source_url":"https://www.ibm.com/support/pages/node/7281143","checked_at":"2026-09-07","evidence":"IBM download table; version range only, not installation approval","supersedence":"not_assumed","note":"IBM nennt PH71706 als enthalten, soweit anwendbar; andere APARs bleiben unabhängig."},{"fix_id":"9.0.5.25-WS-WAS-IFDT496947","apar":"DT496947","filename":"9.0.5.25-WS-WAS-IFDT496947.zip","kind":"interim_fix","cumulative":false,"applies_to":{"min":"9.0.5.25","max":"9.0.5.26"},"source_url":"https://www.ibm.com/support/pages/ph71590ibm-websphere-application-server-vulnerable-identity-spoofing-cve-2026-8644","checked_at":"2026-09-07","evidence":"IBM download table; version range only, not installation approval","supersedence":"not_assumed","note":"IBM verlangt: vorhandenes PH71590 vor DT496947 entfernen. Keine automatische Entfernung."}],"fix_pack_cumulative":true,"fix_pack_url":"https://www.ibm.com/support/pages/node/7285876","availability_evidence":{"kind":"ibm_download_index","source_url":"https://www.ibm.com/support/pages/fix-list-ibm-websphere-application-server-traditional-v9-0"},"index_source_url":"https://www.ibm.com/support/pages/fix-list-ibm-websphere-application-server-traditional-v9-0"}}}</script>
   <script id="inventory-data" type="application/json">null</script>
@@ -119,10 +267,11 @@ function downloadFor(id, entry, installed) {
 
 function compareProduct(id, installed, entry, catalog, now = Date.now()) {
   if (!installed) return result("empty", "Keine Inventardaten", "Öffnen Sie die Datei vom Server. Ein fehlender Eintrag beweist nicht, dass das Produkt nicht installiert ist.");
+  if (installed._discoveryError) return result("error", "Erfassung fehlgeschlagen", installed._discoveryError);
+  if (id === "daeja_viewone_virtual" && installed.source === "ecmclient_version_txt") return result("review", "In ICN enthalten", "Diese Komponente wird mit ICN geliefert. Den Stand im ICN-Paket prüfen.");
   if (!entry || !object(entry.available) || !own(PRODUCTS, id)) return result("review", "Kein Katalogeintrag", "Für diesen Eintrag wird eine eigene IBM-Quelle benötigt.");
   const stale = freshness(entry, catalog, now);
   if (stale) return result("stale", "Katalog prüfen", stale);
-  if (installed._discoveryError) return result("error", "Fehler bei der Erfassung", installed._discoveryError);
   if (entry.support_status === "not_supported") return result("review", "Versionslinie nicht unterstützt", "Prüfen Sie den Supportstatus bei IBM.");
   const available = entry.available;
   const x = versionParts(installed.version), y = versionParts(available.version);
@@ -148,7 +297,6 @@ function compareProduct(id, installed, entry, catalog, now = Date.now()) {
   if (id === "content_navigator" || id === "daeja_viewone_virtual") {
     const ix = ifixLevel(installed), iy = integer(available.interim_fix);
     if (ix === null || iy === null) return result("review", "iFix-Stand prüfen", "Die iFix-Nummer fehlt oder widerspricht dem Build-Level.");
-    if (id === "daeja_viewone_virtual" && installed.source === "ecmclient_version_txt") return result("review", "In ICN enthalten", "Prüfen Sie die Daeja-Version im ausgewählten ICN-Paket.");
     if (ix > iy) return result("different", "iFix neuer als Katalog", "Prüfen Sie eine aktuellere IBM-Quelle.");
     if (ix < iy) return result("update", "Neuerer iFix verfügbar", "Bekannt ist iFix " + iy + "; Anwendbarkeit und Abhängigkeiten stehen in der Readme.");
     if (id === "content_navigator" && installed.build_level && available.build_level && String(installed.build_level).toLowerCase() !== String(available.build_level).toLowerCase()) return result("review", "iFix gleich · anderer Build", "Der Build-Level weicht von der IBM-Readme ab; das Paket muss geprüft werden.");
@@ -159,6 +307,10 @@ function compareProduct(id, installed, entry, catalog, now = Date.now()) {
 
 function validateInventory(value) {
   if (!object(value) || value.schema_version !== 1 || !object(value.host) || !Array.isArray(value.products)) throw Error("Erwartet wird ein Inventar mit schema_version 1, einem host-Objekt und einer products-Liste.");
+  for (const field of ["discovery", "installation_manager"]) {
+    if (value[field] != null && !object(value[field])) throw Error(field + " muss ein Objekt sein.");
+  }
+  if (value.host.os_release != null && !object(value.host.os_release)) throw Error("host.os_release muss ein Objekt sein.");
   if (value.products.length > 1000) throw Error("Die Datei enthält mehr als 1000 Produkte.");
   for (const p of value.products) {
     if (!object(p) || typeof p.id !== "string" || !p.id || p.id.length > 150) throw Error("Jeder products-Eintrag benötigt eine nicht leere id als Zeichenkette.");
@@ -173,6 +325,21 @@ function validateCatalog(value) {
   if (Object.keys(value.products).length > 1000) throw Error("Der Katalog ist zu groß.");
   for (const entry of Object.values(value.products)) {
     if (!object(entry) || (entry.available != null && !object(entry.available))) throw Error("Ungültiger Katalogeintrag.");
+    if (entry.available && entry.available.version != null && typeof entry.available.version !== "string") throw Error("Die Katalogversion muss eine Zeichenkette sein.");
+    if (entry.available) {
+      for (const field of ["build_level", "special_build", "jre_version"]) if (entry.available[field] != null && typeof entry.available[field] !== "string") throw Error("Katalogfeld " + field + " muss eine Zeichenkette sein.");
+      for (const field of ["interim_fix", "fix_pack"]) if (entry.available[field] != null && integer(entry.available[field]) === null) throw Error("Katalogfeld " + field + " muss eine nicht negative Ganzzahl sein.");
+    }
+    if (entry.availability_evidence != null && !object(entry.availability_evidence)) throw Error("Ungültiger Herkunftsnachweis im Katalog.");
+    if (entry.interim_fixes != null) {
+      if (!Array.isArray(entry.interim_fixes) || entry.interim_fixes.length > 1000) throw Error("interim_fixes muss eine Liste mit höchstens 1000 Einträgen sein.");
+      for (const fix of entry.interim_fixes) {
+        if (!object(fix) || (fix.applies_to != null && !object(fix.applies_to))) throw Error("Ungültiger iFix-Eintrag oder Versionsbereich.");
+        for (const field of ["fix_id", "apar", "filename", "source_url", "checked_at", "note"]) {
+          if (fix[field] != null && typeof fix[field] !== "string") throw Error("iFix-Feld " + field + " muss eine Zeichenkette sein.");
+        }
+      }
+    }
   }
   return value;
 }
@@ -224,30 +391,89 @@ function iccsapFixes(inventory) {
 }
 
 function rowsFor(inventory, catalog) {
-  const products = inventory ? inventory.products.map(p => ({...p})) : [];
-  for (const p of products) {
-    const discoveryId = p.id === "ibm_java" ? "websphere" : p.id === "daeja_viewone_virtual" ? "content_navigator" : p.id;
-    const discovery = inventory.discovery && inventory.discovery[discoveryId];
-    if (object(discovery) && discovery.status && !["ok", "skipped"].includes(discovery.status)) p._discoveryError = "Collector-Status: " + discovery.status + ". Die Daten dieses Eintrags können unvollständig sein.";
-    if (p.id === "iccsap" && !p.installed_fixes && products.filter(x => x.id === "iccsap").length === 1) p.installed_fixes = iccsapFixes(inventory);
+  const grouped = new Map();
+  for (const original of inventory ? inventory.products : []) {
+    const p = {...original};
+    const list = grouped.get(p.id) || [];
+    list.push(p); grouped.set(p.id, list);
   }
   const rows = [];
-  for (const id of Object.keys(PRODUCTS)) {
-    const matches = products.filter(p => p.id === id);
-    if (matches.length) for (const installed of matches) rows.push({id, installed, entry:catalog.products[id]});
-    else rows.push({id, installed:null, entry:catalog.products[id]});
+  for (const id of [...Object.keys(PRODUCTS), ...[...grouped.keys()].filter(id => !own(PRODUCTS, id))]) {
+    const discoveryId = id === "ibm_java" ? "websphere" : id === "daeja_viewone_virtual" ? "content_navigator" : id;
+    const discovery = inventory && inventory.discovery && inventory.discovery[discoveryId];
+    const matches = grouped.get(id) || [];
+    if (id === "iccsap" && matches.length === 1 && !matches[0].installed_fixes) matches[0].installed_fixes = iccsapFixes(inventory);
+    for (const p of matches.length ? matches : [null]) {
+      if (p && object(discovery) && discovery.status && !["ok", "skipped"].includes(discovery.status)) p._discoveryError = "Collector-Status: " + discovery.status + ". Die Erfassung ist unvollständig.";
+      rows.push({id, installed:p, entry:own(catalog.products, id) ? catalog.products[id] : null, discovery});
+    }
   }
-  for (const installed of products.filter(p => !own(PRODUCTS, p.id))) rows.push({id:installed.id, installed, entry:catalog.products[installed.id]});
   return rows;
+}
+
+function rowStatus(row, inventory, catalog, now = Date.now()) {
+  if (inventory && !row.installed) {
+    const discovery = row.discovery;
+    if (object(discovery) && discovery.status && !["ok", "skipped", "not_found"].includes(discovery.status)) {
+      return result("error", "Erfassung fehlgeschlagen", "Collector-Status: " + discovery.status + (discovery.path ? " · " + discovery.path : "") + ". Erfassung auf dem Server prüfen.");
+    }
+    return result("empty", "Nicht erkannt", "Das Inventar enthält keinen Produkteintrag." + (discovery && discovery.path ? " Geprüfter Pfad: " + discovery.path + "." : "") + " Dies bestätigt keine Deinstallation.");
+  }
+  return compareProduct(row.id, row.installed, row.entry, catalog, now);
+}
+
+const REVIEW_CODES = new Set(["review", "stale", "error", "different"]);
+function filteredRows(rows, query = "", filter = "all") {
+  const needle = query.trim().toLocaleLowerCase("de-DE");
+  return rows.filter(row => {
+    const p = row.installed || {};
+    const text = [row.id, own(PRODUCTS, row.id) ? PRODUCTS[row.id][0] : p.name, p.version, p.installation_directory, row.entry && row.entry.available && row.entry.available.version].join(" ").toLocaleLowerCase("de-DE");
+    const code = row.status.code;
+    return (!needle || text.includes(needle)) && (filter === "all" || filter === "attention" && (code === "update" || REVIEW_CODES.has(code)) || filter === "update" && code === "update" || filter === "review" && REVIEW_CODES.has(code) || filter === "match" && ["match", "level"].includes(code) || filter === "missing" && code === "empty");
+  });
+}
+
+function linksFor(id, entry, installed, note) {
+  const links = [];
+  if (entry && entry.fix_pack_url) links.push({label:"Fix Pack " + (entry.available && entry.available.version || "") + " · IBM-Download", url:entry.fix_pack_url, download:true});
+  if (note && Array.isArray(note.links)) links.push(...note.links);
+  const download = downloadFor(id, entry, installed);
+  if (download) links.push({label:id === "websphere" ? "Weitere Fixes zur installierten Basis" : "Pakete in Fix Central", url:download, download:!links.some(l => l.download)});
+  if (entry && entry.source_url) links.push({label:"IBM-Quelle des Katalogs", url:entry.source_url});
+  const seen = new Set();
+  return links.filter(item => {
+    const safe = ibmUrl(item.url);
+    if (!safe) return false;
+    const key = new URL(safe); key.searchParams.sort();
+    if (seen.has(key.href)) return false;
+    seen.add(key.href); return true;
+  });
+}
+
+function importPayloads(payloads, state) {
+  const next = {...state}, kinds = new Set();
+  for (const payload of payloads) {
+    const value = payload.value;
+    const kind = value && value.schema_version === 1 ? "inventory" : value && value.schema_version === 2 ? "catalog" : null;
+    if (!kind) throw Error("Bitte inventory.json (Schema 1) oder catalog.json (Schema 2) auswählen.");
+    if (kinds.has(kind)) throw Error("Bitte nur eine Inventardatei und einen Katalog gleichzeitig auswählen.");
+    kinds.add(kind);
+    next[kind] = kind === "inventory" ? validateInventory(value) : validateCatalog(value);
+    next[kind + "Name"] = payload.name;
+  }
+  return next;
 }
 
 function startApp() {
   const $ = id => document.getElementById(id);
-  let catalog = validateCatalog(JSON.parse($("catalog-data").textContent));
-  const initial = JSON.parse($("inventory-data").textContent);
-  let inventory = initial === null ? null : validateInventory(initial);
+  let state = {
+    catalog:validateCatalog(JSON.parse($("catalog-data").textContent)),
+    inventory:JSON.parse($("inventory-data").textContent),
+    catalogName:"eingebettet", inventoryName:""
+  };
+  if (state.inventory !== null) validateInventory(state.inventory);
   const notes = JSON.parse($("notes-data").textContent);
-  let inventoryName = "", catalogName = "eingebettet";
+  let importSequence = 0;
   const el = (tag, text, className) => { const node = document.createElement(tag); if (text !== undefined) node.textContent = String(text); if (className) node.className = className; return node; };
   const date = value => { const stamp = Date.parse(value); return Number.isFinite(stamp) ? new Date(stamp).toLocaleString("de-DE", {timeZone:"UTC", year:"numeric", month:"2-digit", day:"2-digit", hour:"2-digit", minute:"2-digit"}) + " UTC" : "kein Datum angegeben"; };
   function link(label, url, primary) {
@@ -260,35 +486,23 @@ function startApp() {
   function cell(row, label, content) { const td = el("td"); td.dataset.label = label; td.append(content); row.append(td); }
   function metadata(parent, text) { if (text) parent.append(el("span", text, "metadata")); }
   function render() {
+    const {catalog, inventory, catalogName, inventoryName} = state;
     const now = Date.now();
-    $("catalog-date").textContent = "Katalog: " + date(catalog.generated_at) + " · " + catalogName + " · IBM-Hinweise: " + notes.checked_at;
-    $("clear-inventory").hidden = !inventory;
-    $("inventory-title").textContent = inventory ? inventory.context_only ? "Versionsstand aus der bereitgestellten Beschreibung" : "Inventarstand: " + (inventory.host.hostname || "kein Servername angegeben") : "IBM-Katalog · 7 Hauptprodukte";
-    $("inventory-meta").textContent = inventory ? inventory.context_only ? "Dies sind die zuvor angegebenen Versionen. Es wurde kein neuer Scan ausgeführt. Öffnen Sie eine aktuelle inventory.json für einen neuen Vergleich." : [inventoryName, "Erfasst: " + date(inventory.timestamp), inventory.host.machine, inventory.host.os_release && inventory.host.os_release.PRETTY_NAME].filter(Boolean).join(" · ") : "Öffnen Sie inventory.json für den Vergleich mit Ihrem Server. Der Katalog ist auch ohne Inventar nutzbar.";
-    const warnings = [];
-    const badEntries = Object.values(catalog.products).filter(e => freshness(e, catalog, now));
-    if (badEntries.length) warnings.push("Für " + badEntries.length + " Einträge ist der Katalog veraltet, undatiert oder die Quelle nicht erreichbar. Die Stände dienen zur Orientierung.");
-    if (now - Date.parse(notes.checked_at + "T00:00:00Z") > FRESH_HOURS * 3600000) warnings.push("Die IBM-Hinweise vom " + notes.checked_at + " müssen erneut geprüft werden, auch wenn catalog.json inzwischen aktualisiert wurde.");
-    if (inventory && !inventory.context_only) {
-      const stamp = Date.parse(inventory.timestamp);
-      if (!Number.isFinite(stamp) || stamp > now + 300000 || now - stamp > FRESH_HOURS * 3600000) warnings.push("Das Inventar hat kein verlässliches aktuelles Erfassungsdatum. Verglichen werden die Werte aus der Datei; der aktuelle Serverzustand wurde nicht abgefragt.");
+    const rows = rowsFor(inventory, catalog).map(row => ({...row, status:rowStatus(row, inventory, catalog, now)}));
+    const shown = filteredRows(rows, $("search").value, $("status-filter").value);
+    if (inventory) {
+      const priority = {update:0,error:1,review:2,stale:2,different:3,match:4,level:4,empty:5};
+      shown.sort((a, b) => (priority[a.status.code] ?? 5) - (priority[b.status.code] ?? 5));
     }
-    $("freshness").hidden = !warnings.length; $("freshness").textContent = warnings.join(" ");
-    $("products").replaceChildren();
-    const counts = {update:0, review:0, match:0};
-    const rows = rowsFor(inventory, catalog);
-    for (const row of rows) {
-      const {id, installed:p, entry:e} = row, target = e && e.available || {};
+    const fragment = document.createDocumentFragment();
+    for (const row of shown) {
+      const {id, installed:p, entry:e, status} = row, target = e && e.available || {};
       const note = matchingNote(id, e, notes);
-      const status = compareProduct(id, p, e, catalog, now);
-      if (status.code === "update") counts.update++;
-      else if (["match", "level"].includes(status.code)) counts.match++;
-      else if (p) counts.review++;
-      const tr = el("tr");
+      const tr = el("tr"); tr.dataset.status = status.code;
       const product = el("div", undefined, "cell-content");
       product.append(el("strong", own(PRODUCTS, id) ? PRODUCTS[id][0] : p.name || id, "product-name"));
       const parts = versionParts(target.version);
-      if (parts && own(PRODUCTS, id)) product.append(el("span", "Versionslinie " + parts.slice(0, PRODUCTS[id][1]).join("."), "stream"));
+      if (parts && own(PRODUCTS, id)) metadata(product, "Versionslinie " + parts.slice(0, PRODUCTS[id][1]).join("."));
       if (p && p.installation_directory) metadata(product, p.installation_directory);
       cell(tr, "Produkt", product);
       const installedCell = el("div", undefined, "cell-content");
@@ -302,79 +516,132 @@ function startApp() {
       }
       cell(tr, "Installiert", installedCell);
       const availableCell = el("div", undefined, "cell-content");
-      const targetText = [target.version, target.interim_fix != null ? "iFix " + target.interim_fix : "", target.jre_version ? "+ JRE " + target.jre_version : ""].filter(Boolean).join(" ") || "Keine Daten";
-      availableCell.append(el("span", targetText, "version"));
+      availableCell.append(el("span", [target.version, target.interim_fix != null ? "iFix " + target.interim_fix : "", target.jre_version ? "+ JRE " + target.jre_version : ""].filter(Boolean).join(" ") || "Keine Daten", "version"));
       metadata(availableCell, target.special_build);
-      if (note) metadata(availableCell, note.availability_note);
+      if (target.fix_pack != null) metadata(availableCell, "Fix Pack " + target.fix_pack);
+      if (e && e.fix_pack_cumulative) metadata(availableCell, "Kumulativer Fix Pack", "metadata");
       if (e) {
         const evidence = e.availability_evidence;
-        if (evidence && evidence.kind === "operator_confirmed") metadata(availableCell, "Paketverfügbarkeit vom Betreiber bestätigt: " + (evidence.checked_at || "Datum fehlt"));
-        metadata(availableCell, (evidence && evidence.kind === "operator_confirmed" ? "Katalogabgleich: " : "Quelle abgerufen: ") + date(e.refreshed_at || catalog.generated_at));
+        metadata(availableCell, evidence && evidence.kind === "operator_confirmed" ? "Paket bestätigt: " + (evidence.checked_at || "Datum fehlt") : "Abgerufen: " + date(e.refreshed_at || catalog.generated_at));
       }
       if (note) {
         const details = el("details", undefined, "product-notes");
         details.append(el("summary", "Voraussetzungen und Hinweise"));
+        if (note.availability_note) details.append(el("p", note.availability_note));
         for (const text of note.notes) details.append(el("p", text));
-        details.append(el("p", "Hinweise geprüft am: " + (note.checked_at || notes.checked_at), "muted"));
+        details.append(el("p", "Hinweise geprüft: " + (note.checked_at || notes.checked_at), "muted"));
         availableCell.append(details);
       }
-      for (const association of visibleFixAssociations(e, p && p.version, target.version)) {
-        const f = association.fix;
-        const block = el("div", undefined, "product-notes");
-        block.append(el("strong", f.fix_id || "Unbekannter iFix"));
-        metadata(block, "Nicht kumulativ · " + (f.filename || ""));
-        const range = f.applies_to || {};
-        metadata(block, "Basisbereich: " + (range.min || "unbekannt") + " bis " + (range.max || "unbekannt"));
-        if (p) metadata(block, "Installierte Basis: " + (association.installed === null ? "Zuordnung ungeprüft" : association.installed ? "im Versionsbereich" : "außerhalb des Versionsbereichs"));
-        metadata(block, "Katalog-Zielbasis: " + (association.target === null ? "Zuordnung ungeprüft" : association.target ? "im Versionsbereich" : "außerhalb des Versionsbereichs"));
-        metadata(block, "iFix im Inventar: " + (p && (p.installed_fixes || []).some(value => value === f.fix_id || value === f.apar) ? "Kennung vorhanden; Paketstand prüfen" : "nicht eindeutig nachgewiesen"));
-        metadata(block, "iFix-Quelle geprüft: " + (f.checked_at || "unbekannt"));
-        if (!f.checked_at || now - Date.parse(f.checked_at + "T00:00:00Z") > FRESH_HOURS * 3600000) metadata(block, "iFix-Quelle erneut prüfen; ein Basisabruf aktualisiert diese Prüfung nicht.");
-        if (f.note) metadata(block, f.note);
-        const source = link("IBM-Paket / Voraussetzungen", f.source_url);
-        if (source) block.append(source);
-        availableCell.append(block);
+      const associations = visibleFixAssociations(e, p && p.version, target.version);
+      if (associations.length) {
+        const group = el("details", undefined, "product-notes ifix-group");
+        group.append(el("summary", "iFixes zur Zielbasis (" + associations.length + ")"));
+        for (const association of associations) {
+          const f = association.fix, range = f.applies_to || {};
+          const block = el("div", undefined, "ifix-item");
+          block.append(el("strong", f.fix_id || "Unbekannter iFix"));
+          metadata(block, "Nicht kumulativ · " + (f.filename || ""));
+          metadata(block, "Basisbereich: " + (range.min || "unbekannt") + " bis " + (range.max || "unbekannt"));
+          metadata(block, association.target === null ? "Anwendbarkeit ungeprüft" : "Zielbasis im Versionsbereich");
+          metadata(block, "Kennung im Inventar: " + (p && (p.installed_fixes || []).some(value => value === f.fix_id || value === f.apar) ? "vorhanden; Paketstand prüfen" : "nicht nachgewiesen"));
+          metadata(block, "Quelle geprüft: " + (f.checked_at || "unbekannt"));
+          if (!f.checked_at || now - Date.parse(f.checked_at + "T00:00:00Z") > FRESH_HOURS * 3600000) metadata(block, "iFix-Quelle erneut prüfen.");
+          if (f.note) metadata(block, f.note);
+          const source = link("IBM-Paket und Voraussetzungen", f.source_url);
+          if (source) block.append(source);
+          group.append(block);
+        }
+        availableCell.append(group);
       }
-      cell(tr, "Bei IBM bestätigt", availableCell);
+      cell(tr, "Bekannter Zielstand", availableCell);
       const statusCell = el("div", undefined, "cell-content");
-      statusCell.append(el("span", status.label, "status " + status.code), el("p", status.reason, "reason"));
+      statusCell.append(el("span", status.label, "status " + status.code));
+      if (inventory) statusCell.append(el("p", status.reason, "reason"));
       cell(tr, "Vergleich", statusCell);
       const actions = el("div", undefined, "cell-content links");
-      const links = note ? note.links.slice() : [];
-      if (e && e.fix_pack_url) links.unshift({label:"Fix Pack " + target.version + " · Paket auswählen", url:e.fix_pack_url, download:true});
-      if (e && e.source_url && !links.some(l => l.url === e.source_url)) links.push({label:"IBM-Quelle des Katalogs", url:e.source_url});
-      const download = downloadFor(id, e, p);
-      if (download && !links.some(l => l.url === download)) links.unshift({label:"Fix Central · installierte Basis und Updates", url:download, download:true});
-      for (const item of links) { const a = link(item.label, item.url, item.download); if (a) actions.append(a); }
+      for (const item of linksFor(id, e, p, note)) { const a = link(item.label, item.url, item.download); if (a) actions.append(a); }
       if (!actions.childNodes.length) actions.append(el("span", "Keine Quelle angegeben", "metadata"));
-      cell(tr, "Quellen und Downloads", actions);
-      $("products").append(tr);
+      cell(tr, "Downloads und Quellen", actions);
+      fragment.append(tr);
     }
-    $("summary").textContent = inventory ? counts.update + " — neuerer Stand · " + counts.review + " — prüfen · " + counts.match + " — übereinstimmend" : "Bekannte Versionsstände und offizielle IBM-Seiten";
+    $("products").replaceChildren(fragment);
+    $("empty-results").hidden = shown.length > 0;
+    $("summary").textContent = shown.length + " von " + rows.length + " Produktzeilen";
+    const counts = {update:0, review:0, match:0};
+    for (const row of rows) {
+      if (row.status.code === "update") counts.update++;
+      else if (REVIEW_CODES.has(row.status.code)) counts.review++;
+      else if (["match", "level"].includes(row.status.code)) counts.match++;
+    }
+    for (const name of Object.keys(counts)) $("count-" + name).textContent = inventory ? counts[name] : "—";
+    for (const card of document.querySelectorAll("[data-filter]")) {
+      card.disabled = !inventory;
+      card.setAttribute("aria-pressed", String($("status-filter").value === card.dataset.filter));
+    }
+    $("clear-inventory").hidden = !inventory;
+    $("onboarding").hidden = !!inventory;
+    $("inventory-title").textContent = inventory ? inventory.context_only ? "Versionen aus einer bereitgestellten Beschreibung" : "Server: " + (inventory.host.hostname || "Name fehlt") : "Inventar laden und Updates vergleichen";
+    $("inventory-meta").textContent = inventory ? inventory.context_only ? "Kein neuer Serverscan. Eine aktuelle inventory.json liefert den gemessenen Stand." : [inventoryName, "Erfasst: " + date(inventory.timestamp), inventory.host.machine, inventory.host.os_release && inventory.host.os_release.PRETTY_NAME].filter(Boolean).join(" · ") : "inventory.json auswählen oder hier ablegen. Die Datei bleibt in diesem Browser.";
+    $("catalog-date").textContent = "Katalog: " + date(catalog.generated_at) + " · " + catalogName;
+    const warnings = [];
+    const badEntries = Object.values(catalog.products).filter(e => freshness(e, catalog, now));
+    if (badEntries.length) warnings.push(badEntries.length + " Katalogeinträge benötigen eine Quellenprüfung. Ältere Stände bleiben zur Orientierung sichtbar.");
+    if (now - Date.parse(notes.checked_at + "T00:00:00Z") > FRESH_HOURS * 3600000) warnings.push("Die ergänzenden IBM-Hinweise vom " + notes.checked_at + " sind älter als 72 Stunden. Für neuere Hinweise die aktuelle HTML-Datei öffnen.");
+    if (inventory && !inventory.context_only) {
+      const stamp = Date.parse(inventory.timestamp);
+      if (!Number.isFinite(stamp) || stamp > now + 300000 || now - stamp > FRESH_HOURS * 3600000) warnings.push("Das Inventar ist undatiert, älter als 72 Stunden oder hat ein Datum in der Zukunft. Angezeigt wird der Stand aus der Datei; für einen aktuellen Vergleich das Inventar auf dem Server neu erstellen.");
+    }
+    $("refresh-catalog").hidden = badEntries.length === 0;
+    $("freshness").hidden = !warnings.length;
+    $("freshness-message").textContent = warnings.join(" ");
   }
-  async function readFile(input, kind) {
-    const file = input.files[0];
-    if (!file) return;
+  async function importFiles(files) {
+    if (!files.length) return;
+    const sequence = ++importSequence;
+    $("load-message").textContent = "Dateien werden geprüft …";
     try {
-      if (file.size > MAX_BYTES) throw Error("Die JSON-Datei darf höchstens 10 MiB groß sein.");
-      const value = JSON.parse((await file.text()).replace(/^\uFEFF/, ""));
-      if (kind === "inventory") { validateInventory(value); inventory = value; inventoryName = file.name; }
-      else { validateCatalog(value); catalog = value; catalogName = file.name; }
-      $("error").hidden = true; $("error").textContent = ""; render();
+      if (files.length > 2) throw Error("Bitte höchstens inventory.json und catalog.json gemeinsam ablegen.");
+      const payloads = await Promise.all(files.map(async file => {
+        if (file.size > MAX_BYTES) throw Error("Jede JSON-Datei darf höchstens 10 MiB groß sein.");
+        return {name:file.name, value:JSON.parse((await file.text()).replace(/^\uFEFF/, ""))};
+      }));
+      if (sequence !== importSequence) return;
+      const next = importPayloads(payloads, state), previous = state;
+      state = next;
+      try { render(); } catch (error) { state = previous; render(); throw error; }
+      $("error").hidden = true;
+      $("error").textContent = "";
+      $("load-message").textContent = payloads.map(p => p.name).join(" und ") + " geladen.";
     } catch (error) {
-      $("error").textContent = "Die Datei konnte nicht geladen werden: " + error.message + " Die bisherigen Daten bleiben erhalten.";
+      if (sequence !== importSequence) return;
+      $("error").textContent = "Datei nicht übernommen: " + error.message + " Die bisherigen Daten bleiben erhalten.";
       $("error").hidden = false;
-    } finally { input.value = ""; }
+      $("load-message").textContent = "";
+    }
   }
-  $("load-inventory").addEventListener("click", () => $("inventory-file").click());
-  $("inventory-file").addEventListener("change", event => readFile(event.target, "inventory"));
-  $("load-catalog").addEventListener("click", () => $("catalog-file").click());
-  $("catalog-file").addEventListener("change", event => readFile(event.target, "catalog"));
-  $("clear-inventory").addEventListener("click", () => { inventory = null; inventoryName = ""; render(); });
+  for (const kind of ["inventory", "catalog"]) {
+    $("load-" + kind).addEventListener("click", () => $(kind + "-file").click());
+    $(kind + "-file").addEventListener("change", event => { importFiles([...event.target.files]); event.target.value = ""; });
+  }
+  $("clear-inventory").addEventListener("click", () => {
+    importSequence++; state = {...state, inventory:null, inventoryName:""};
+    $("search").value = ""; $("status-filter").value = "all";
+    $("error").hidden = true; $("load-message").textContent = "Inventar entfernt."; render();
+  });
+  $("search").addEventListener("input", render);
+  $("status-filter").addEventListener("change", render);
+  $("reset-filter").addEventListener("click", () => { $("search").value = ""; $("status-filter").value = "all"; render(); $("search").focus(); });
+  for (const card of document.querySelectorAll("[data-filter]")) card.addEventListener("click", () => { $("status-filter").value = card.dataset.filter; render(); });
+  $("print").addEventListener("click", () => window.print());
+  $("refresh-catalog").addEventListener("click", () => $("catalog-file").click());
+  const zone = $("drop-zone");
+  document.addEventListener("dragover", event => { event.preventDefault(); zone.classList.add("drag-active"); });
+  document.addEventListener("dragleave", event => { if (!event.relatedTarget) zone.classList.remove("drag-active"); });
+  document.addEventListener("drop", event => { event.preventDefault(); zone.classList.remove("drag-active"); importFiles([...event.dataTransfer.files]); });
   render();
 }
 
-if (typeof module !== "undefined" && module.exports) module.exports = {versionParts, compareVersions, ifixLevel, freshness, compareProduct, validateInventory, validateCatalog, ibmUrl, matchingNote, iccsapFixes, rowsFor, fixAssociations, visibleFixAssociations, downloadFor};
+if (typeof module !== "undefined" && module.exports) module.exports = {versionParts, compareVersions, ifixLevel, freshness, compareProduct, validateInventory, validateCatalog, ibmUrl, matchingNote, iccsapFixes, rowsFor, fixAssociations, visibleFixAssociations, downloadFor, rowStatus, filteredRows, linksFor, importPayloads};
 if (typeof document !== "undefined") {
   try { startApp(); } catch (error) {
     const target = document.getElementById("error");

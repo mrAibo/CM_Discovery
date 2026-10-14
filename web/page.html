@@ -5,23 +5,58 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="referrer" content="no-referrer">
   <meta http-equiv="Content-Security-Policy" content="__CSP__">
-  <title>IBM Patchwatch — Versionsstände und Updates</title>
-  <meta name="description" content="Installierte IBM-Versionen und bestätigte Updates. Lokaler Vergleich mit inventory.json, offizielle Quellen und Downloadseiten.">
+  <title>IBM Patchwatch — Ihre Update-Übersicht</title>
+  <meta name="description" content="IBM-Versionen lokal vergleichen, Updates erkennen und passende IBM-Downloadseiten öffnen.">
   <style>__CSS__</style>
 </head>
 <body>
-  <header class="topbar"><span class="brand">IBM <strong>Patchwatch</strong></span><span class="edition">Content-Manager-Umgebung</span></header>
+  <a class="skip-link" href="#products-heading">Zur Produktübersicht</a>
+  <header class="topbar"><span class="brand">IBM <strong>Patchwatch</strong></span><span class="edition">Ihre Content-Manager-Umgebung</span></header>
   <main>
-    <div class="heading"><div><p class="eyebrow">UPDATE-ÜBERSICHT</p><h1>Versionsstände und Updates</h1><p class="muted" id="catalog-date"></p></div><div class="controls"><button type="button" id="load-inventory">inventory.json öffnen</button><button type="button" id="clear-inventory" class="secondary" hidden>Inventar ausblenden</button><input type="file" id="inventory-file" accept=".json,application/json" hidden></div></div>
-    <div class="inventory-banner"><div><strong id="inventory-title">IBM-Katalog</strong><p id="inventory-meta">Öffnen Sie inventory.json für den Vergleich mit Ihrem Server.</p></div><span class="local-label">Lokale Dateiverarbeitung</span></div>
-    <p class="notice" id="freshness" hidden></p>
+    <div class="heading">
+      <div><p class="eyebrow">VERSIONEN VERGLEICHEN · UPDATES FINDEN</p><h1>Ihre IBM-Updates im Überblick</h1><p class="muted" id="catalog-date"></p></div>
+      <div class="controls">
+        <button type="button" id="load-inventory">Inventar öffnen</button>
+        <button type="button" id="load-catalog" class="secondary">Katalog aktualisieren</button>
+        <button type="button" id="clear-inventory" class="secondary" hidden>Inventar entfernen</button>
+        <input type="file" id="inventory-file" accept=".json,application/json" hidden>
+        <input type="file" id="catalog-file" accept=".json,application/json" hidden>
+      </div>
+    </div>
+    <section id="onboarding" class="onboarding" aria-label="So funktioniert es">
+      <div><span class="step">1</span><strong>Inventar laden</strong><p>inventory.json vom IBM-Server öffnen.</p></div>
+      <div><span class="step">2</span><strong>Stände vergleichen</strong><p>Updates und offene Prüfungen erkennen.</p></div>
+      <div><span class="step">3</span><strong>Pakete herunterladen</strong><p>IBM-Link öffnen; Installation separat mit Ansible.</p></div>
+    </section>
+    <section class="inventory-banner" id="drop-zone" aria-label="Dateien per Drag-and-drop laden">
+      <div><strong id="inventory-title">Inventar laden und Updates vergleichen</strong><p id="inventory-meta">inventory.json auswählen oder hier ablegen. Die Datei bleibt in diesem Browser.</p></div>
+      <span class="local-label">JSON hier ablegen · Verarbeitung lokal</span>
+    </section>
+    <p id="load-message" class="load-message" role="status" aria-live="polite"></p>
+    <div class="notice" id="freshness" hidden><div><strong>Aktualität prüfen</strong><p id="freshness-message"></p></div><button type="button" id="refresh-catalog" class="secondary">Neueren Katalog öffnen</button></div>
     <p class="error" id="error" role="alert" hidden></p>
-    <div class="table-heading"><h2>Produkte</h2><p id="summary" role="status" aria-live="polite"></p></div>
-    <table><caption class="sr-only">Vergleich installierter Versionen mit den bei IBM bestätigten Ständen der jeweiligen Versionslinie</caption><colgroup><col class="col-product"><col class="col-installed"><col class="col-available"><col class="col-status"><col class="col-links"></colgroup><thead><tr><th scope="col">Produkt / Versionslinie</th><th scope="col">Installiert</th><th scope="col">Bei IBM bestätigt</th><th scope="col">Vergleich</th><th scope="col">Quellen und Downloads</th></tr></thead><tbody id="products"></tbody></table>
-    <p class="table-note">Der Vergleich gilt für die angegebene Versionslinie und Komponente. Eine übereinstimmende Version bestätigt weder die Abdeckung aller Sicherheitskorrekturen noch die Kompatibilität der gesamten Umgebung.</p>
-    <details class="help"><summary>Bedienung und Aktualisierung</summary><div class="help-content"><ol><li>Öffnen Sie diese HTML-Datei in einem normalen Windows-Browser.</li><li>Erzeugen Sie auf dem CM-Server im Verzeichnis des Collectors die Datei mit <code>python3 ibm_discovery.py --json &gt; inventory.json</code> und übertragen Sie sie über einen vorhandenen Dateitransferweg nach Windows.</li><li>Klicken Sie auf „inventory.json öffnen“. Der Vergleich erfolgt im Browser; die Datei wird nicht hochgeladen.</li><li>Die Links öffnen IBM Support oder Fix Central. Dort wählen Sie die Plattform aus, melden sich bei Bedarf mit Ihrer IBMid an und laden das Paket herunter. Downloads mit IBM-Anmeldung wurden hier nicht geprüft.</li></ol><p>Der Katalog ist in die Seite eingebettet und wird beim Öffnen nicht automatisch aktualisiert. Laden Sie eine neue HTML-Datei aus dem Repository herunter oder öffnen Sie eine neuere catalog.json. GitHub Actions erstellt nach der Katalogaktualisierung alle fertigen Dateien im Ordner output/ neu.</p><button type="button" id="load-catalog" class="secondary">catalog.json öffnen</button><input type="file" id="catalog-file" accept=".json,application/json" hidden><p class="muted">Einige vorhandene Provider prüfen eine fest hinterlegte Seite eines bereits bekannten Releases. Ein erneuter Abruf beweist nicht, dass es keine neueren Korrekturen gibt. Die ergänzenden Hinweise behalten ihr eigenes, in der jeweiligen Produktzeile angezeigtes Prüfdatum.</p></div></details>
-    <footer><span>IBM Patchwatch · portable</span><span>Ohne Webserver oder zusätzliche Windows-Installation</span></footer>
-    <noscript><p>Aktivieren Sie JavaScript im Browser, um die Tabelle anzuzeigen und JSON-Dateien einzulesen.</p></noscript>
+    <section class="stats" aria-label="Ergebnis des Versionsvergleichs">
+      <button type="button" class="stat stat-update" data-filter="update"><span id="count-update">—</span><strong>Updates verfügbar</strong><small>Neuere bestätigte Stände</small></button>
+      <button type="button" class="stat stat-review" data-filter="review"><span id="count-review">—</span><strong>Prüfung erforderlich</strong><small>Quellen, Erfassung oder Kompatibilität</small></button>
+      <button type="button" class="stat stat-match" data-filter="match"><span id="count-match">—</span><strong>Verglichener Stand gleich</strong><small>Keine vollständige Sicherheitsprüfung</small></button>
+    </section>
+    <div class="table-heading"><h2 id="products-heading">Produkte und Downloads</h2><p id="summary" role="status" aria-live="polite"></p><button type="button" id="print" class="secondary">Drucken / PDF</button></div>
+    <div class="filters" role="search" aria-label="Produktübersicht filtern">
+      <div class="search-field"><label for="search">Produkt oder Installationspfad suchen</label><input id="search" type="search" placeholder="z. B. WebSphere, Db2 oder /opt/IBM" autocomplete="off"></div>
+      <div><label for="status-filter">Anzeige</label><select id="status-filter"><option value="all">Alle Produkte</option><option value="attention">Updates und Prüfungen</option><option value="update">Nur verfügbare Updates</option><option value="review">Nur offene Prüfungen</option><option value="match">Verglichener Stand gleich</option><option value="missing">Ohne Produkteintrag</option></select></div>
+      <button type="button" id="reset-filter" class="secondary">Filter zurücksetzen</button>
+    </div>
+    <table><caption class="sr-only">Installierte IBM-Versionen, bekannte Zielstände und passende Downloadseiten</caption><colgroup><col class="col-product"><col class="col-installed"><col class="col-available"><col class="col-status"><col class="col-links"></colgroup><thead><tr><th scope="col">Produkt</th><th scope="col">Installiert</th><th scope="col">Bekannter Zielstand</th><th scope="col">Vergleich</th><th scope="col">Downloads und Quellen</th></tr></thead><tbody id="products"></tbody></table>
+    <div class="empty-results" id="empty-results" hidden><strong>Keine passenden Produkte</strong><p>Ändern Sie den Suchbegriff oder setzen Sie die Filter zurück.</p></div>
+    <p class="table-note">Verglichen werden die Versionen aus Ihrer Datei. Eine gleiche Basisversion bestätigt nicht, dass alle Sicherheitskorrekturen und iFixes installiert sind.</p>
+    <details class="help"><summary>Hilfe: Inventar erstellen und Daten aktualisieren</summary><div class="help-content">
+      <ol><li>Auf dem IBM-Server den Collector ausführen: <code>python3 ibm_discovery.py --json &gt; inventory.json</code>.</li><li>Die Datei nach Windows übertragen und über <strong>Inventar öffnen</strong> laden oder auf die Seite ziehen. Inventar und Katalog können gemeinsam abgelegt werden.</li><li>Nach Produkt oder Status filtern. Voraussetzungen und iFix-Details lassen sich in der jeweiligen Zeile aufklappen.</li><li>IBM-Link öffnen, bei Bedarf anmelden und das Paket manuell herunterladen. Die Ansible-Installation wird separat gestartet.</li></ol>
+      <p>Alle fertigen Dateien liegen im Repository im Ordner <strong>output/</strong>. Für neue Stände das aktuelle Paket herunterladen oder über <strong>Katalog aktualisieren</strong> eine neuere catalog.json öffnen. Neue fachliche Hinweise benötigen auch eine neue HTML-Datei.</p>
+      <p>Beim Schließen der Seite werden die geladenen Inventardaten verworfen. Es erfolgt kein Upload und kein automatischer Zugriff auf den IBM-Server.</p>
+      <p class="muted">Einige Provider prüfen eine versionsgebundene IBM-Seite. Ein neuer Abruf beweist nicht, dass es keine neueren Releases gibt. Fachliche Hinweise und Paketbestätigungen behalten ihr eigenes Prüfdatum.</p>
+    </div></details>
+    <footer><span>IBM Patchwatch · portable</span><span>Eine HTML-Datei · keine zusätzliche Windows-Installation</span></footer>
+    <noscript><p>Aktivieren Sie JavaScript, um Versionen zu vergleichen und JSON-Dateien einzulesen.</p></noscript>
   </main>
   <script id="catalog-data" type="application/json">__CATALOG__</script>
   <script id="inventory-data" type="application/json">__INVENTORY__</script>

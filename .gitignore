@@ -16,3 +16,6 @@ config.toml
 /output/inventory*.json
 /output/*-patches.json
 /output/*-product-plan.json
+
+# Nur für Browser-Entwicklungstests, nicht für die portable Ausgabe.
+node_modules/

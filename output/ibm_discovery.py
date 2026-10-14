@@ -5,7 +5,7 @@ import argparse, datetime, json, os, platform, re, socket, subprocess, time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 SCHEMA_VERSION=1
-COLLECTOR_VERSION="0.5.0"
+COLLECTOR_VERSION="0.5.1"
 P={
  "was":"/opt/IBM/WebSphere/AppServer/bin/versionInfo.sh",
  "db2":"/home/db2icm/sqllib/bin/db2level",
@@ -51,6 +51,7 @@ def was(r):
  path=P["was"]
  if not os.access(path,os.X_OK):r["discovery"]["websphere"]={"status":"not_found","path":path};return
  rc,out,err,mode,sh=run([path]);r["discovery"]["websphere"]={"status":"ok" if rc==0 else "error","path":path,"returncode":rc}
+ before=len(r["products"])
  for b in re.split(r"\n\s*\n",out.replace("\r","")):
   if "Installiertes Produkt" not in b and "Installed Product" not in b:continue
   def g(pat):
@@ -61,6 +62,7 @@ def was(r):
   elif "IBM SDK, Java Technology Edition" in n:id,name="ibm_java","IBM SDK, Java Technology Edition"
   else:id,name="websphere_component",n
   add(r,id,name,v,"websphere_versionInfo",product_id=g(r"^ID\s+(.+)$"),build_version=g(r"^(?:Build-Version|Build Version)\s+(.+)$"),build_date=g(r"^(?:Build-Datum|Build Date)\s+(.+)$"))
+ if rc==0 and not any(x["id"]=="websphere" for x in r["products"][before:]):r["discovery"]["websphere"]["status"]="parse_error"
 
 def db2(r):
  path=P["db2"]
@@ -76,7 +78,7 @@ def db2(r):
  m=re.search(r'DB2 v([^"\s,]+)',out)
  if not m:st["status"]="parse_error";st["stderr"]=err.strip();return
  v=m.group(1);fp=re.search(r'(?:Fix Pack|FixPak)\s+"([^"]+)"',out,re.I);cr=re.search(r'DB2 code release\s+"([^"]+)"',out,re.I) or re.search(r'\b(SQL\d{5})\b',out);sb=re.search(r'"(special_[^"]+)"',out)
- add(r,"db2","IBM DB2",v,"db2level",fix_pack=fp.group(1) if fp else None,code_release=cr.group(1) if cr else None,special_build=sb.group(1) if sb else None);st["status"]="ok"
+ add(r,"db2","IBM DB2",v,"db2level",fix_pack=fp.group(1) if fp else None,code_release=cr.group(1) if cr else None,special_build=sb.group(1) if sb else None)
 
 def cm(r):
  path=P["cm"]
@@ -105,6 +107,7 @@ def icn(r):
  if not t:return
  kv=dict(l.strip().split("=",1) for l in t.splitlines() if "=" in l)
  if kv.get("version"):add(r,"content_navigator","IBM Content Navigator",kv["version"],"ecmclient_version_txt",build_level=kv.get("build.level"),build_number=kv.get("build.number"))
+ else:r["discovery"]["content_navigator"]["status"]="parse_error"
  for id,name,pat in (("filenet_ce_client","IBM FileNet Content Engine client",r"IBM FileNet Content Engine client Version\s+(.+)"),("filenet_pe_client","IBM FileNet Process Engine client",r"IBM FileNet Process Engine client Version\s+(.+)"),("content_manager_apis","IBM Content Manager APIs",r"IBM Content Manager APIs Version\s+(.+)")):
   m=re.search(pat,t)
   if m:add(r,id,name,m.group(1).strip(),"ecmclient_version_txt")
@@ -118,6 +121,7 @@ def iccsap(r):
  if not t:return
  ls=[x.strip() for x in t.splitlines() if x.strip()];name=next((x for x in ls if not x.startswith(("Version","Build"))),"IBM Content Collector for SAP Applications");v=next((x.split(None,1)[1] for x in ls if x.startswith("Version") and len(x.split(None,1))>1),None);b=next((x.split(None,1)[1] for x in ls if x.startswith("Build") and len(x.split(None,1))>1),None)
  if v:add(r,"iccsap",name,v,"iccsap_version_file",build=b)
+ else:r["discovery"]["iccsap"]["status"]="parse_error"
 
 def im(r):
  path=P["imcl"]

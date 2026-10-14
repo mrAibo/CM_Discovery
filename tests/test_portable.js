@@ -122,3 +122,51 @@ test("visible fixes exclude older target ranges but retain applicable and unknow
   assert.equal(entry.interim_fixes.length, 3);
   assert.deepEqual(api.visibleFixAssociations({interim_fixes:[entry.interim_fixes[0]]}, "9.0.5.25", "9.0.5.29"), []);
 });
+
+test("collector errors take precedence over stale catalog and missing products show diagnostics", () => {
+  const bad = {version:"9.0.5.25", _discoveryError:"Collector-Status: error"};
+  assert.equal(code("websphere", bad, {version:"9.0.5.29"}, {refreshed_at:"2025-01-01T00:00:00Z"}), "error");
+  const inv = {schema_version:1,host:{},products:[],discovery:{websphere:{status:"parse_error",path:"/opt/IBM/versionInfo.sh"}}};
+  const row = api.rowsFor(inv, catalog).find(r => r.id === "websphere");
+  const status = api.rowStatus(row, inv, catalog, now);
+  assert.equal(status.code, "error");
+  assert.match(status.reason, /versionInfo/);
+});
+
+test("bundled Daeja never becomes a separate upgrade even across base versions", () => {
+  const status = api.compareProduct("daeja_viewone_virtual", {version:"5.0.14",source:"ecmclient_version_txt"}, entry({version:"5.0.15",interim_fix:6}), catalog, now);
+  assert.equal(status.code, "review");
+  assert.equal(status.label, "In ICN enthalten");
+});
+
+test("JSON imports validate nested catalog data and commit batches atomically", () => {
+  const previous = {inventory:{schema_version:1,host:{hostname:"old"},products:[]},catalog:{schema_version:2,products:{}},inventoryName:"old.json",catalogName:"old-catalog.json"};
+  const incoming = {schema_version:1,host:{hostname:"new"},products:[]};
+  for (const interim_fixes of [[null], [{fix_id:{bad:true}}], [{applies_to:[]}], "bad"]) {
+    assert.throws(() => api.importPayloads([{name:"new.json",value:incoming},{name:"bad.json",value:{schema_version:2,products:{websphere:{interim_fixes}}}}], previous));
+    assert.equal(previous.inventory.host.hostname, "old");
+  }
+  const next = api.importPayloads([{name:"new.json",value:incoming},{name:"catalog.json",value:{schema_version:2,products:{}}}], previous);
+  assert.equal(next.inventory.host.hostname, "new");
+  assert.equal(next.catalogName, "catalog.json");
+  assert.throws(() => api.importPayloads([{name:"a",value:incoming},{name:"b",value:incoming}], previous));
+});
+
+test("filters preserve distinct installations and search their paths", () => {
+  const rows = [{id:"websphere",installed:{version:"9.0.5.25",installation_directory:"/opt/A"},status:{code:"update"}},{id:"websphere",installed:{version:"9.0.5.29",installation_directory:"/opt/B"},status:{code:"level"}},{id:"db2",status:{code:"error"}}];
+  assert.equal(api.filteredRows(rows, "", "attention").length, 2);
+  assert.equal(api.filteredRows(rows, "/opt/B", "all").length, 1);
+  assert.equal(api.filteredRows(rows, "websphere", "match").length, 1);
+  assert.equal(api.filteredRows(rows, "", "update").length, 1);
+});
+
+test("target package is first and equivalent IBM URLs are deduplicated", () => {
+  const url = "https://www.ibm.com/support/fixcentral/swg/doSelectFixes?continue=1&options.selectedFixes=9.0.5-WS-WAS-FP029";
+  const e = {available:{version:"9.0.5.29"},fix_pack_url:url,source_url:url,download_url:"https://www.ibm.com/support/fixcentral/swg/selectFixes?release=9.0.5.25"};
+  const note = {links:[{url:"https://www.ibm.com/support/fixcentral/swg/doSelectFixes?options.selectedFixes=9.0.5-WS-WAS-FP029&continue=1",label:"duplicate"}]};
+  const links = api.linksFor("websphere", e, {version:"9.0.5.25"}, note);
+  assert.equal(links.length, 2);
+  assert.equal(links[0].url, url);
+  assert.equal(links[0].download, true);
+  assert.match(links[1].label, /installierten Basis/);
+});
