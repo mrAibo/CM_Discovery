@@ -90,10 +90,11 @@ function downloadFor(id, entry, installed) {
 
 function compareProduct(id, installed, entry, catalog, now = Date.now()) {
   if (!installed) return result("empty", "Keine Inventardaten", "Öffnen Sie die Datei vom Server. Ein fehlender Eintrag beweist nicht, dass das Produkt nicht installiert ist.");
+  if (installed._discoveryError) return result("error", "Erfassung fehlgeschlagen", installed._discoveryError);
+  if (id === "daeja_viewone_virtual" && installed.source === "ecmclient_version_txt") return result("review", "In ICN enthalten", "Diese Komponente wird mit ICN geliefert. Den Stand im ICN-Paket prüfen.");
   if (!entry || !object(entry.available) || !own(PRODUCTS, id)) return result("review", "Kein Katalogeintrag", "Für diesen Eintrag wird eine eigene IBM-Quelle benötigt.");
   const stale = freshness(entry, catalog, now);
   if (stale) return result("stale", "Katalog prüfen", stale);
-  if (installed._discoveryError) return result("error", "Fehler bei der Erfassung", installed._discoveryError);
   if (entry.support_status === "not_supported") return result("review", "Versionslinie nicht unterstützt", "Prüfen Sie den Supportstatus bei IBM.");
   const available = entry.available;
   const x = versionParts(installed.version), y = versionParts(available.version);
@@ -119,7 +120,6 @@ function compareProduct(id, installed, entry, catalog, now = Date.now()) {
   if (id === "content_navigator" || id === "daeja_viewone_virtual") {
     const ix = ifixLevel(installed), iy = integer(available.interim_fix);
     if (ix === null || iy === null) return result("review", "iFix-Stand prüfen", "Die iFix-Nummer fehlt oder widerspricht dem Build-Level.");
-    if (id === "daeja_viewone_virtual" && installed.source === "ecmclient_version_txt") return result("review", "In ICN enthalten", "Prüfen Sie die Daeja-Version im ausgewählten ICN-Paket.");
     if (ix > iy) return result("different", "iFix neuer als Katalog", "Prüfen Sie eine aktuellere IBM-Quelle.");
     if (ix < iy) return result("update", "Neuerer iFix verfügbar", "Bekannt ist iFix " + iy + "; Anwendbarkeit und Abhängigkeiten stehen in der Readme.");
     if (id === "content_navigator" && installed.build_level && available.build_level && String(installed.build_level).toLowerCase() !== String(available.build_level).toLowerCase()) return result("review", "iFix gleich · anderer Build", "Der Build-Level weicht von der IBM-Readme ab; das Paket muss geprüft werden.");
@@ -130,6 +130,10 @@ function compareProduct(id, installed, entry, catalog, now = Date.now()) {
 
 function validateInventory(value) {
   if (!object(value) || value.schema_version !== 1 || !object(value.host) || !Array.isArray(value.products)) throw Error("Erwartet wird ein Inventar mit schema_version 1, einem host-Objekt und einer products-Liste.");
+  for (const field of ["discovery", "installation_manager"]) {
+    if (value[field] != null && !object(value[field])) throw Error(field + " muss ein Objekt sein.");
+  }
+  if (value.host.os_release != null && !object(value.host.os_release)) throw Error("host.os_release muss ein Objekt sein.");
   if (value.products.length > 1000) throw Error("Die Datei enthält mehr als 1000 Produkte.");
   for (const p of value.products) {
     if (!object(p) || typeof p.id !== "string" || !p.id || p.id.length > 150) throw Error("Jeder products-Eintrag benötigt eine nicht leere id als Zeichenkette.");
@@ -144,6 +148,21 @@ function validateCatalog(value) {
   if (Object.keys(value.products).length > 1000) throw Error("Der Katalog ist zu groß.");
   for (const entry of Object.values(value.products)) {
     if (!object(entry) || (entry.available != null && !object(entry.available))) throw Error("Ungültiger Katalogeintrag.");
+    if (entry.available && entry.available.version != null && typeof entry.available.version !== "string") throw Error("Die Katalogversion muss eine Zeichenkette sein.");
+    if (entry.available) {
+      for (const field of ["build_level", "special_build", "jre_version"]) if (entry.available[field] != null && typeof entry.available[field] !== "string") throw Error("Katalogfeld " + field + " muss eine Zeichenkette sein.");
+      for (const field of ["interim_fix", "fix_pack"]) if (entry.available[field] != null && integer(entry.available[field]) === null) throw Error("Katalogfeld " + field + " muss eine nicht negative Ganzzahl sein.");
+    }
+    if (entry.availability_evidence != null && !object(entry.availability_evidence)) throw Error("Ungültiger Herkunftsnachweis im Katalog.");
+    if (entry.interim_fixes != null) {
+      if (!Array.isArray(entry.interim_fixes) || entry.interim_fixes.length > 1000) throw Error("interim_fixes muss eine Liste mit höchstens 1000 Einträgen sein.");
+      for (const fix of entry.interim_fixes) {
+        if (!object(fix) || (fix.applies_to != null && !object(fix.applies_to))) throw Error("Ungültiger iFix-Eintrag oder Versionsbereich.");
+        for (const field of ["fix_id", "apar", "filename", "source_url", "checked_at", "note"]) {
+          if (fix[field] != null && typeof fix[field] !== "string") throw Error("iFix-Feld " + field + " muss eine Zeichenkette sein.");
+        }
+      }
+    }
   }
   return value;
 }
@@ -195,30 +214,89 @@ function iccsapFixes(inventory) {
 }
 
 function rowsFor(inventory, catalog) {
-  const products = inventory ? inventory.products.map(p => ({...p})) : [];
-  for (const p of products) {
-    const discoveryId = p.id === "ibm_java" ? "websphere" : p.id === "daeja_viewone_virtual" ? "content_navigator" : p.id;
-    const discovery = inventory.discovery && inventory.discovery[discoveryId];
-    if (object(discovery) && discovery.status && !["ok", "skipped"].includes(discovery.status)) p._discoveryError = "Collector-Status: " + discovery.status + ". Die Daten dieses Eintrags können unvollständig sein.";
-    if (p.id === "iccsap" && !p.installed_fixes && products.filter(x => x.id === "iccsap").length === 1) p.installed_fixes = iccsapFixes(inventory);
+  const grouped = new Map();
+  for (const original of inventory ? inventory.products : []) {
+    const p = {...original};
+    const list = grouped.get(p.id) || [];
+    list.push(p); grouped.set(p.id, list);
   }
   const rows = [];
-  for (const id of Object.keys(PRODUCTS)) {
-    const matches = products.filter(p => p.id === id);
-    if (matches.length) for (const installed of matches) rows.push({id, installed, entry:catalog.products[id]});
-    else rows.push({id, installed:null, entry:catalog.products[id]});
+  for (const id of [...Object.keys(PRODUCTS), ...[...grouped.keys()].filter(id => !own(PRODUCTS, id))]) {
+    const discoveryId = id === "ibm_java" ? "websphere" : id === "daeja_viewone_virtual" ? "content_navigator" : id;
+    const discovery = inventory && inventory.discovery && inventory.discovery[discoveryId];
+    const matches = grouped.get(id) || [];
+    if (id === "iccsap" && matches.length === 1 && !matches[0].installed_fixes) matches[0].installed_fixes = iccsapFixes(inventory);
+    for (const p of matches.length ? matches : [null]) {
+      if (p && object(discovery) && discovery.status && !["ok", "skipped"].includes(discovery.status)) p._discoveryError = "Collector-Status: " + discovery.status + ". Die Erfassung ist unvollständig.";
+      rows.push({id, installed:p, entry:own(catalog.products, id) ? catalog.products[id] : null, discovery});
+    }
   }
-  for (const installed of products.filter(p => !own(PRODUCTS, p.id))) rows.push({id:installed.id, installed, entry:catalog.products[installed.id]});
   return rows;
+}
+
+function rowStatus(row, inventory, catalog, now = Date.now()) {
+  if (inventory && !row.installed) {
+    const discovery = row.discovery;
+    if (object(discovery) && discovery.status && !["ok", "skipped", "not_found"].includes(discovery.status)) {
+      return result("error", "Erfassung fehlgeschlagen", "Collector-Status: " + discovery.status + (discovery.path ? " · " + discovery.path : "") + ". Erfassung auf dem Server prüfen.");
+    }
+    return result("empty", "Nicht erkannt", "Das Inventar enthält keinen Produkteintrag." + (discovery && discovery.path ? " Geprüfter Pfad: " + discovery.path + "." : "") + " Dies bestätigt keine Deinstallation.");
+  }
+  return compareProduct(row.id, row.installed, row.entry, catalog, now);
+}
+
+const REVIEW_CODES = new Set(["review", "stale", "error", "different"]);
+function filteredRows(rows, query = "", filter = "all") {
+  const needle = query.trim().toLocaleLowerCase("de-DE");
+  return rows.filter(row => {
+    const p = row.installed || {};
+    const text = [row.id, own(PRODUCTS, row.id) ? PRODUCTS[row.id][0] : p.name, p.version, p.installation_directory, row.entry && row.entry.available && row.entry.available.version].join(" ").toLocaleLowerCase("de-DE");
+    const code = row.status.code;
+    return (!needle || text.includes(needle)) && (filter === "all" || filter === "attention" && (code === "update" || REVIEW_CODES.has(code)) || filter === "update" && code === "update" || filter === "review" && REVIEW_CODES.has(code) || filter === "match" && ["match", "level"].includes(code) || filter === "missing" && code === "empty");
+  });
+}
+
+function linksFor(id, entry, installed, note) {
+  const links = [];
+  if (entry && entry.fix_pack_url) links.push({label:"Fix Pack " + (entry.available && entry.available.version || "") + " · IBM-Download", url:entry.fix_pack_url, download:true});
+  if (note && Array.isArray(note.links)) links.push(...note.links);
+  const download = downloadFor(id, entry, installed);
+  if (download) links.push({label:id === "websphere" ? "Weitere Fixes zur installierten Basis" : "Pakete in Fix Central", url:download, download:!links.some(l => l.download)});
+  if (entry && entry.source_url) links.push({label:"IBM-Quelle des Katalogs", url:entry.source_url});
+  const seen = new Set();
+  return links.filter(item => {
+    const safe = ibmUrl(item.url);
+    if (!safe) return false;
+    const key = new URL(safe); key.searchParams.sort();
+    if (seen.has(key.href)) return false;
+    seen.add(key.href); return true;
+  });
+}
+
+function importPayloads(payloads, state) {
+  const next = {...state}, kinds = new Set();
+  for (const payload of payloads) {
+    const value = payload.value;
+    const kind = value && value.schema_version === 1 ? "inventory" : value && value.schema_version === 2 ? "catalog" : null;
+    if (!kind) throw Error("Bitte inventory.json (Schema 1) oder catalog.json (Schema 2) auswählen.");
+    if (kinds.has(kind)) throw Error("Bitte nur eine Inventardatei und einen Katalog gleichzeitig auswählen.");
+    kinds.add(kind);
+    next[kind] = kind === "inventory" ? validateInventory(value) : validateCatalog(value);
+    next[kind + "Name"] = payload.name;
+  }
+  return next;
 }
 
 function startApp() {
   const $ = id => document.getElementById(id);
-  let catalog = validateCatalog(JSON.parse($("catalog-data").textContent));
-  const initial = JSON.parse($("inventory-data").textContent);
-  let inventory = initial === null ? null : validateInventory(initial);
+  let state = {
+    catalog:validateCatalog(JSON.parse($("catalog-data").textContent)),
+    inventory:JSON.parse($("inventory-data").textContent),
+    catalogName:"eingebettet", inventoryName:""
+  };
+  if (state.inventory !== null) validateInventory(state.inventory);
   const notes = JSON.parse($("notes-data").textContent);
-  let inventoryName = "", catalogName = "eingebettet";
+  let importSequence = 0;
   const el = (tag, text, className) => { const node = document.createElement(tag); if (text !== undefined) node.textContent = String(text); if (className) node.className = className; return node; };
   const date = value => { const stamp = Date.parse(value); return Number.isFinite(stamp) ? new Date(stamp).toLocaleString("de-DE", {timeZone:"UTC", year:"numeric", month:"2-digit", day:"2-digit", hour:"2-digit", minute:"2-digit"}) + " UTC" : "kein Datum angegeben"; };
   function link(label, url, primary) {
@@ -231,35 +309,23 @@ function startApp() {
   function cell(row, label, content) { const td = el("td"); td.dataset.label = label; td.append(content); row.append(td); }
   function metadata(parent, text) { if (text) parent.append(el("span", text, "metadata")); }
   function render() {
+    const {catalog, inventory, catalogName, inventoryName} = state;
     const now = Date.now();
-    $("catalog-date").textContent = "Katalog: " + date(catalog.generated_at) + " · " + catalogName + " · IBM-Hinweise: " + notes.checked_at;
-    $("clear-inventory").hidden = !inventory;
-    $("inventory-title").textContent = inventory ? inventory.context_only ? "Versionsstand aus der bereitgestellten Beschreibung" : "Inventarstand: " + (inventory.host.hostname || "kein Servername angegeben") : "IBM-Katalog · 7 Hauptprodukte";
-    $("inventory-meta").textContent = inventory ? inventory.context_only ? "Dies sind die zuvor angegebenen Versionen. Es wurde kein neuer Scan ausgeführt. Öffnen Sie eine aktuelle inventory.json für einen neuen Vergleich." : [inventoryName, "Erfasst: " + date(inventory.timestamp), inventory.host.machine, inventory.host.os_release && inventory.host.os_release.PRETTY_NAME].filter(Boolean).join(" · ") : "Öffnen Sie inventory.json für den Vergleich mit Ihrem Server. Der Katalog ist auch ohne Inventar nutzbar.";
-    const warnings = [];
-    const badEntries = Object.values(catalog.products).filter(e => freshness(e, catalog, now));
-    if (badEntries.length) warnings.push("Für " + badEntries.length + " Einträge ist der Katalog veraltet, undatiert oder die Quelle nicht erreichbar. Die Stände dienen zur Orientierung.");
-    if (now - Date.parse(notes.checked_at + "T00:00:00Z") > FRESH_HOURS * 3600000) warnings.push("Die IBM-Hinweise vom " + notes.checked_at + " müssen erneut geprüft werden, auch wenn catalog.json inzwischen aktualisiert wurde.");
-    if (inventory && !inventory.context_only) {
-      const stamp = Date.parse(inventory.timestamp);
-      if (!Number.isFinite(stamp) || stamp > now + 300000 || now - stamp > FRESH_HOURS * 3600000) warnings.push("Das Inventar hat kein verlässliches aktuelles Erfassungsdatum. Verglichen werden die Werte aus der Datei; der aktuelle Serverzustand wurde nicht abgefragt.");
+    const rows = rowsFor(inventory, catalog).map(row => ({...row, status:rowStatus(row, inventory, catalog, now)}));
+    const shown = filteredRows(rows, $("search").value, $("status-filter").value);
+    if (inventory) {
+      const priority = {update:0,error:1,review:2,stale:2,different:3,match:4,level:4,empty:5};
+      shown.sort((a, b) => (priority[a.status.code] ?? 5) - (priority[b.status.code] ?? 5));
     }
-    $("freshness").hidden = !warnings.length; $("freshness").textContent = warnings.join(" ");
-    $("products").replaceChildren();
-    const counts = {update:0, review:0, match:0};
-    const rows = rowsFor(inventory, catalog);
-    for (const row of rows) {
-      const {id, installed:p, entry:e} = row, target = e && e.available || {};
+    const fragment = document.createDocumentFragment();
+    for (const row of shown) {
+      const {id, installed:p, entry:e, status} = row, target = e && e.available || {};
       const note = matchingNote(id, e, notes);
-      const status = compareProduct(id, p, e, catalog, now);
-      if (status.code === "update") counts.update++;
-      else if (["match", "level"].includes(status.code)) counts.match++;
-      else if (p) counts.review++;
-      const tr = el("tr");
+      const tr = el("tr"); tr.dataset.status = status.code;
       const product = el("div", undefined, "cell-content");
       product.append(el("strong", own(PRODUCTS, id) ? PRODUCTS[id][0] : p.name || id, "product-name"));
       const parts = versionParts(target.version);
-      if (parts && own(PRODUCTS, id)) product.append(el("span", "Versionslinie " + parts.slice(0, PRODUCTS[id][1]).join("."), "stream"));
+      if (parts && own(PRODUCTS, id)) metadata(product, "Versionslinie " + parts.slice(0, PRODUCTS[id][1]).join("."));
       if (p && p.installation_directory) metadata(product, p.installation_directory);
       cell(tr, "Produkt", product);
       const installedCell = el("div", undefined, "cell-content");
@@ -273,79 +339,132 @@ function startApp() {
       }
       cell(tr, "Installiert", installedCell);
       const availableCell = el("div", undefined, "cell-content");
-      const targetText = [target.version, target.interim_fix != null ? "iFix " + target.interim_fix : "", target.jre_version ? "+ JRE " + target.jre_version : ""].filter(Boolean).join(" ") || "Keine Daten";
-      availableCell.append(el("span", targetText, "version"));
+      availableCell.append(el("span", [target.version, target.interim_fix != null ? "iFix " + target.interim_fix : "", target.jre_version ? "+ JRE " + target.jre_version : ""].filter(Boolean).join(" ") || "Keine Daten", "version"));
       metadata(availableCell, target.special_build);
-      if (note) metadata(availableCell, note.availability_note);
+      if (target.fix_pack != null) metadata(availableCell, "Fix Pack " + target.fix_pack);
+      if (e && e.fix_pack_cumulative) metadata(availableCell, "Kumulativer Fix Pack", "metadata");
       if (e) {
         const evidence = e.availability_evidence;
-        if (evidence && evidence.kind === "operator_confirmed") metadata(availableCell, "Paketverfügbarkeit vom Betreiber bestätigt: " + (evidence.checked_at || "Datum fehlt"));
-        metadata(availableCell, (evidence && evidence.kind === "operator_confirmed" ? "Katalogabgleich: " : "Quelle abgerufen: ") + date(e.refreshed_at || catalog.generated_at));
+        metadata(availableCell, evidence && evidence.kind === "operator_confirmed" ? "Paket bestätigt: " + (evidence.checked_at || "Datum fehlt") : "Abgerufen: " + date(e.refreshed_at || catalog.generated_at));
       }
       if (note) {
         const details = el("details", undefined, "product-notes");
         details.append(el("summary", "Voraussetzungen und Hinweise"));
+        if (note.availability_note) details.append(el("p", note.availability_note));
         for (const text of note.notes) details.append(el("p", text));
-        details.append(el("p", "Hinweise geprüft am: " + (note.checked_at || notes.checked_at), "muted"));
+        details.append(el("p", "Hinweise geprüft: " + (note.checked_at || notes.checked_at), "muted"));
         availableCell.append(details);
       }
-      for (const association of visibleFixAssociations(e, p && p.version, target.version)) {
-        const f = association.fix;
-        const block = el("div", undefined, "product-notes");
-        block.append(el("strong", f.fix_id || "Unbekannter iFix"));
-        metadata(block, "Nicht kumulativ · " + (f.filename || ""));
-        const range = f.applies_to || {};
-        metadata(block, "Basisbereich: " + (range.min || "unbekannt") + " bis " + (range.max || "unbekannt"));
-        if (p) metadata(block, "Installierte Basis: " + (association.installed === null ? "Zuordnung ungeprüft" : association.installed ? "im Versionsbereich" : "außerhalb des Versionsbereichs"));
-        metadata(block, "Katalog-Zielbasis: " + (association.target === null ? "Zuordnung ungeprüft" : association.target ? "im Versionsbereich" : "außerhalb des Versionsbereichs"));
-        metadata(block, "iFix im Inventar: " + (p && (p.installed_fixes || []).some(value => value === f.fix_id || value === f.apar) ? "Kennung vorhanden; Paketstand prüfen" : "nicht eindeutig nachgewiesen"));
-        metadata(block, "iFix-Quelle geprüft: " + (f.checked_at || "unbekannt"));
-        if (!f.checked_at || now - Date.parse(f.checked_at + "T00:00:00Z") > FRESH_HOURS * 3600000) metadata(block, "iFix-Quelle erneut prüfen; ein Basisabruf aktualisiert diese Prüfung nicht.");
-        if (f.note) metadata(block, f.note);
-        const source = link("IBM-Paket / Voraussetzungen", f.source_url);
-        if (source) block.append(source);
-        availableCell.append(block);
+      const associations = visibleFixAssociations(e, p && p.version, target.version);
+      if (associations.length) {
+        const group = el("details", undefined, "product-notes ifix-group");
+        group.append(el("summary", "iFixes zur Zielbasis (" + associations.length + ")"));
+        for (const association of associations) {
+          const f = association.fix, range = f.applies_to || {};
+          const block = el("div", undefined, "ifix-item");
+          block.append(el("strong", f.fix_id || "Unbekannter iFix"));
+          metadata(block, "Nicht kumulativ · " + (f.filename || ""));
+          metadata(block, "Basisbereich: " + (range.min || "unbekannt") + " bis " + (range.max || "unbekannt"));
+          metadata(block, association.target === null ? "Anwendbarkeit ungeprüft" : "Zielbasis im Versionsbereich");
+          metadata(block, "Kennung im Inventar: " + (p && (p.installed_fixes || []).some(value => value === f.fix_id || value === f.apar) ? "vorhanden; Paketstand prüfen" : "nicht nachgewiesen"));
+          metadata(block, "Quelle geprüft: " + (f.checked_at || "unbekannt"));
+          if (!f.checked_at || now - Date.parse(f.checked_at + "T00:00:00Z") > FRESH_HOURS * 3600000) metadata(block, "iFix-Quelle erneut prüfen.");
+          if (f.note) metadata(block, f.note);
+          const source = link("IBM-Paket und Voraussetzungen", f.source_url);
+          if (source) block.append(source);
+          group.append(block);
+        }
+        availableCell.append(group);
       }
-      cell(tr, "Bei IBM bestätigt", availableCell);
+      cell(tr, "Bekannter Zielstand", availableCell);
       const statusCell = el("div", undefined, "cell-content");
-      statusCell.append(el("span", status.label, "status " + status.code), el("p", status.reason, "reason"));
+      statusCell.append(el("span", status.label, "status " + status.code));
+      if (inventory) statusCell.append(el("p", status.reason, "reason"));
       cell(tr, "Vergleich", statusCell);
       const actions = el("div", undefined, "cell-content links");
-      const links = note ? note.links.slice() : [];
-      if (e && e.fix_pack_url) links.unshift({label:"Fix Pack " + target.version + " · Paket auswählen", url:e.fix_pack_url, download:true});
-      if (e && e.source_url && !links.some(l => l.url === e.source_url)) links.push({label:"IBM-Quelle des Katalogs", url:e.source_url});
-      const download = downloadFor(id, e, p);
-      if (download && !links.some(l => l.url === download)) links.unshift({label:"Fix Central · installierte Basis und Updates", url:download, download:true});
-      for (const item of links) { const a = link(item.label, item.url, item.download); if (a) actions.append(a); }
+      for (const item of linksFor(id, e, p, note)) { const a = link(item.label, item.url, item.download); if (a) actions.append(a); }
       if (!actions.childNodes.length) actions.append(el("span", "Keine Quelle angegeben", "metadata"));
-      cell(tr, "Quellen und Downloads", actions);
-      $("products").append(tr);
+      cell(tr, "Downloads und Quellen", actions);
+      fragment.append(tr);
     }
-    $("summary").textContent = inventory ? counts.update + " — neuerer Stand · " + counts.review + " — prüfen · " + counts.match + " — übereinstimmend" : "Bekannte Versionsstände und offizielle IBM-Seiten";
+    $("products").replaceChildren(fragment);
+    $("empty-results").hidden = shown.length > 0;
+    $("summary").textContent = shown.length + " von " + rows.length + " Produktzeilen";
+    const counts = {update:0, review:0, match:0};
+    for (const row of rows) {
+      if (row.status.code === "update") counts.update++;
+      else if (REVIEW_CODES.has(row.status.code)) counts.review++;
+      else if (["match", "level"].includes(row.status.code)) counts.match++;
+    }
+    for (const name of Object.keys(counts)) $("count-" + name).textContent = inventory ? counts[name] : "—";
+    for (const card of document.querySelectorAll("[data-filter]")) {
+      card.disabled = !inventory;
+      card.setAttribute("aria-pressed", String($("status-filter").value === card.dataset.filter));
+    }
+    $("clear-inventory").hidden = !inventory;
+    $("onboarding").hidden = !!inventory;
+    $("inventory-title").textContent = inventory ? inventory.context_only ? "Versionen aus einer bereitgestellten Beschreibung" : "Server: " + (inventory.host.hostname || "Name fehlt") : "Inventar laden und Updates vergleichen";
+    $("inventory-meta").textContent = inventory ? inventory.context_only ? "Kein neuer Serverscan. Eine aktuelle inventory.json liefert den gemessenen Stand." : [inventoryName, "Erfasst: " + date(inventory.timestamp), inventory.host.machine, inventory.host.os_release && inventory.host.os_release.PRETTY_NAME].filter(Boolean).join(" · ") : "inventory.json auswählen oder hier ablegen. Die Datei bleibt in diesem Browser.";
+    $("catalog-date").textContent = "Katalog: " + date(catalog.generated_at) + " · " + catalogName;
+    const warnings = [];
+    const badEntries = Object.values(catalog.products).filter(e => freshness(e, catalog, now));
+    if (badEntries.length) warnings.push(badEntries.length + " Katalogeinträge benötigen eine Quellenprüfung. Ältere Stände bleiben zur Orientierung sichtbar.");
+    if (now - Date.parse(notes.checked_at + "T00:00:00Z") > FRESH_HOURS * 3600000) warnings.push("Die ergänzenden IBM-Hinweise vom " + notes.checked_at + " sind älter als 72 Stunden. Für neuere Hinweise die aktuelle HTML-Datei öffnen.");
+    if (inventory && !inventory.context_only) {
+      const stamp = Date.parse(inventory.timestamp);
+      if (!Number.isFinite(stamp) || stamp > now + 300000 || now - stamp > FRESH_HOURS * 3600000) warnings.push("Das Inventar ist undatiert, älter als 72 Stunden oder hat ein Datum in der Zukunft. Angezeigt wird der Stand aus der Datei; für einen aktuellen Vergleich das Inventar auf dem Server neu erstellen.");
+    }
+    $("refresh-catalog").hidden = badEntries.length === 0;
+    $("freshness").hidden = !warnings.length;
+    $("freshness-message").textContent = warnings.join(" ");
   }
-  async function readFile(input, kind) {
-    const file = input.files[0];
-    if (!file) return;
+  async function importFiles(files) {
+    if (!files.length) return;
+    const sequence = ++importSequence;
+    $("load-message").textContent = "Dateien werden geprüft …";
     try {
-      if (file.size > MAX_BYTES) throw Error("Die JSON-Datei darf höchstens 10 MiB groß sein.");
-      const value = JSON.parse((await file.text()).replace(/^\uFEFF/, ""));
-      if (kind === "inventory") { validateInventory(value); inventory = value; inventoryName = file.name; }
-      else { validateCatalog(value); catalog = value; catalogName = file.name; }
-      $("error").hidden = true; $("error").textContent = ""; render();
+      if (files.length > 2) throw Error("Bitte höchstens inventory.json und catalog.json gemeinsam ablegen.");
+      const payloads = await Promise.all(files.map(async file => {
+        if (file.size > MAX_BYTES) throw Error("Jede JSON-Datei darf höchstens 10 MiB groß sein.");
+        return {name:file.name, value:JSON.parse((await file.text()).replace(/^\uFEFF/, ""))};
+      }));
+      if (sequence !== importSequence) return;
+      const next = importPayloads(payloads, state), previous = state;
+      state = next;
+      try { render(); } catch (error) { state = previous; render(); throw error; }
+      $("error").hidden = true;
+      $("error").textContent = "";
+      $("load-message").textContent = payloads.map(p => p.name).join(" und ") + " geladen.";
     } catch (error) {
-      $("error").textContent = "Die Datei konnte nicht geladen werden: " + error.message + " Die bisherigen Daten bleiben erhalten.";
+      if (sequence !== importSequence) return;
+      $("error").textContent = "Datei nicht übernommen: " + error.message + " Die bisherigen Daten bleiben erhalten.";
       $("error").hidden = false;
-    } finally { input.value = ""; }
+      $("load-message").textContent = "";
+    }
   }
-  $("load-inventory").addEventListener("click", () => $("inventory-file").click());
-  $("inventory-file").addEventListener("change", event => readFile(event.target, "inventory"));
-  $("load-catalog").addEventListener("click", () => $("catalog-file").click());
-  $("catalog-file").addEventListener("change", event => readFile(event.target, "catalog"));
-  $("clear-inventory").addEventListener("click", () => { inventory = null; inventoryName = ""; render(); });
+  for (const kind of ["inventory", "catalog"]) {
+    $("load-" + kind).addEventListener("click", () => $(kind + "-file").click());
+    $(kind + "-file").addEventListener("change", event => { importFiles([...event.target.files]); event.target.value = ""; });
+  }
+  $("clear-inventory").addEventListener("click", () => {
+    importSequence++; state = {...state, inventory:null, inventoryName:""};
+    $("search").value = ""; $("status-filter").value = "all";
+    $("error").hidden = true; $("load-message").textContent = "Inventar entfernt."; render();
+  });
+  $("search").addEventListener("input", render);
+  $("status-filter").addEventListener("change", render);
+  $("reset-filter").addEventListener("click", () => { $("search").value = ""; $("status-filter").value = "all"; render(); $("search").focus(); });
+  for (const card of document.querySelectorAll("[data-filter]")) card.addEventListener("click", () => { $("status-filter").value = card.dataset.filter; render(); });
+  $("print").addEventListener("click", () => window.print());
+  $("refresh-catalog").addEventListener("click", () => $("catalog-file").click());
+  const zone = $("drop-zone");
+  document.addEventListener("dragover", event => { event.preventDefault(); zone.classList.add("drag-active"); });
+  document.addEventListener("dragleave", event => { if (!event.relatedTarget) zone.classList.remove("drag-active"); });
+  document.addEventListener("drop", event => { event.preventDefault(); zone.classList.remove("drag-active"); importFiles([...event.dataTransfer.files]); });
   render();
 }
 
-if (typeof module !== "undefined" && module.exports) module.exports = {versionParts, compareVersions, ifixLevel, freshness, compareProduct, validateInventory, validateCatalog, ibmUrl, matchingNote, iccsapFixes, rowsFor, fixAssociations, visibleFixAssociations, downloadFor};
+if (typeof module !== "undefined" && module.exports) module.exports = {versionParts, compareVersions, ifixLevel, freshness, compareProduct, validateInventory, validateCatalog, ibmUrl, matchingNote, iccsapFixes, rowsFor, fixAssociations, visibleFixAssociations, downloadFor, rowStatus, filteredRows, linksFor, importPayloads};
 if (typeof document !== "undefined") {
   try { startApp(); } catch (error) {
     const target = document.getElementById("error");

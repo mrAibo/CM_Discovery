@@ -37,6 +37,15 @@ jobs:
       - name: Test portable comparison logic
         run: node --test tests/test_portable.js
 
+      - name: Install browser test dependencies
+        run: npm ci
+
+      - name: Set up headless Chromium
+        run: npx playwright install --with-deps chromium --only-shell
+
+      - name: Test local JSON imports and responsive UI in Chromium
+        run: npm run test:browser
+
       - name: Verify portable output folder is reproducible
         run: |
           python scripts/build_static_page.py

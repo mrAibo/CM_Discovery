@@ -38,7 +38,7 @@ sichtbar. Auf Windows genügt ein aktueller Browser mit aktiviertem JavaScript.
    ```
 
 3. Übertragen Sie die JSON-Datei über einen vorhandenen Dateitransferweg nach
-   Windows. Klicken Sie in der Seite auf **inventory.json öffnen**.
+   Windows. Klicken Sie in der Seite auf **Inventar öffnen**.
 4. Prüfen Sie die Produktzeilen und öffnen Sie die IBM-Links. Einige führen zur
    konkreten Fix-Auswahl, andere zur Downloadseite oder zur Produktauswahl in
    Fix Central. Plattform, IBMid-Anmeldung, Berechtigungen und Lizenzannahme
@@ -49,6 +49,18 @@ Sie enthält CSS, JavaScript und Katalogdaten vollständig eingebettet und ruft
 selbst keine Netzwerkressourcen ab. IBM-Links öffnen sich in einem neuen Tab.
 Das Inventar bleibt nur im Arbeitsspeicher dieser Seite. **Inventar ausblenden**
 entfernt es aus dem Vergleich; beim Schließen der Seite wird es verworfen.
+
+## Die Übersicht bedienen
+
+- Inventar per Dateiauswahl laden oder `inventory.json` und `catalog.json` gemeinsam auf die Seite ziehen.
+- Die drei Ergebnisfelder filtern nach Updates, offenen Prüfungen oder übereinstimmendem Stand.
+- Updates und Erfassungsfehler stehen nach dem Import zuerst. Über die Suche Produkte, Versionen oder Installationspfade finden; mehrere Installationen bleiben getrennte Zeilen.
+- Voraussetzungen und relevante iFixes aufklappen. Der Link zum Zielpaket steht vor der Auswahl für die bisherige Basis.
+- Mit **Drucken / PDF** die aktuelle Ansicht ausgeben. **Filter zurücksetzen** zeigt wieder alle Zeilen.
+
+Ungültige Dateien werden vollständig abgelehnt; das bisherige Inventar und der
+Katalog bleiben erhalten. Unterschiedliche Dateitypen werden anhand des JSON-Schemas
+erkannt. Fehler der Erfassung bleiben auch bei alten Katalogdaten sichtbar.
 
 ## Voraussetzungen
 
@@ -91,7 +103,7 @@ werden; die betroffenen Zeilen verlangen eine Prüfung.
 
 **Eine bereits heruntergeladene HTML-Datei aktualisiert sich beim Öffnen nicht.**
 Laden Sie eine neue HTML-Datei herunter oder wählen Sie unter
-**Bedienung und Aktualisierung** die Schaltfläche **catalog.json öffnen**.
+**Bedienung und Aktualisierung** die Schaltfläche **Katalog aktualisieren**.
 Quellendaten, die älter als 72 Stunden sind, und fehlgeschlagene Aktualisierungen
 werden gekennzeichnet.
 
@@ -202,6 +214,15 @@ python3 scripts/build_static_page.py
 git diff --exit-code -- output/
 ```
 
+Browser-Tests werden nur bei der Entwicklung ausgeführt; für die Verwendung
+der HTML-Datei sind sie nicht erforderlich.
+
+```bash
+npm ci
+npx playwright install --with-deps chromium --only-shell
+npm run test:browser
+```
+
 Nach Änderungen an `web/`, am Katalog oder am Collector den Ausgabeordner
 neu bauen und vollständig mit einchecken. Die letzte Prüfung kontrolliert anschließend die
 reproduzierbare Ausgabe. Die Tests prüfen unter anderem Versionslinien,
@@ -217,6 +238,7 @@ Skripteinbettung und CSP-Hashes.
 | `output/` | Alle fertigen Dateien an einem Ort; automatisch erzeugt, ohne Serverinventar |
 | `scripts/update_ibm_catalog.py` und `src/ibm_patchwatch/providers/` | Abruf der IBM-Quellen |
 | `ansible/` | Verzeichnisscan, Produktinstallation und optionale WAS-Diagnose |
+| `docs/REVIEW.md` | Behobene Fehler, Prüfungen und verbleibende funktionale Grenzen |
 
 Die HTML-Seite installiert keine Patches; dafür wird Ansible separat gestartet. Die tatsächliche Erfassung auf den
 IBM-Servern sowie authentifizierte Downloads und Voraussetzungen müssen in der
