@@ -5,13 +5,24 @@ IBM-Quellen bestätigten Updates in einer Tabelle. Der empfohlene Ablauf besteht
 aus dem vorhandenen Offline-Collector und **einer portablen HTML-Datei mit
 deutscher Oberfläche**.
 
-Öffnen Sie [IBM-Patchwatch.html](docs/IBM-Patchwatch.html) im Browser und wählen
+Alle fertigen Dateien stehen gemeinsam im Verzeichnis **[output/](output/)**
+im Repository-Stamm:
+
+| Datei | Zweck |
+| --- | --- |
+| [IBM-Patchwatch.html](output/IBM-Patchwatch.html) | Fertige Browseroberfläche mit eingebettetem Katalog und Hinweisen |
+| [catalog.json](output/catalog.json) | Dieselben Katalogdaten als separate Datei |
+| [verified-notes.json](output/verified-notes.json) | Datierte Hinweise und Links als separate Datei |
+| [ibm_discovery.py](output/ibm_discovery.py) | Standalone-Collector zur Erzeugung des Serverinventars |
+| [README.md](output/README.md) | Kurzanleitung für das fertige Paket |
+
+Öffnen Sie [IBM-Patchwatch.html](output/IBM-Patchwatch.html) im Browser und wählen
 Sie Ihre `inventory.json` aus. Der eingebettete Katalog ist auch ohne Inventar
 sichtbar. Auf Windows genügt ein aktueller Browser mit aktiviertem JavaScript.
 
 ## Schnellstart: portable HTML-Datei
 
-1. Öffnen Sie [docs/IBM-Patchwatch.html](docs/IBM-Patchwatch.html) auf GitHub und
+1. Öffnen Sie [output/IBM-Patchwatch.html](output/IBM-Patchwatch.html) auf GitHub und
    speichern Sie die Datei über **Download raw file** auf dem Windows-Rechner.
    Öffnen Sie die heruntergeladene Datei im Browser.
 2. Erzeugen Sie auf dem CM-Server das Inventar. Aus dem Repository-Verzeichnis:
@@ -61,8 +72,10 @@ Pfade müssen im Discovery-Ergebnis beachtet werden.
 Der Workflow **Refresh IBM metadata catalog** ist täglich für **03:17 UTC**
 geplant. Er kann auf GitHub auch über **Run workflow** gestartet werden und läuft
 zusätzlich bei den im Workflow definierten Quellcode- und Release-Ereignissen.
-Er aktualisiert `data/ibm/catalog.json`, erzeugt danach
-`docs/IBM-Patchwatch.html` neu und übernimmt beide Dateien in `main`.
+Er aktualisiert die Quelldatei `data/ibm/catalog.json` und baut danach den gesamten
+Ordner `output/`: HTML-Datei, JSON-Kopien, Collector und Kurzanleitung. Alle
+Ausgabedateien werden gemeinsam in `main` übernommen. Im Workflow-Lauf steht
+zusätzlich unter **Artifacts** das Artefakt **IBM-Patchwatch** als ZIP zum Download bereit.
 
 Für WAS werden veröffentlichte Download-Verweise ausgewertet. Ein separat vom
 Betreiber bestätigtes Fix-Central-Paket (aktuell FP29) bleibt erhalten, wenn eine
@@ -82,7 +95,7 @@ Laden Sie eine neue HTML-Datei herunter oder wählen Sie unter
 Quellendaten, die älter als 72 Stunden sind, und fehlgeschlagene Aktualisierungen
 werden gekennzeichnet.
 
-Nur die HTML-Datei aus dem vorhandenen Katalog neu erzeugen:
+Den gesamten Ausgabeordner aus dem vorhandenen Katalog neu erzeugen:
 
 ```bash
 python3 scripts/build_static_page.py
@@ -97,16 +110,27 @@ PYTHONPATH=src python3 scripts/update_ibm_catalog.py
 python3 scripts/build_static_page.py
 ```
 
-Für einen privaten Bericht mit eingebettetem Inventar:
+Ein anderes lokales Zielverzeichnis verwenden:
 
 ```bash
-python3 scripts/build_static_page.py --inventory /private/inventory.json --output /private/IBM-Patchwatch-report.html
+python3 scripts/build_static_page.py --output-dir /srv/IBM-Patchwatch
 ```
 
-Dieser Bericht enthält Serverdaten und gehört nicht ins Repository. Der Builder
-verhindert, dass `--inventory` in die öffentliche Ausgabedatei
-`docs/IBM-Patchwatch.html` geschrieben wird. Die automatisch erzeugte öffentliche
-HTML-Datei enthält ausschließlich Katalogdaten und Hinweise.
+Für ein privates Paket einschließlich `inventory.json` und HTML mit eingebettetem Inventar:
+
+```bash
+python3 scripts/build_static_page.py --inventory /private/inventory.json --output-dir /private/IBM-Patchwatch
+```
+
+Das private Paket enthält dieselben Dateien und zusätzlich das echte Serverinventar.
+`inventory.json` wird auf dem IBM-Server erzeugt und anschließend ausdrücklich
+übergeben; die öffentliche GitHub-Sammlung enthält kein erfundenes Beispielinventar.
+Der Builder verhindert private Inventare im öffentlichen `output/`-Ordner.
+Lokale Inventare und Ansible-Berichte können beim Dateitransfer in denselben
+privaten Arbeitsordner gelegt werden. Dieser Ordner gehört nicht ins öffentliche Git.
+
+`--output DATEI.html` bleibt für einen einzelnen HTML-Export verfügbar. Ohne
+diesen Parameter wird immer der vollständige Ordner erzeugt.
 
 ## Bedeutung des Vergleichs
 
@@ -175,11 +199,11 @@ python3 -m pip install -e . pytest
 python3 -m pytest -q
 node --test tests/test_portable.js
 python3 scripts/build_static_page.py
-git diff --exit-code -- docs/IBM-Patchwatch.html
+git diff --exit-code -- output/
 ```
 
-Nach beabsichtigten Änderungen an `web/` oder am Katalog die HTML-Datei neu
-bauen und mit einchecken. Die letzte Prüfung kontrolliert anschließend die
+Nach Änderungen an `web/`, am Katalog oder am Collector den Ausgabeordner
+neu bauen und vollständig mit einchecken. Die letzte Prüfung kontrolliert anschließend die
 reproduzierbare Ausgabe. Die Tests prüfen unter anderem Versionslinien,
 fehlende oder widersprüchliche Angaben, Quellenalter, IM-Paketzuordnung,
 Skripteinbettung und CSP-Hashes.
@@ -189,8 +213,8 @@ Skripteinbettung und CSP-Hashes.
 | `collectors/ibm_discovery.py` | Offline-Erfassung auf dem CM-Server, Inventarschema 1 |
 | `data/ibm/catalog.json` | Bekannte IBM-Zielstände, Katalogschema 2 |
 | `web/` | Deutsche Oberfläche, Vergleich und datierte IBM-Hinweise |
-| `scripts/build_static_page.py` | Netzwerkfreier Builder für eine einzelne HTML-Datei |
-| `docs/IBM-Patchwatch.html` | Generierte öffentliche HTML-Datei ohne Serverinventar |
+| `scripts/build_static_page.py` | Netzwerkfreier Builder für den vollständigen Ausgabeordner |
+| `output/` | Alle fertigen Dateien an einem Ort; automatisch erzeugt, ohne Serverinventar |
 | `scripts/update_ibm_catalog.py` und `src/ibm_patchwatch/providers/` | Abruf der IBM-Quellen |
 | `ansible/` | Verzeichnisscan, Produktinstallation und optionale WAS-Diagnose |
 

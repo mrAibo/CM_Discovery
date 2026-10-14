@@ -37,10 +37,10 @@ jobs:
       - name: Test portable comparison logic
         run: node --test tests/test_portable.js
 
-      - name: Verify portable page is reproducible
+      - name: Verify portable output folder is reproducible
         run: |
           python scripts/build_static_page.py
-          git diff --exit-code -- docs/IBM-Patchwatch.html
+          git diff --exit-code -- output/
 
   ansible:
     runs-on: ubuntu-latest

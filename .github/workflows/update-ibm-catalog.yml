@@ -19,6 +19,7 @@ on:
       - "scripts/update_ibm_catalog.py"
       - "scripts/build_static_page.py"
       - "web/**"
+      - "collectors/ibm_discovery.py"
       - "src/ibm_patchwatch/providers/**"
 
 # Several provider commits can arrive within seconds.  Only one refresh is
@@ -55,19 +56,26 @@ jobs:
           PYTHONPATH: src
         run: python scripts/update_ibm_catalog.py
 
-      - name: Build portable browser page (catalog only)
+      - name: Build complete portable output folder (public data only)
         run: python scripts/build_static_page.py
+
+      - name: Upload complete portable package
+        uses: actions/upload-artifact@v4
+        with:
+          name: IBM-Patchwatch
+          path: output/
+          if-no-files-found: error
 
       - name: Commit and publish refreshed catalog
         run: |
-          if git diff --quiet -- data/ibm/catalog.json docs/IBM-Patchwatch.html; then
+          if git diff --quiet -- data/ibm/catalog.json output/; then
             echo "IBM catalog unchanged"
             exit 0
           fi
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/ibm/catalog.json docs/IBM-Patchwatch.html
+          git add data/ibm/catalog.json output/
           git commit -m "chore: refresh IBM catalog and portable page"
 
           # main can still move because of an unrelated human/CI commit between

@@ -10,3 +10,9 @@ dist/
 config.toml
 *.db
 *.sqlite*
+
+# Lokale Serverdaten sind kein Bestandteil des öffentlichen Pakets.
+/private/
+/output/inventory*.json
+/output/*-patches.json
+/output/*-product-plan.json
