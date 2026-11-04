@@ -186,3 +186,23 @@ test("H1: target_mode accepts only pinned or index", () => {
   for (const ok of ["pinned", "index", undefined]) assert.doesNotThrow(() => api.validateCatalog(cat(ok)));
   for (const bad of ["fixed", 1, true, ""]) assert.throws(() => api.validateCatalog(cat(bad)), /target_mode/);
 });
+
+test("H2: uncaptured installed_fixes are reported honestly, not as 'not found'", () => {
+  const fix = {fix_id:"PH1", apar:"PH2"};
+  assert.equal(api.fixPresence({version:"9"}, fix), "Installierte iFixes wurden nicht erfasst");
+  assert.equal(api.fixPresence(null, fix), "Installierte iFixes wurden nicht erfasst");
+  assert.equal(api.fixPresence({installed_fixes:[]}, fix), "nicht gefunden");
+  assert.equal(api.fixPresence({installed_fixes:["PH2"]}, fix), "vorhanden; Paketstand prüfen");
+});
+
+test("H3: interim fixes for the installed base only form their own group", () => {
+  const e = {interim_fixes:[
+    {fix_id:"old", applies_to:{min:"9.0.5.20",max:"9.0.5.28"}},
+    {fix_id:"both", applies_to:{min:"9.0.5.20",max:"9.0.5.29"}},
+    {fix_id:"current", applies_to:{min:"9.0.5.29",max:"9.0.5.29"}},
+    {fix_id:"unknown"}
+  ]};
+  assert.deepEqual(api.installedOnlyFixAssociations(e, "9.0.5.25", "9.0.5.29").map(a => a.fix.fix_id), ["old"]);
+  assert.deepEqual(api.visibleFixAssociations(e, "9.0.5.25", "9.0.5.29").map(a => a.fix.fix_id), ["both", "current", "unknown"]);
+  assert.deepEqual(api.installedOnlyFixAssociations(e, null, "9.0.5.29"), []);
+});

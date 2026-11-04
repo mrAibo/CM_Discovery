@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="referrer" content="no-referrer">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; base-uri 'none'; object-src 'none'; form-action 'none'; connect-src 'none'; style-src 'sha256-J0bvYUraHYuTPkkNhtdoh5XkYDJTjAy1egaMaiJrRLo='; script-src 'sha256-3mcro28UB+jC6AdRLan/UY0bZyuzdleDnY0KpU1RSFA='">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; base-uri 'none'; object-src 'none'; form-action 'none'; connect-src 'none'; style-src 'sha256-J0bvYUraHYuTPkkNhtdoh5XkYDJTjAy1egaMaiJrRLo='; script-src 'sha256-wq60+Os3nytxK9nW6zO7kUfWiMwg85rGi0PWttGP01I='">
   <title>IBM Patchwatch — Ihre Update-Übersicht</title>
   <meta name="description" content="IBM-Versionen lokal vergleichen, Updates erkennen und passende IBM-Downloadseiten öffnen.">
   <style>:root {color-scheme:light;--ink:#192b40;--muted:#536379;--blue:#1458c2;--line:#dce4ed;--paper:#fff;--navy:#152e4a}
@@ -188,6 +188,7 @@ const PRODUCTS = {
 };
 const MAX_BYTES = 10 * 1024 * 1024;
 const FRESH_HOURS = 72;
+const NOTES_BANNER_DAYS = 90;
 const own = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
 const object = value => value !== null && typeof value === "object" && !Array.isArray(value);
 const result = (code, label, reason) => ({code, label, reason});
@@ -255,6 +256,17 @@ function fixAssociations(entry, installedVersion, targetVersion) {
 // Hide packages outside the target range; retain unknown ranges for review.
 function visibleFixAssociations(entry, installedVersion, targetVersion) {
   return fixAssociations(entry, installedVersion, targetVersion).filter(a => a.target !== false);
+}
+
+// iFixes applying to the installed base only; they lapse with the update to the target.
+function installedOnlyFixAssociations(entry, installedVersion, targetVersion) {
+  return fixAssociations(entry, installedVersion, targetVersion).filter(a => a.installed === true && a.target === false);
+}
+
+// Without a captured installed_fixes list nothing can be said about a package.
+function fixPresence(installed, fix) {
+  if (!installed || !Array.isArray(installed.installed_fixes)) return "Installierte iFixes wurden nicht erfasst";
+  return installed.installed_fixes.some(value => value === fix.fix_id || value === fix.apar) ? "vorhanden; Paketstand prüfen" : "nicht gefunden";
 }
 
 function downloadFor(id, entry, installed) {
@@ -539,27 +551,29 @@ function startApp() {
         details.append(el("p", "Hinweise geprüft: " + (note.checked_at || notes.checked_at), "muted"));
         availableCell.append(details);
       }
-      const associations = visibleFixAssociations(e, p && p.version, target.version);
-      if (associations.length) {
-        const group = el("details", undefined, "product-notes ifix-group");
-        group.append(el("summary", "iFixes zur Zielbasis (" + associations.length + ")"));
+      const ifixGroup = (title, associations, className) => {
+        if (!associations.length) return;
+        const group = el("details", undefined, "product-notes ifix-group" + (className ? " " + className : ""));
+        group.append(el("summary", title + " (" + associations.length + ")"));
         for (const association of associations) {
           const f = association.fix, range = f.applies_to || {};
           const block = el("div", undefined, "ifix-item");
           block.append(el("strong", f.fix_id || "Unbekannter iFix"));
           metadata(block, "Nicht kumulativ · " + (f.filename || ""));
           metadata(block, "Basisbereich: " + (range.min || "unbekannt") + " bis " + (range.max || "unbekannt"));
-          metadata(block, association.target === null ? "Anwendbarkeit ungeprüft" : "Zielbasis im Versionsbereich");
-          metadata(block, "Kennung im Inventar: " + (p && (p.installed_fixes || []).some(value => value === f.fix_id || value === f.apar) ? "vorhanden; Paketstand prüfen" : "nicht nachgewiesen"));
+          metadata(block, association.target === null ? "Anwendbarkeit ungeprüft" : association.target ? "Zielbasis im Versionsbereich" : "Nur installierte Basis im Versionsbereich");
+          metadata(block, "Kennung im Inventar: " + fixPresence(p, f));
           metadata(block, "Quelle geprüft: " + (f.checked_at || "unbekannt"));
-          if (!f.checked_at || now - Date.parse(f.checked_at + "T00:00:00Z") > FRESH_HOURS * 3600000) metadata(block, "iFix-Quelle erneut prüfen.");
+          if (!f.checked_at || now - Date.parse(f.checked_at + "T00:00:00Z") > NOTES_BANNER_DAYS * 86400000) metadata(block, "iFix-Quelle erneut prüfen.");
           if (f.note) metadata(block, f.note);
           const source = link("IBM-Paket und Voraussetzungen", f.source_url);
           if (source) block.append(source);
           group.append(block);
         }
         availableCell.append(group);
-      }
+      };
+      ifixGroup("iFixes zur Zielbasis", visibleFixAssociations(e, p && p.version, target.version));
+      ifixGroup("Zwischenlösung für die installierte Basis (entfällt mit Update auf " + (target.version || "das Ziel") + ")", installedOnlyFixAssociations(e, p && p.version, target.version), "ifix-interim");
       cell(tr, "Bekannter Zielstand", availableCell);
       const statusCell = el("div", undefined, "cell-content");
       statusCell.append(el("span", status.label, "status " + status.code));
@@ -649,7 +663,7 @@ function startApp() {
   render();
 }
 
-if (typeof module !== "undefined" && module.exports) module.exports = {versionParts, compareVersions, ifixLevel, freshness, compareProduct, validateInventory, validateCatalog, ibmUrl, matchingNote, iccsapFixes, rowsFor, fixAssociations, visibleFixAssociations, downloadFor, rowStatus, filteredRows, linksFor, importPayloads};
+if (typeof module !== "undefined" && module.exports) module.exports = {versionParts, compareVersions, ifixLevel, freshness, compareProduct, validateInventory, validateCatalog, ibmUrl, matchingNote, iccsapFixes, rowsFor, fixAssociations, visibleFixAssociations, installedOnlyFixAssociations, fixPresence, downloadFor, rowStatus, filteredRows, linksFor, importPayloads};
 if (typeof document !== "undefined") {
   try { startApp(); } catch (error) {
     const target = document.getElementById("error");
