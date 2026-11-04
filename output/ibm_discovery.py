@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """Read-only IBM product discovery collector. Python 3.6+, stdlib only."""
-import argparse, datetime, json, os, platform, re, socket, subprocess, time
+import argparse, datetime, json, os, platform, re, socket, subprocess, sys, time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 SCHEMA_VERSION=1
@@ -19,6 +19,8 @@ def run(cmd,timeout=30):
  try:
   p=subprocess.run(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE,universal_newlines=True,timeout=timeout,check=False)
   return p.returncode,p.stdout or "",p.stderr or "","direct",None
+ except subprocess.TimeoutExpired:
+  return None,"","timeout after {}s".format(timeout),"timeout",None
  except OSError as e:
   if getattr(e,"errno",None)==8:
    for sh in ("/bin/sh","/bin/bash"):
@@ -29,6 +31,9 @@ def run(cmd,timeout=30):
      except Exception: pass
   return None,"",str(e),"direct",None
  except Exception as e: return None,"",str(e),"direct",None
+
+def state(rc,mode):
+ return "timeout" if mode=="timeout" else "ok" if rc==0 else "error"
 
 def read(path):
  try:
@@ -50,7 +55,7 @@ def host():
 def was(r):
  path=P["was"]
  if not os.access(path,os.X_OK):r["discovery"]["websphere"]={"status":"not_found","path":path};return
- rc,out,err,mode,sh=run([path]);r["discovery"]["websphere"]={"status":"ok" if rc==0 else "error","path":path,"returncode":rc}
+ rc,out,err,mode,sh=run([path]);r["discovery"]["websphere"]={"status":state(rc,mode),"path":path,"returncode":rc}
  before=len(r["products"])
  for b in re.split(r"\n\s*\n",out.replace("\r","")):
   if "Installiertes Produkt" not in b and "Installed Product" not in b:continue
@@ -67,12 +72,12 @@ def was(r):
 def db2(r):
  path=P["db2"]
  if not os.access(path,os.X_OK):r["discovery"]["db2"]={"status":"not_found","path":path};return
- rc,out,err,mode,sh=run([path]);profile="/home/db2icm/sqllib/db2profile"
+ rc,out,err,mode,sh=run([path]);profile=os.path.join(os.path.dirname(os.path.dirname(path)),"db2profile")
  if (rc!=0 or not out.strip()) and os.path.isfile(profile):
   shell="/bin/bash" if os.path.isfile("/bin/bash") else "/bin/sh"
-  rc2,o2,e2,_,_=run([shell,"-c",'. "{}" && exec "{}"'.format(profile,path)])
+  rc2,o2,e2,_,_=run([shell,"-c",'. "$1" && exec "$2"',"collector",profile,path])
   if rc2==0 or o2.strip():rc,out,err,mode=rc2,o2,e2,"db2profile"
- st={"status":"ok" if rc==0 else "error","path":path,"returncode":rc,"execution_mode":mode}
+ st={"status":state(rc,mode),"path":path,"returncode":rc,"execution_mode":mode}
  if mode=="db2profile":st["profile"]=profile
  r["discovery"]["db2"]=st
  m=re.search(r'DB2 v([^"\s,]+)',out)
@@ -83,7 +88,7 @@ def db2(r):
 def cm(r):
  path=P["cm"]
  if not os.access(path,os.X_OK):r["discovery"]["content_manager"]={"status":"not_found","path":path};return
- rc,out,err,mode,sh=run([path,"-l"]);st={"status":"ok" if rc==0 else "error","path":path,"returncode":rc,"execution_mode":mode};
+ rc,out,err,mode,sh=run([path,"-l"]);st={"status":state(rc,mode),"path":path,"returncode":rc,"execution_mode":mode};
  if sh:st["shell"]=sh
  r["discovery"]["content_manager"]=st;rows=[];sec=None
  for raw in out.replace("\r","").splitlines():
@@ -126,7 +131,7 @@ def iccsap(r):
 def im(r):
  path=P["imcl"]
  if not os.access(path,os.X_OK):r["discovery"]["installation_manager"]={"status":"not_found","path":path};return
- rc,out,err,mode,sh=run([path,"listInstalledPackages","-verbose"],60);r["discovery"]["installation_manager"]={"status":"ok" if rc==0 else "error","path":path,"returncode":rc};lines=[x.strip() for x in out.replace("\r","").splitlines() if x.strip()];r["installation_manager"]={"path":path,"packages_raw":lines}
+ rc,out,err,mode,sh=run([path,"listInstalledPackages","-verbose"],60);r["discovery"]["installation_manager"]={"status":state(rc,mode),"path":path,"returncode":rc};lines=[x.strip() for x in out.replace("\r","").splitlines() if x.strip()];r["installation_manager"]={"path":path,"packages_raw":lines}
 
 def timed(name,fn,r):
  s=time.monotonic()
@@ -155,8 +160,19 @@ def human(r):
  for n,s in sorted(r["discovery"].items()):print("  {:24}: {:12} ({:.3f}s)".format(n,s.get("status","unknown"),s.get("duration_seconds",0.0)))
  print("\n"+"="*78)
 
-def main():
- p=argparse.ArgumentParser();p.add_argument("--json",action="store_true");p.add_argument("--pretty",action="store_true");p.add_argument("--skip-im",action="store_true");a=p.parse_args();r=inventory(a.skip_im)
- if a.json:print(json.dumps(r,ensure_ascii=False,indent=2 if a.pretty else None))
+def main(argv=None):
+ p=argparse.ArgumentParser();p.add_argument("--json",action="store_true");p.add_argument("--pretty",action="store_true");p.add_argument("--skip-im",action="store_true")
+ p.add_argument("--path",action="append",default=[],metavar="KEY=PFAD",help="Standardpfad überschreiben; Schlüssel: "+", ".join(sorted(P)))
+ p.add_argument("--output",metavar="DATEI",help="JSON in eine Datei schreiben (impliziert --json)")
+ p.add_argument("--version",action="version",version="ibm_discovery "+COLLECTOR_VERSION);a=p.parse_args(argv)
+ for item in a.path:
+  k,sep,v=item.partition("=")
+  if not sep or k not in P or not v:p.error("--path erwartet KEY=PFAD mit KEY aus: "+", ".join(sorted(P)))
+  P[k]=v
+ if hasattr(os,"geteuid") and os.geteuid()==0:sys.stderr.write("WARNUNG: Der Collector läuft als root. Er liest nur; ein Lauf mit dem Produktbenutzer genügt und ist sicherer.\n")
+ r=inventory(a.skip_im)
+ if a.output:
+  with open(a.output,"w",encoding="utf-8") as f:f.write(json.dumps(r,ensure_ascii=False,indent=2 if a.pretty else None)+"\n")
+ elif a.json:print(json.dumps(r,ensure_ascii=False,indent=2 if a.pretty else None))
  else:human(r)
 if __name__=="__main__":main()
