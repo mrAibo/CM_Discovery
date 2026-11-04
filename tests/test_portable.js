@@ -266,3 +266,11 @@ test("N4: result markdown escapes pipes and marks pinned targets", () => {
   assert.equal(md.length, 3);
   assert.equal(md[2], "| IBM Db2 | 11.5\\|9 | 11.5.9.0 special_1 | Update stimmt überein (Zielstand fest hinterlegt) |");
 });
+
+test("IBM SDK notes do not link to the WebSphere Liberty product in Fix Central", () => {
+  const notes = JSON.parse(require("node:fs").readFileSync(require("node:path").join(__dirname, "../web/verified-notes.json"), "utf8"));
+  for (const link of notes.products.ibm_java.links.filter(l => /fixcentral/.test(l.url))) assert.doesNotMatch(link.url, /Liberty/i);
+  const fixCentral = notes.products.ibm_java.links.filter(l => /fixcentral/.test(l.url));
+  assert.ok(fixCentral.length > 0 && fixCentral.every(l => /WebSphere\+Application\+Server/.test(l.url)));
+  assert.ok(notes.products.ibm_java.links.every(l => api.ibmUrl(l.url)));
+});

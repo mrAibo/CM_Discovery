@@ -107,8 +107,12 @@
           "download": true
         },
         {
-          "label": "Fix Central · Linux x64",
-          "url": "https://www.ibm.com/support/fixcentral/swg/selectFixes?fixids=8.0.8.71-JavaSE-SDK-linux-x64-repo&function=fixId&parent=ibm%2FWebSphere&product=ibm%2FWebSphere%2FWebSphere+Liberty"
+          "label": "Fix Central · WebSphere Application Server 9.0.5 (Linux x64)",
+          "url": "https://www.ibm.com/support/fixcentral/swg/selectFixes?parent=ibm%7EWebSphere&product=ibm/WebSphere/WebSphere+Application+Server&release=9.0.5&platform=Linux+64-bit,x86_64&function=all"
+        },
+        {
+          "label": "IBM Doku: SDK unter WAS 9.0.5 installieren und aktualisieren",
+          "url": "https://www.ibm.com/docs/en/was-nd/9.0.5?topic=ipo-installing-updating-sdk-java-technology-edition-distributed-operating-systems"
         }
       ]
     },
