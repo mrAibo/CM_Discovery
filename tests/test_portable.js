@@ -227,3 +227,18 @@ test("M3: structurally unverifiable states are info, still 'review', and leave t
   assert.deepEqual(api.filteredRows(rows, "", "attention").map(r => r.id), ["websphere"]);
   assert.deepEqual(api.filteredRows(rows, "", "info").map(r => r.id), ["content_manager"]);
 });
+
+test("H2: WAS fixes come from exactly one WAS package of the IM output, otherwise stay uncaptured", () => {
+  const raw = (...pkgs) => ({installation_manager:{packages_raw:pkgs.flat()}});
+  const was = ["[Package]", "Name: WAS ND (com.ibm.websphere.ND.v90)", "Fixes:", "9.0.5.29-WS-WAS-IFPH12345", "Features:", "x"];
+  assert.deepEqual(api.wasFixes(raw(was)), ["9.0.5.29-WS-WAS-IFPH12345"]);
+  assert.deepEqual(api.wasFixes(raw(["[Package]", "Name: WAS ND (com.ibm.websphere.ND.v90)", "Fixes:", "None"])), []);
+  assert.equal(api.wasFixes(raw(was, was)), null);
+  assert.equal(api.wasFixes(raw(["[Package]", "Name: Java (com.ibm.java.jdk.v8)", "Fixes:", "a"])), null);
+  assert.equal(api.wasFixes({}), null);
+  const inv = {schema_version:1, host:{}, products:[{id:"websphere", version:"9.0.5.29"}], ...raw(was)};
+  const rows = api.rowsFor(inv, {products:{}});
+  assert.deepEqual(rows.find(r => r.id === "websphere").installed.installed_fixes, ["9.0.5.29-WS-WAS-IFPH12345"]);
+  const none = api.rowsFor({...inv, installation_manager:{}}, {products:{}});
+  assert.equal(none.find(r => r.id === "websphere").installed.installed_fixes, undefined);
+});

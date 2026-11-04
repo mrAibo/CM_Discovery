@@ -207,16 +207,17 @@ function matchingNote(id, entry, notes) {
   return same ? note : null;
 }
 
-// Display ICCSAP fix identifiers only from its own package's Fixes section.
-// Never infer a Java version from a date, another package, or rollback history.
-function iccsapFixes(inventory) {
+// Fix identifiers come only from the matching package's own Fixes section of the
+// Installation Manager output. Never infer a Java version from a date, another
+// package, or rollback history. Returns null unless exactly one package matches.
+function imFixes(inventory, matchesId) {
   const im = inventory.installation_manager;
-  if (!object(im)) return [];
+  if (!object(im)) return null;
   if (Array.isArray(im.packages)) {
-    const packages = im.packages.filter(p => object(p) && p.package_id === "com.ibm.im.iccsap.offering");
-    return packages.length === 1 && Array.isArray(packages[0].fixes) ? packages[0].fixes.filter(v => typeof v === "string") : [];
+    const packages = im.packages.filter(p => object(p) && matchesId(p.package_id));
+    return packages.length === 1 && Array.isArray(packages[0].fixes) ? packages[0].fixes.filter(v => typeof v === "string") : null;
   }
-  if (!Array.isArray(im.packages_raw)) return [];
+  if (!Array.isArray(im.packages_raw)) return null;
   let current = null, section = "", groups = [];
   for (const raw of im.packages_raw) {
     const line = String(raw).trim(), low = line.toLowerCase();
@@ -232,9 +233,11 @@ function iccsapFixes(inventory) {
     else if (current && section === "fixes" && line && !line.includes(":") && !["none", "keine"].includes(low)) current.fixes.push(line);
   }
   if (current) groups.push(current);
-  groups = groups.filter(p => p.id === "com.ibm.im.iccsap.offering");
-  return groups.length === 1 ? groups[0].fixes : [];
+  groups = groups.filter(p => matchesId(p.id));
+  return groups.length === 1 ? groups[0].fixes : null;
 }
+const iccsapFixes = inventory => imFixes(inventory, id => id === "com.ibm.im.iccsap.offering") || [];
+const wasFixes = inventory => imFixes(inventory, id => /^com\.ibm\.websphere\.(?:BASE|ND|EXPRESS|DEVELOPERS|NDDMZ)\.v\d+$/i.test(id));
 
 function rowsFor(inventory, catalog) {
   const grouped = new Map();
@@ -249,6 +252,10 @@ function rowsFor(inventory, catalog) {
     const discovery = inventory && inventory.discovery && inventory.discovery[discoveryId];
     const matches = grouped.get(id) || [];
     if (id === "iccsap" && matches.length === 1 && !matches[0].installed_fixes) matches[0].installed_fixes = iccsapFixes(inventory);
+    if (id === "websphere" && matches.length === 1 && !matches[0].installed_fixes) {
+      const fixes = wasFixes(inventory);
+      if (fixes) matches[0].installed_fixes = fixes;
+    }
     for (const p of matches.length ? matches : [null]) {
       if (p && object(discovery) && discovery.status && !["ok", "skipped"].includes(discovery.status)) p._discoveryError = "Collector-Status: " + discovery.status + ". Die Erfassung ist unvollständig.";
       rows.push({id, installed:p, entry:own(catalog.products, id) ? catalog.products[id] : null, discovery});
@@ -496,7 +503,7 @@ function startApp() {
   render();
 }
 
-if (typeof module !== "undefined" && module.exports) module.exports = {versionParts, compareVersions, ifixLevel, freshness, compareProduct, validateInventory, validateCatalog, ibmUrl, matchingNote, daysSince, NOTES_BANNER_DAYS, iccsapFixes, rowsFor, fixAssociations, visibleFixAssociations, installedOnlyFixAssociations, fixPresence, downloadFor, rowStatus, filteredRows, linksFor, importPayloads};
+if (typeof module !== "undefined" && module.exports) module.exports = {versionParts, compareVersions, ifixLevel, freshness, compareProduct, validateInventory, validateCatalog, ibmUrl, matchingNote, daysSince, NOTES_BANNER_DAYS, iccsapFixes, imFixes, wasFixes, rowsFor, fixAssociations, visibleFixAssociations, installedOnlyFixAssociations, fixPresence, downloadFor, rowStatus, filteredRows, linksFor, importPayloads};
 if (typeof document !== "undefined") {
   try { startApp(); } catch (error) {
     const target = document.getElementById("error");
