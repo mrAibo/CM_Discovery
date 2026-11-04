@@ -152,15 +152,20 @@ test("M2: notes for another catalog state are announced instead of vanishing; M3
 
 test("N2/N3/N1/N4: card toggle, details open for print and restore, copy buttons, legend", async () => withPage(async page => {
   await page.context().grantPermissions(["clipboard-read", "clipboard-write"]).catch(() => {});
-  await load(page);
+  // A WAS iFix applying to the installed base only gives a folded group (notes are open by default).
+  const withFix = freshCatalog(); withFix.products.websphere.interim_fixes = [{fix_id:"PH-OLD", applies_to:{min:"9.0.5.20", max:"9.0.5.28"}}];
+  await page.locator("#catalog-file").setInputFiles(file("catalog.json", withFix));
+  await page.waitForFunction(() => document.querySelector("#load-message").textContent.includes("catalog.json geladen"));
+  await page.locator("#inventory-file").setInputFiles(file("inventory.json", inventory("test-server")));
+  await page.waitForFunction(() => document.querySelector("#inventory-title").textContent.includes("Server:"));
   await page.locator("[data-filter=update]").click();
   assert.equal(await page.locator("#products tr").count(), 2);
   await page.locator("[data-filter=update]").click();
   assert.equal(await page.locator("#status-filter").inputValue(), "all");
-  const details = page.locator("#products details").first();
+  const details = page.locator("#products details.ifix-group").first();
   assert.equal(await details.evaluate(d => d.open), false);
   await page.evaluate(() => window.dispatchEvent(new Event("beforeprint")));
-  assert.equal(await page.locator("#products details:not([open])").count(), 0);
+  assert.equal(await page.locator("#products details.ifix-group:not([open])").count(), 0);
   await page.evaluate(() => window.dispatchEvent(new Event("afterprint")));
   assert.equal(await details.evaluate(d => d.open), false);
   await page.locator("#copy-result").click();
@@ -180,4 +185,13 @@ test("M4: two inventories dropped together show a server label per row", async (
   assert.equal(await page.locator("#products tr").filter({hasText:"Server: srv-b"}).count(), 8);
   await page.locator("#search").fill("srv-a");
   assert.equal(await page.locator("#products tr").count(), 8);
+}));
+
+test("notes are open by default in their own column; how-to is available", async () => withPage(async page => {
+  await load(page);
+  const was = page.locator("#products tr").filter({hasText:"IBM WebSphere Application Server"}).first();
+  assert.equal(await was.locator("td[data-label='Voraussetzungen und Hinweise'] details.product-notes").evaluate(d => d.open), true);
+  assert.equal(await page.locator("#count-info").textContent(), "0");
+  await page.locator("#howto > summary").click();
+  assert.match(await page.locator("#howto").textContent(), /install_patches\.yml/);
 }));
