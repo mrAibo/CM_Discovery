@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Callable
 
@@ -49,6 +49,30 @@ def _load_previous() -> dict:
     except (OSError, json.JSONDecodeError):
         return {}
     return value if isinstance(value, dict) else {}
+
+
+MAX_UNCHANGED_AGE = timedelta(hours=40)  # below the page's 72 h freshness limit even if one daily run is skipped
+
+
+def _content(catalog: dict) -> dict:
+    """Catalog without refresh timestamps, to tell real changes from reruns."""
+    value = json.loads(json.dumps(catalog))
+    for key in ("generated_at",):
+        value.pop(key, None)
+    for entry in (value.get("products") or {}).values():
+        if isinstance(entry, dict):
+            entry.pop("refreshed_at", None)
+            if isinstance(entry.get("refresh_error"), dict):
+                entry["refresh_error"].pop("at", None)
+    return value
+
+
+def _unchanged_and_fresh(previous: dict, payload: dict, now: datetime) -> bool:
+    try:
+        age = now - datetime.fromisoformat(previous["generated_at"])
+    except (KeyError, TypeError, ValueError):
+        return False
+    return _content(previous) == _content(payload) and age < MAX_UNCHANGED_AGE
 
 
 def main() -> None:
@@ -119,6 +143,11 @@ def main() -> None:
         "refresh_errors": refresh_errors,
         "products": products,
     }
+
+    # Only timestamps would change: keep the committed file (fewer daily commits).
+    if _unchanged_and_fresh(previous, payload, datetime.fromisoformat(attempted_at)):
+        print("catalog content unchanged; keeping the committed file")
+        return
 
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     OUTPUT.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
