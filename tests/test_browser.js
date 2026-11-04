@@ -149,3 +149,24 @@ test("M2: notes for another catalog state are announced instead of vanishing; M3
   await page.locator("#status-filter").selectOption("info");
   assert.equal(await page.locator("#products tr").count(), 1);
 }));
+
+test("N2/N3/N1/N4: card toggle, details open for print and restore, copy buttons, legend", async () => withPage(async page => {
+  await page.context().grantPermissions(["clipboard-read", "clipboard-write"]).catch(() => {});
+  await load(page);
+  await page.locator("[data-filter=update]").click();
+  assert.equal(await page.locator("#products tr").count(), 2);
+  await page.locator("[data-filter=update]").click();
+  assert.equal(await page.locator("#status-filter").inputValue(), "all");
+  const details = page.locator("#products details").first();
+  assert.equal(await details.evaluate(d => d.open), false);
+  await page.evaluate(() => window.dispatchEvent(new Event("beforeprint")));
+  assert.equal(await page.locator("#products details:not([open])").count(), 0);
+  await page.evaluate(() => window.dispatchEvent(new Event("afterprint")));
+  assert.equal(await details.evaluate(d => d.open), false);
+  await page.locator("#copy-result").click();
+  await page.waitForFunction(() => document.querySelector("#load-message").textContent.includes("Markdown"));
+  await page.locator(".help:not(#legend) > summary").click();
+  await page.locator("[data-copy^='python3']").click();
+  await page.waitForFunction(() => document.querySelector("#load-message").textContent.includes("Befehl kopiert"));
+  assert.match(await page.locator("#legend").textContent(), /Bedeutung der Anzeigen/);
+}));

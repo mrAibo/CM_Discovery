@@ -242,3 +242,10 @@ test("H2: WAS fixes come from exactly one WAS package of the IM output, otherwis
   const none = api.rowsFor({...inv, installation_manager:{}}, {products:{}});
   assert.equal(none.find(r => r.id === "websphere").installed.installed_fixes, undefined);
 });
+
+test("N4: result markdown escapes pipes and marks pinned targets", () => {
+  const rows = [{id:"db2", installed:{version:"11.5|9"}, entry:{available:{version:"11.5.9.0", special_build:"special_1"}}, status:{label:"Update stimmt überein", pinned:true}}];
+  const md = api.resultMarkdown(rows).split("\n");
+  assert.equal(md.length, 3);
+  assert.equal(md[2], "| IBM Db2 | 11.5\\|9 | 11.5.9.0 special_1 | Update stimmt überein (Zielstand fest hinterlegt) |");
+});

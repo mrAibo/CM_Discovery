@@ -239,6 +239,18 @@ function imFixes(inventory, matchesId) {
 const iccsapFixes = inventory => imFixes(inventory, id => id === "com.ibm.im.iccsap.offering") || [];
 const wasFixes = inventory => imFixes(inventory, id => /^com\.ibm\.websphere\.(?:BASE|ND|EXPRESS|DEVELOPERS|NDDMZ)\.v\d+$/i.test(id));
 
+// Markdown table of the shown rows, for change tickets.
+function resultMarkdown(rows) {
+  const cell = value => String(value == null || value === "" ? "—" : value).replace(/\|/g, "\\|").replace(/\s+/g, " ");
+  const lines = ["| Produkt | Installiert | Zielstand | Ergebnis |", "| --- | --- | --- | --- |"];
+  for (const row of rows) {
+    const p = row.installed, a = row.entry && row.entry.available || {};
+    const target = [a.version, a.interim_fix != null ? "iFix " + a.interim_fix : "", a.special_build].filter(Boolean).join(" ");
+    lines.push("| " + [own(PRODUCTS, row.id) ? PRODUCTS[row.id][0] : p && p.name || row.id, p && p.version, target, row.status.label + (row.status.pinned ? " (Zielstand fest hinterlegt)" : "")].map(cell).join(" | ") + " |");
+  }
+  return lines.join("\n");
+}
+
 function rowsFor(inventory, catalog) {
   const grouped = new Map();
   for (const original of inventory ? inventory.products : []) {
@@ -327,7 +339,7 @@ function startApp() {
   };
   if (state.inventory !== null) validateInventory(state.inventory);
   const notes = JSON.parse($("notes-data").textContent);
-  let importSequence = 0;
+  let importSequence = 0, currentRows = [];
   const el = (tag, text, className) => { const node = document.createElement(tag); if (text !== undefined) node.textContent = String(text); if (className) node.className = className; return node; };
   const date = value => { const stamp = Date.parse(value); return Number.isFinite(stamp) ? new Date(stamp).toLocaleString("de-DE", {timeZone:"UTC", year:"numeric", month:"2-digit", day:"2-digit", hour:"2-digit", minute:"2-digit"}) + " UTC" : "kein Datum angegeben"; };
   function link(label, url, primary) {
@@ -344,6 +356,7 @@ function startApp() {
     const now = Date.now();
     const rows = rowsFor(inventory, catalog).map(row => ({...row, status:rowStatus(row, inventory, catalog, now)}));
     const shown = filteredRows(rows, $("search").value, $("status-filter").value);
+    currentRows = shown;
     if (inventory) {
       const priority = {update:0,error:1,review:2,stale:2,different:3,match:4,level:4,empty:5};
       const rank = status => status.info ? 4 : priority[status.code] ?? 5;
@@ -493,8 +506,24 @@ function startApp() {
   $("search").addEventListener("input", render);
   $("status-filter").addEventListener("change", render);
   $("reset-filter").addEventListener("click", () => { $("search").value = ""; $("status-filter").value = "all"; render(); $("search").focus(); });
-  for (const card of document.querySelectorAll("[data-filter]")) card.addEventListener("click", () => { $("status-filter").value = card.dataset.filter; render(); });
+  // A second click on the active card clears the filter again.
+  for (const card of document.querySelectorAll("[data-filter]")) card.addEventListener("click", () => { $("status-filter").value = $("status-filter").value === card.dataset.filter ? "all" : card.dataset.filter; render(); });
   $("print").addEventListener("click", () => window.print());
+  // Print every folded detail, then restore the previous state.
+  let folded = [];
+  window.addEventListener("beforeprint", () => { folded = [...document.querySelectorAll("#products details:not([open])")]; folded.forEach(d => { d.open = true; }); });
+  window.addEventListener("afterprint", () => { folded.forEach(d => { d.open = false; }); folded = []; });
+  async function copyText(text, done) {
+    try { await navigator.clipboard.writeText(text); }
+    catch (error) {
+      const box = el("textarea", text); document.body.append(box); box.select();
+      try { document.execCommand("copy"); } catch (inner) { box.remove(); $("load-message").textContent = "Kopieren nicht möglich; bitte den Text manuell markieren."; return; }
+      box.remove();
+    }
+    $("load-message").textContent = done;
+  }
+  for (const button of document.querySelectorAll("[data-copy]")) button.addEventListener("click", () => copyText(button.dataset.copy, "Befehl kopiert."));
+  $("copy-result").addEventListener("click", () => copyText(resultMarkdown(currentRows), "Ergebnis als Markdown-Tabelle kopiert."));
   $("refresh-catalog").addEventListener("click", () => $("catalog-file").click());
   const zone = $("drop-zone");
   document.addEventListener("dragover", event => { event.preventDefault(); zone.classList.add("drag-active"); });
@@ -503,7 +532,7 @@ function startApp() {
   render();
 }
 
-if (typeof module !== "undefined" && module.exports) module.exports = {versionParts, compareVersions, ifixLevel, freshness, compareProduct, validateInventory, validateCatalog, ibmUrl, matchingNote, daysSince, NOTES_BANNER_DAYS, iccsapFixes, imFixes, wasFixes, rowsFor, fixAssociations, visibleFixAssociations, installedOnlyFixAssociations, fixPresence, downloadFor, rowStatus, filteredRows, linksFor, importPayloads};
+if (typeof module !== "undefined" && module.exports) module.exports = {versionParts, compareVersions, ifixLevel, freshness, compareProduct, validateInventory, validateCatalog, ibmUrl, matchingNote, daysSince, NOTES_BANNER_DAYS, iccsapFixes, imFixes, wasFixes, rowsFor, resultMarkdown, fixAssociations, visibleFixAssociations, installedOnlyFixAssociations, fixPresence, downloadFor, rowStatus, filteredRows, linksFor, importPayloads};
 if (typeof document !== "undefined") {
   try { startApp(); } catch (error) {
     const target = document.getElementById("error");

@@ -40,7 +40,7 @@
       <button type="button" class="stat stat-review" data-filter="review"><span id="count-review">—</span><strong>Prüfung erforderlich</strong><small>Quellen, Erfassung oder Kompatibilität</small></button>
       <button type="button" class="stat stat-match" data-filter="match"><span id="count-match">—</span><strong>Verglichener Stand gleich</strong><small>Keine vollständige Sicherheitsprüfung</small></button>
     </section>
-    <div class="table-heading"><h2 id="products-heading">Produkte und Downloads</h2><p id="summary" role="status" aria-live="polite"></p><button type="button" id="print" class="secondary">Drucken / PDF</button></div>
+    <div class="table-heading"><h2 id="products-heading">Produkte und Downloads</h2><p id="summary" role="status" aria-live="polite"></p><button type="button" id="copy-result" class="secondary">Ergebnis kopieren</button><button type="button" id="print" class="secondary">Drucken / PDF</button></div>
     <div class="filters" role="search" aria-label="Produktübersicht filtern">
       <div class="search-field"><label for="search">Produkt oder Installationspfad suchen</label><input id="search" type="search" placeholder="z. B. WebSphere, Db2 oder /opt/IBM" autocomplete="off"></div>
       <div><label for="status-filter">Anzeige</label><select id="status-filter"><option value="all">Alle Produkte</option><option value="attention">Updates und Prüfungen</option><option value="update">Nur verfügbare Updates</option><option value="review">Nur offene Prüfungen</option><option value="info">Hinweise (nicht prüfbar)</option><option value="match">Verglichener Stand gleich</option><option value="missing">Ohne Produkteintrag</option></select></div>
@@ -50,10 +50,24 @@
     <div class="empty-results" id="empty-results" hidden><strong>Keine passenden Produkte</strong><p>Ändern Sie den Suchbegriff oder setzen Sie die Filter zurück.</p></div>
     <p class="table-note">Verglichen werden die Versionen aus Ihrer Datei. Eine gleiche Basisversion bestätigt nicht, dass alle Sicherheitskorrekturen und iFixes installiert sind.</p>
     <details class="help"><summary>Hilfe: Inventar erstellen und Daten aktualisieren</summary><div class="help-content">
-      <ol><li>Auf dem IBM-Server den Collector ausführen: <code>python3 ibm_discovery.py --json &gt; inventory.json</code>.</li><li>Die Datei nach Windows übertragen und über <strong>Inventar öffnen</strong> laden oder auf die Seite ziehen. Inventar und Katalog können gemeinsam abgelegt werden.</li><li>Nach Produkt oder Status filtern. Voraussetzungen und iFix-Details lassen sich in der jeweiligen Zeile aufklappen.</li><li>IBM-Link öffnen, bei Bedarf anmelden und das Paket manuell herunterladen. Die Ansible-Installation wird separat gestartet.</li></ol>
+      <ol><li>Auf dem IBM-Server den Collector ausführen: <code>python3 ibm_discovery.py --json &gt; inventory.json</code> <button type="button" class="secondary copy" data-copy="python3 ibm_discovery.py --json > inventory.json">Befehl kopieren</button><br>Ohne Datei auf dem Server, direkt vom eigenen Rechner: <code>ssh SERVER 'python3 - --json' &lt; ibm_discovery.py &gt; inventory-SERVER.json</code> <button type="button" class="secondary copy" data-copy="ssh SERVER 'python3 - --json' < ibm_discovery.py > inventory-SERVER.json">Befehl kopieren</button></li><li>Die Datei nach Windows übertragen und über <strong>Inventar öffnen</strong> laden oder auf die Seite ziehen. Inventar und Katalog können gemeinsam abgelegt werden.</li><li>Nach Produkt oder Status filtern. Voraussetzungen und iFix-Details lassen sich in der jeweiligen Zeile aufklappen.</li><li>IBM-Link öffnen, bei Bedarf anmelden und das Paket manuell herunterladen. Die Ansible-Installation wird separat gestartet.</li></ol>
       <p>Alle fertigen Dateien liegen im Repository im Ordner <strong>output/</strong>. Für neue Stände das aktuelle Paket herunterladen oder über <strong>Katalog aktualisieren</strong> eine neuere catalog.json öffnen. Neue fachliche Hinweise benötigen auch eine neue HTML-Datei.</p>
       <p>Beim Schließen der Seite werden die geladenen Inventardaten verworfen. Es erfolgt kein Upload und kein automatischer Zugriff auf den IBM-Server.</p>
       <p class="muted">Einige Provider prüfen eine versionsgebundene IBM-Seite. Ein neuer Abruf beweist nicht, dass es keine neueren Releases gibt. Fachliche Hinweise und Paketbestätigungen behalten ihr eigenes Prüfdatum.</p>
+    </div></details>
+    <details class="help" id="legend"><summary>Bedeutung der Anzeigen</summary><div class="help-content">
+      <table class="legend"><tbody>
+        <tr><th scope="row">Neuerer Stand / Neuerer iFix verfügbar</th><td>In derselben Versionslinie ist ein neuerer Stand bekannt; Voraussetzungen vor der Installation prüfen.</td></tr>
+        <tr><th scope="row">Version / iFix / Update stimmt überein</th><td>Der verglichene Stand passt zum Katalog; keine Gesamtaussage über alle Sicherheitskorrekturen.</td></tr>
+        <tr><th scope="row">Fix Pack stimmt überein</th><td>WAS-Fix-Pack passt; einzelne iFixes wurden nicht geprüft.</td></tr>
+        <tr><th scope="row">Fix Pack gleich · iFix prüfen</th><td>CM-Fix-Pack passt; einzelne Interim Fixes lassen sich so nicht bestätigen (Hinweis, nicht prüfbar).</td></tr>
+        <tr><th scope="row">Special Build prüfen</th><td>Db2-Builds unterscheiden sich; ihre Nummern ergeben keine zeitliche Reihenfolge.</td></tr>
+        <tr><th scope="row">In ICN enthalten</th><td>Daeja ist eine mitgelieferte ICN-Komponente und wird mit dem ICN-Paket geprüft (Hinweis, nicht prüfbar).</td></tr>
+        <tr><th scope="row">Mitgelieferte JRE prüfen / JRE gleich</th><td>Für ICCSAP fehlt eine gemessene JRE-Version, bzw. Binaries-iFixes sind einzeln zu prüfen.</td></tr>
+        <tr><th scope="row">Andere Versionslinie / Neuer als Katalog</th><td>Kein automatischer Versionswechsel und kein Downgrade.</td></tr>
+        <tr><th scope="row">Katalog prüfen / Erfassung fehlgeschlagen</th><td>Quelle oder Erfassung ist veraltet, unvollständig, widersprüchlich oder fehlgeschlagen.</td></tr>
+        <tr><th scope="row">Zielstand fest hinterlegt</th><td>Der Zielstand ist von Hand gepflegt; neue Releases werden nicht automatisch erkannt.</td></tr>
+      </tbody></table>
     </div></details>
     <footer><span>IBM Patchwatch · portable</span><span>Eine HTML-Datei · keine zusätzliche Windows-Installation</span></footer>
     <noscript><p>Aktivieren Sie JavaScript, um Versionen zu vergleichen und JSON-Dateien einzulesen.</p></noscript>
