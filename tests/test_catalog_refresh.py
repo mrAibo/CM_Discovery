@@ -44,3 +44,16 @@ def test_was_refresh_cannot_regress_to_fp28(monkeypatch, tmp_path):
     assert entry['available'] == old['available']
     assert entry['availability_evidence'] == old['availability_evidence']
     assert 'regressed' in entry['refresh_error']['message']
+
+
+def test_timestamp_only_refresh_is_not_written_until_the_file_gets_old():
+    from datetime import datetime, timedelta, timezone
+    now = datetime(2026, 11, 5, 3, 17, tzinfo=timezone.utc)
+    def catalog(at, refreshed, version='9.0.5.29'):
+        return {'generated_at': at.isoformat(), 'products': {'websphere': {'available': {'version': version}, 'refreshed_at': refreshed.isoformat()}}}
+    old = catalog(now - timedelta(hours=24), now - timedelta(hours=24))
+    assert refresh._unchanged_and_fresh(old, catalog(now, now), now)
+    assert not refresh._unchanged_and_fresh(old, catalog(now, now, '9.0.5.30'), now)
+    stale = catalog(now - timedelta(hours=48), now - timedelta(hours=48))
+    assert not refresh._unchanged_and_fresh(stale, catalog(now, now), now)
+    assert not refresh._unchanged_and_fresh({}, catalog(now, now), now)
