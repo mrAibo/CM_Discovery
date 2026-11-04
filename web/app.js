@@ -112,7 +112,7 @@ function compareBase(id, installed, entry, catalog, now) {
   if (!installed) return result("empty", "Keine Inventardaten", "Öffnen Sie die Datei vom Server. Ein fehlender Eintrag beweist nicht, dass das Produkt nicht installiert ist.");
   if (installed._discoveryError) return result("error", "Erfassung fehlgeschlagen", installed._discoveryError);
   if (id === "daeja_viewone_virtual" && installed.source === "ecmclient_version_txt") return notice("review", "In ICN enthalten", "Diese Komponente wird mit ICN geliefert. Den Stand im ICN-Paket prüfen.");
-  if (!entry || !object(entry.available) || !own(PRODUCTS, id)) return result("review", "Kein Katalogeintrag", "Für diesen Eintrag wird eine eigene IBM-Quelle benötigt.");
+  if (!entry || !object(entry.available) || !own(PRODUCTS, id)) return notice("review", "Kein Katalogeintrag", "Für diesen Eintrag wird eine eigene IBM-Quelle benötigt.");
   const stale = freshness(entry, catalog, now);
   if (stale) return result("stale", "Katalog prüfen", stale);
   if (entry.support_status === "not_supported") return result("review", "Versionslinie nicht unterstützt", "Prüfen Sie den Supportstatus bei IBM.");
@@ -391,7 +391,7 @@ function startApp() {
         if (fixes.length) metadata(installedCell, fixes.map(v => v.match(/JRE_fix_\d{8}/i)[0]).join(" · "));
       }
       cell(tr, "Installiert", installedCell);
-      const availableCell = el("div", undefined, "cell-content");
+      const availableCell = el("div", undefined, "cell-content"), detailsCell = el("div", undefined, "cell-content");
       availableCell.append(el("span", [target.version, target.interim_fix != null ? "iFix " + target.interim_fix : "", target.jre_version ? "+ JRE " + target.jre_version : ""].filter(Boolean).join(" ") || "Keine Daten", "version"));
       metadata(availableCell, target.special_build);
       if (target.fix_pack != null) metadata(availableCell, "Fix Pack " + target.fix_pack);
@@ -402,15 +402,16 @@ function startApp() {
       }
       if (note) {
         const details = el("details", undefined, "product-notes");
+        details.open = true;
         details.append(el("summary", "Voraussetzungen und Hinweise"));
         if (note.availability_note) details.append(el("p", note.availability_note));
         for (const text of note.notes) details.append(el("p", text));
         const checked = note.checked_at || notes.checked_at, age = daysSince(checked, now);
         details.append(el("p", Number.isFinite(age) ? "Hinweise geprüft vor " + age + " Tagen (" + checked + ")" : "Hinweise geprüft: " + checked, "muted"));
-        availableCell.append(details);
+        detailsCell.append(details);
       } else if (e && object(notes.products) && own(notes.products, id)) {
         const wanted = Object.entries(notes.products[id].for_available || {}).map(([k, v]) => k + " " + v).join(", ");
-        availableCell.append(el("p", "Hinweise liegen nur für " + wanted + " vor und passen nicht zum aktuellen Katalogstand. Download über die IBM-Quelle prüfen.", "reason"));
+        detailsCell.append(el("p", "Hinweise liegen nur für " + wanted + " vor und passen nicht zum aktuellen Katalogstand. Download über die IBM-Quelle prüfen.", "reason"));
       }
       const ifixGroup = (title, associations, className) => {
         if (!associations.length) return;
@@ -431,11 +432,12 @@ function startApp() {
           if (source) block.append(source);
           group.append(block);
         }
-        availableCell.append(group);
+        detailsCell.append(group);
       };
       ifixGroup("iFixes zur Zielbasis", visibleFixAssociations(e, p && p.version, target.version));
       ifixGroup("Zwischenlösung für die installierte Basis (entfällt mit Update auf " + (target.version || "das Ziel") + ")", installedOnlyFixAssociations(e, p && p.version, target.version), "ifix-interim");
       cell(tr, "Bekannter Zielstand", availableCell);
+      if (!detailsCell.childNodes.length) detailsCell.append(el("span", "—", "metadata"));
       const statusCell = el("div", undefined, "cell-content");
       statusCell.append(el("span", status.label, "status " + status.code + (status.info ? " info" : "")));
       if (inventory) statusCell.append(el("p", status.reason, "reason"));
@@ -444,16 +446,18 @@ function startApp() {
       const actions = el("div", undefined, "cell-content links");
       for (const item of linksFor(id, e, p, note)) { const a = link(item.label, item.url, item.download); if (a) actions.append(a); }
       if (!actions.childNodes.length) actions.append(el("span", "Keine Quelle angegeben", "metadata"));
+      cell(tr, "Voraussetzungen und Hinweise", detailsCell);
       cell(tr, "Downloads und Quellen", actions);
       fragment.append(tr);
     }
     $("products").replaceChildren(fragment);
     $("empty-results").hidden = shown.length > 0;
     $("summary").textContent = shown.length + " von " + rows.length + " Produktzeilen";
-    const counts = {update:0, review:0, match:0};
+    const counts = {update:0, review:0, info:0, match:0};
     for (const row of rows) {
       if (row.status.code === "update") counts.update++;
       else if (needsReview(row.status)) counts.review++;
+      else if (row.status.info) counts.info++;
       else if (["match", "level"].includes(row.status.code)) counts.match++;
     }
     for (const name of Object.keys(counts)) $("count-" + name).textContent = inventory ? counts[name] : "—";

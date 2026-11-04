@@ -38,6 +38,7 @@
     <section class="stats" aria-label="Ergebnis des Versionsvergleichs">
       <button type="button" class="stat stat-update" data-filter="update"><span id="count-update">—</span><strong>Updates verfügbar</strong><small>Neuere bestätigte Stände</small></button>
       <button type="button" class="stat stat-review" data-filter="review"><span id="count-review">—</span><strong>Prüfung erforderlich</strong><small>Quellen, Erfassung oder Kompatibilität</small></button>
+      <button type="button" class="stat stat-info" data-filter="info"><span id="count-info">—</span><strong>Hinweise</strong><small>Nicht automatisch prüfbar</small></button>
       <button type="button" class="stat stat-match" data-filter="match"><span id="count-match">—</span><strong>Verglichener Stand gleich</strong><small>Keine vollständige Sicherheitsprüfung</small></button>
     </section>
     <div class="table-heading"><h2 id="products-heading">Produkte und Downloads</h2><p id="summary" role="status" aria-live="polite"></p><button type="button" id="copy-result" class="secondary">Ergebnis kopieren</button><button type="button" id="print" class="secondary">Drucken / PDF</button></div>
@@ -46,7 +47,7 @@
       <div><label for="status-filter">Anzeige</label><select id="status-filter"><option value="all">Alle Produkte</option><option value="attention">Updates und Prüfungen</option><option value="update">Nur verfügbare Updates</option><option value="review">Nur offene Prüfungen</option><option value="info">Hinweise (nicht prüfbar)</option><option value="match">Verglichener Stand gleich</option><option value="missing">Ohne Produkteintrag</option></select></div>
       <button type="button" id="reset-filter" class="secondary">Filter zurücksetzen</button>
     </div>
-    <table><caption class="sr-only">Installierte IBM-Versionen, bekannte Zielstände und passende Downloadseiten</caption><colgroup><col class="col-product"><col class="col-installed"><col class="col-available"><col class="col-status"><col class="col-links"></colgroup><thead><tr><th scope="col">Produkt</th><th scope="col">Installiert</th><th scope="col">Bekannter Zielstand</th><th scope="col">Vergleich</th><th scope="col">Downloads und Quellen</th></tr></thead><tbody id="products"></tbody></table>
+    <table><caption class="sr-only">Installierte IBM-Versionen, bekannte Zielstände und passende Downloadseiten</caption><colgroup><col class="col-product"><col class="col-installed"><col class="col-available"><col class="col-status"><col class="col-notes"><col class="col-links"></colgroup><thead><tr><th scope="col">Produkt</th><th scope="col">Installiert</th><th scope="col">Bekannter Zielstand</th><th scope="col">Vergleich</th><th scope="col">Voraussetzungen und Hinweise</th><th scope="col">Downloads und Quellen</th></tr></thead><tbody id="products"></tbody></table>
     <div class="empty-results" id="empty-results" hidden><strong>Keine passenden Produkte</strong><p>Ändern Sie den Suchbegriff oder setzen Sie die Filter zurück.</p></div>
     <p class="table-note">Verglichen werden die Versionen aus Ihrer Datei. Eine gleiche Basisversion bestätigt nicht, dass alle Sicherheitskorrekturen und iFixes installiert sind.</p>
     <details class="help"><summary>Hilfe: Inventar erstellen und Daten aktualisieren</summary><div class="help-content">
@@ -54,6 +55,22 @@
       <p>Alle fertigen Dateien liegen im Repository im Ordner <strong>output/</strong>. Für neue Stände das aktuelle Paket herunterladen oder über <strong>Katalog aktualisieren</strong> eine neuere catalog.json öffnen. Neue fachliche Hinweise benötigen auch eine neue HTML-Datei.</p>
       <p>Beim Schließen der Seite werden die geladenen Inventardaten verworfen. Es erfolgt kein Upload und kein automatischer Zugriff auf den IBM-Server.</p>
       <p class="muted">Einige Provider prüfen eine versionsgebundene IBM-Seite. Ein neuer Abruf beweist nicht, dass es keine neueren Releases gibt. Fachliche Hinweise und Paketbestätigungen behalten ihr eigenes Prüfdatum.</p>
+    </div></details>
+    <details class="howto" id="howto"><summary>Installation per CLI ohne Rückfragen (unattended)</summary><div class="help-content">
+      <p>Die Seite installiert nichts. Nach dem manuellen Download startet Ansible die Installer still (Response-Dateien, <code>-y</code>, <code>-i silent</code>) auf genau <strong>einem</strong> Zielserver pro Aufruf. Details: <code>ansible/INSTALLATION.md</code>.</p>
+      <ol>
+        <li>Einmalig den Controller einrichten (Python 3.12 auf Controller und Ziel): <code>cd ansible &amp;&amp; python3.12 -m venv .venv &amp;&amp; . .venv/bin/activate &amp;&amp; python -m pip install -r requirements-controller.txt</code></li>
+        <li>Pakete bei IBM manuell herunterladen und auf dem Controller in <code>/srv/ibm-updates</code> ablegen.</li>
+        <li>Konfiguration anlegen und anpassen (Server in <code>private/hosts.yml</code>; in <code>private/install.yml</code> Installation, Benutzer, Dienste, Response-Dateien und Prüfbefehle):
+          <code>mkdir -p private &amp;&amp; cp -R inventories/example/. private/ &amp;&amp; cp examples/install-was.yml private/install.yml</code></li>
+        <li>Pakete lesend zuordnen (ändert nichts):
+          <code>ansible-playbook -i private/hosts.yml playbooks/scan_patches.yml --limit HB_TEST -e ibm_patch_directory=/srv/ibm-updates</code>
+          <button type="button" class="secondary copy" data-copy="ansible-playbook -i private/hosts.yml playbooks/scan_patches.yml --limit HB_TEST -e ibm_patch_directory=/srv/ibm-updates">Befehl kopieren</button></li>
+        <li><strong>Installieren</strong> (läuft tatsächlich, ohne weitere Freigabe):
+          <code>ansible-playbook -i private/hosts.yml playbooks/install_patches.yml --limit HB_TEST -e @private/install.yml</code>
+          <button type="button" class="secondary copy" data-copy="ansible-playbook -i private/hosts.yml playbooks/install_patches.yml --limit HB_TEST -e @private/install.yml">Befehl kopieren</button></li>
+      </ol>
+      <p class="muted">Vorher Backup sicherstellen und selbst über <code>before</code> im Auftrag anstoßen: Die Rolle erzwingt kein Backup. <code>--check</code> wird abgelehnt (kein Probelauf). Bei einem Fehler bleiben Sperre und Laufverzeichnis erhalten; Dienste können gestoppt sein, es gibt keinen automatischen Neustart. Nie beide Produktionsumgebungen gleichzeitig aktualisieren.</p>
     </div></details>
     <details class="help" id="legend"><summary>Bedeutung der Anzeigen</summary><div class="help-content">
       <table class="legend"><tbody>

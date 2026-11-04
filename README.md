@@ -213,6 +213,18 @@ oder andere belegte IBM-Metadatenquellen erweitert werden.
 
 ## Unabhängige Ansible-Installation
 
+Kurzfassung für die unbeaufsichtigte Installation per CLI (auch in der Seite unter
+**Installation per CLI ohne Rückfragen**): Controller einrichten, IBM-Pakete manuell nach
+`/srv/ibm-updates` legen, `private/install.yml` anpassen, mit `scan_patches.yml` lesend prüfen,
+dann tatsächlich installieren:
+
+```bash
+ansible-playbook -i private/hosts.yml playbooks/install_patches.yml \
+  --limit HB_TEST -e @private/install.yml
+```
+
+Ein Host pro Aufruf, kein `--check`, kein erzwungenes Backup (selbst über `before` anstoßen).
+
 Nach dem manuellen Download installiert [Ansible](ansible/INSTALLATION.md) die
 lokalen Pakete mit eigenen Tasks je Produkt. `ibm_patch_directory` legt den
 Downloadordner fest. Inventory-Beispiele für HB/NDD Test und Produktion stehen
