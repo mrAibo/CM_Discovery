@@ -88,7 +88,13 @@ function downloadFor(id, entry, installed) {
   return url.href;
 }
 
+// Pinned targets are hand-maintained: a match says nothing about newer releases.
 function compareProduct(id, installed, entry, catalog, now = Date.now()) {
+  const outcome = compareBase(id, installed, entry, catalog, now);
+  return outcome.code === "match" && entry && entry.target_mode === "pinned" ? {...outcome, pinned:true} : outcome;
+}
+
+function compareBase(id, installed, entry, catalog, now) {
   if (!installed) return result("empty", "Keine Inventardaten", "Öffnen Sie die Datei vom Server. Ein fehlender Eintrag beweist nicht, dass das Produkt nicht installiert ist.");
   if (installed._discoveryError) return result("error", "Erfassung fehlgeschlagen", installed._discoveryError);
   if (id === "daeja_viewone_virtual" && installed.source === "ecmclient_version_txt") return result("review", "In ICN enthalten", "Diese Komponente wird mit ICN geliefert. Den Stand im ICN-Paket prüfen.");
@@ -153,6 +159,7 @@ function validateCatalog(value) {
       for (const field of ["build_level", "special_build", "jre_version"]) if (entry.available[field] != null && typeof entry.available[field] !== "string") throw Error("Katalogfeld " + field + " muss eine Zeichenkette sein.");
       for (const field of ["interim_fix", "fix_pack"]) if (entry.available[field] != null && integer(entry.available[field]) === null) throw Error("Katalogfeld " + field + " muss eine nicht negative Ganzzahl sein.");
     }
+    if (entry.target_mode != null && !["pinned", "index"].includes(entry.target_mode)) throw Error("Katalogfeld target_mode muss \"pinned\" oder \"index\" sein.");
     if (entry.availability_evidence != null && !object(entry.availability_evidence)) throw Error("Ungültiger Herkunftsnachweis im Katalog.");
     if (entry.interim_fixes != null) {
       if (!Array.isArray(entry.interim_fixes) || entry.interim_fixes.length > 1000) throw Error("interim_fixes muss eine Liste mit höchstens 1000 Einträgen sein.");
@@ -380,6 +387,7 @@ function startApp() {
       const statusCell = el("div", undefined, "cell-content");
       statusCell.append(el("span", status.label, "status " + status.code));
       if (inventory) statusCell.append(el("p", status.reason, "reason"));
+      if (status.pinned) statusCell.append(el("p", "Zielstand fest hinterlegt – neue Releases werden nicht automatisch erkannt", "reason"));
       cell(tr, "Vergleich", statusCell);
       const actions = el("div", undefined, "cell-content links");
       for (const item of linksFor(id, e, p, note)) { const a = link(item.label, item.url, item.download); if (a) actions.append(a); }

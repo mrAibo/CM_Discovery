@@ -170,3 +170,19 @@ test("target package is first and equivalent IBM URLs are deduplicated", () => {
   assert.equal(links[0].download, true);
   assert.match(links[1].label, /installierten Basis/);
 });
+
+test("H1: pinned targets flag matches without changing status codes", () => {
+  const nav = {version:"3.1.0", interim_fix:12, build_level:"icn310.012.703"};
+  const inst = {version:"3.1.0", build_level:"icn310.012.703"};
+  const pinned = api.compareProduct("content_navigator", inst, entry(nav, {target_mode:"pinned"}), catalog, now);
+  assert.equal(pinned.code, "match");
+  assert.equal(pinned.pinned, true);
+  assert.equal(api.compareProduct("content_navigator", inst, entry(nav, {target_mode:"index"}), catalog, now).pinned, undefined);
+  assert.equal(api.compareProduct("content_navigator", {version:"3.1.0", build_level:"icn310.006.430"}, entry(nav, {target_mode:"pinned"}), catalog, now).pinned, undefined);
+});
+
+test("H1: target_mode accepts only pinned or index", () => {
+  const cat = mode => ({schema_version:2, products:{x:{available:{}, target_mode:mode}}});
+  for (const ok of ["pinned", "index", undefined]) assert.doesNotThrow(() => api.validateCatalog(cat(ok)));
+  for (const bad of ["fixed", 1, true, ""]) assert.throws(() => api.validateCatalog(cat(bad)), /target_mode/);
+});
