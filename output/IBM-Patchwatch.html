@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="referrer" content="no-referrer">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; base-uri 'none'; object-src 'none'; form-action 'none'; connect-src 'none'; style-src 'sha256-zrp6oBKhN0s7WzU6/Yt5+Rx1K0pqCw2NshsNdfKeAsU='; script-src 'sha256-ucdVYfX1YfToMGhSv7Lbv6DoiMJMsN3go17g5Ynxos0='">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; base-uri 'none'; object-src 'none'; form-action 'none'; connect-src 'none'; style-src 'sha256-zrp6oBKhN0s7WzU6/Yt5+Rx1K0pqCw2NshsNdfKeAsU='; script-src 'sha256-GNDtwL8ILpqpvOaw3m/akioI2gt4O60j/546/J7ALWo='">
   <title>IBM Patchwatch — Ihre Update-Übersicht</title>
   <meta name="description" content="IBM-Versionen lokal vergleichen, Updates erkennen und passende IBM-Downloadseiten öffnen.">
   <style>:root {color-scheme:light;--ink:#192b40;--muted:#536379;--blue:#1458c2;--line:#dce4ed;--paper:#fff;--navy:#152e4a}
@@ -138,7 +138,7 @@ footer {display:flex;justify-content:space-between;gap:1rem;margin-top:1.75rem;f
         <button type="button" id="load-inventory">Inventar öffnen</button>
         <button type="button" id="load-catalog" class="secondary">Katalog aktualisieren</button>
         <button type="button" id="clear-inventory" class="secondary" hidden>Inventar entfernen</button>
-        <input type="file" id="inventory-file" accept=".json,application/json" hidden>
+        <input type="file" id="inventory-file" accept=".json,application/json" multiple hidden>
         <input type="file" id="catalog-file" accept=".json,application/json" hidden>
       </div>
     </div>
@@ -438,11 +438,11 @@ const wasFixes = inventory => imFixes(inventory, id => /^com\.ibm\.websphere\.(?
 // Markdown table of the shown rows, for change tickets.
 function resultMarkdown(rows) {
   const cell = value => String(value == null || value === "" ? "—" : value).replace(/\|/g, "\\|").replace(/\s+/g, " ");
-  const lines = ["| Produkt | Installiert | Zielstand | Ergebnis |", "| --- | --- | --- | --- |"];
+  const servers = rows.some(row => row.server), lines = [(servers ? "| Server " : "") + "| Produkt | Installiert | Zielstand | Ergebnis |", (servers ? "| --- " : "") + "| --- | --- | --- | --- |"];
   for (const row of rows) {
     const p = row.installed, a = row.entry && row.entry.available || {};
     const target = [a.version, a.interim_fix != null ? "iFix " + a.interim_fix : "", a.special_build].filter(Boolean).join(" ");
-    lines.push("| " + [own(PRODUCTS, row.id) ? PRODUCTS[row.id][0] : p && p.name || row.id, p && p.version, target, row.status.label + (row.status.pinned ? " (Zielstand fest hinterlegt)" : "")].map(cell).join(" | ") + " |");
+    lines.push("| " + [...(servers ? [row.server] : []), own(PRODUCTS, row.id) ? PRODUCTS[row.id][0] : p && p.name || row.id, p && p.version, target, row.status.label + (row.status.pinned ? " (Zielstand fest hinterlegt)" : "")].map(cell).join(" | ") + " |");
   }
   return lines.join("\n");
 }
@@ -489,7 +489,7 @@ function filteredRows(rows, query = "", filter = "all") {
   const needle = query.trim().toLocaleLowerCase("de-DE");
   return rows.filter(row => {
     const p = row.installed || {};
-    const text = [row.id, own(PRODUCTS, row.id) ? PRODUCTS[row.id][0] : p.name, p.version, p.installation_directory, row.entry && row.entry.available && row.entry.available.version].join(" ").toLocaleLowerCase("de-DE");
+    const text = [row.server, row.id, own(PRODUCTS, row.id) ? PRODUCTS[row.id][0] : p.name, p.version, p.installation_directory, row.entry && row.entry.available && row.entry.available.version].join(" ").toLocaleLowerCase("de-DE");
     const code = row.status.code;
     return (!needle || text.includes(needle)) && (filter === "all" || filter === "attention" && (code === "update" || needsReview(row.status)) || filter === "update" && code === "update" || filter === "review" && needsReview(row.status) || filter === "info" && !!row.status.info || filter === "match" && ["match", "level"].includes(code) || filter === "missing" && code === "empty");
   });
@@ -513,16 +513,21 @@ function linksFor(id, entry, installed, note) {
 }
 
 function importPayloads(payloads, state) {
-  const next = {...state}, kinds = new Set();
+  const next = {...state}, inventories = [];
+  let catalogSeen = false;
   for (const payload of payloads) {
     const value = payload.value;
     const kind = value && value.schema_version === 1 ? "inventory" : value && value.schema_version === 2 ? "catalog" : null;
     if (!kind) throw Error("Bitte inventory.json (Schema 1) oder catalog.json (Schema 2) auswählen.");
-    if (kinds.has(kind)) throw Error("Bitte nur eine Inventardatei und einen Katalog gleichzeitig auswählen.");
-    kinds.add(kind);
-    next[kind] = kind === "inventory" ? validateInventory(value) : validateCatalog(value);
-    next[kind + "Name"] = payload.name;
+    if (kind === "inventory") inventories.push({name:payload.name, value:validateInventory(value)});
+    else {
+      if (catalogSeen) throw Error("Bitte nur einen Katalog gleichzeitig auswählen.");
+      catalogSeen = true;
+      next.catalog = validateCatalog(value); next.catalogName = payload.name;
+    }
   }
+  // Newly chosen inventories (one per server) replace the previous set.
+  if (inventories.length) next.inventories = inventories;
   return next;
 }
 
@@ -530,10 +535,11 @@ function startApp() {
   const $ = id => document.getElementById(id);
   let state = {
     catalog:validateCatalog(JSON.parse($("catalog-data").textContent)),
-    inventory:JSON.parse($("inventory-data").textContent),
-    catalogName:"eingebettet", inventoryName:""
+    inventories:[],
+    catalogName:"eingebettet"
   };
-  if (state.inventory !== null) validateInventory(state.inventory);
+  const embedded = JSON.parse($("inventory-data").textContent);
+  if (embedded !== null) state.inventories = [{name:"", value:validateInventory(embedded)}];
   const notes = JSON.parse($("notes-data").textContent);
   let importSequence = 0, currentRows = [];
   const el = (tag, text, className) => { const node = document.createElement(tag); if (text !== undefined) node.textContent = String(text); if (className) node.className = className; return node; };
@@ -548,9 +554,10 @@ function startApp() {
   function cell(row, label, content) { const td = el("td"); td.dataset.label = label; td.append(content); row.append(td); }
   function metadata(parent, text) { if (text) parent.append(el("span", text, "metadata")); }
   function render() {
-    const {catalog, inventory, catalogName, inventoryName} = state;
+    const {catalog, inventories, catalogName} = state;
+    const inventory = inventories.length > 0, many = inventories.length > 1;
     const now = Date.now();
-    const rows = rowsFor(inventory, catalog).map(row => ({...row, status:rowStatus(row, inventory, catalog, now)}));
+    const rows = (inventory ? inventories : [{name:"", value:null}]).flatMap(inv => rowsFor(inv.value, catalog).map(row => ({...row, server:many ? inv.value.host.hostname || inv.name || "Name fehlt" : "", status:rowStatus(row, inv.value, catalog, now)})));
     const shown = filteredRows(rows, $("search").value, $("status-filter").value);
     currentRows = shown;
     if (inventory) {
@@ -565,6 +572,7 @@ function startApp() {
       const tr = el("tr"); tr.dataset.status = status.code;
       const product = el("div", undefined, "cell-content");
       product.append(el("strong", own(PRODUCTS, id) ? PRODUCTS[id][0] : p.name || id, "product-name"));
+      if (row.server) metadata(product, "Server: " + row.server);
       const parts = versionParts(target.version);
       if (parts && own(PRODUCTS, id)) metadata(product, "Versionslinie " + parts.slice(0, PRODUCTS[id][1]).join("."));
       if (p && p.installation_directory) metadata(product, p.installation_directory);
@@ -651,17 +659,21 @@ function startApp() {
     }
     $("clear-inventory").hidden = !inventory;
     $("onboarding").hidden = !!inventory;
-    $("inventory-title").textContent = inventory ? inventory.context_only ? "Versionen aus einer bereitgestellten Beschreibung" : "Server: " + (inventory.host.hostname || "Name fehlt") : "Inventar laden und Updates vergleichen";
-    $("inventory-meta").textContent = inventory ? inventory.context_only ? "Kein neuer Serverscan. Eine aktuelle inventory.json liefert den gemessenen Stand." : [inventoryName, "Erfasst: " + date(inventory.timestamp), inventory.host.machine, inventory.host.os_release && inventory.host.os_release.PRETTY_NAME].filter(Boolean).join(" · ") : "inventory.json auswählen oder hier ablegen. Die Datei bleibt in diesem Browser.";
+    const first = inventory ? inventories[0] : null, one = first && first.value;
+    const hostOf = inv => inv.value.host.hostname || "Name fehlt";
+    $("inventory-title").textContent = !inventory ? "Inventar laden und Updates vergleichen" : many ? inventories.length + " Server: " + inventories.map(hostOf).join(", ") : one.context_only ? "Versionen aus einer bereitgestellten Beschreibung" : "Server: " + hostOf(first);
+    $("inventory-meta").textContent = !inventory ? "inventory.json auswählen oder hier ablegen. Mehrere Server: mehrere Dateien gemeinsam wählen. Die Dateien bleiben in diesem Browser." : many ? inventories.map(inv => inv.name || hostOf(inv)).join(" · ") : one.context_only ? "Kein neuer Serverscan. Eine aktuelle inventory.json liefert den gemessenen Stand." : [first.name, "Erfasst: " + date(one.timestamp), one.host.machine, one.host.os_release && one.host.os_release.PRETTY_NAME].filter(Boolean).join(" · ");
     $("catalog-date").textContent = "Katalog: " + date(catalog.generated_at) + " · " + catalogName;
     const warnings = [];
     const badEntries = Object.values(catalog.products).filter(e => freshness(e, catalog, now));
     if (badEntries.length) warnings.push(badEntries.length + " Katalogeinträge benötigen eine Quellenprüfung. Ältere Stände bleiben zur Orientierung sichtbar.");
     if (daysSince(notes.checked_at, now) > NOTES_BANNER_DAYS) warnings.push("Die ergänzenden IBM-Hinweise vom " + notes.checked_at + " sind älter als " + NOTES_BANNER_DAYS + " Tage. Für neuere Hinweise die aktuelle HTML-Datei öffnen.");
-    if (inventory && !inventory.context_only) {
-      const stamp = Date.parse(inventory.timestamp);
-      if (!Number.isFinite(stamp) || stamp > now + 300000 || now - stamp > FRESH_HOURS * 3600000) warnings.push("Das Inventar ist undatiert, älter als 72 Stunden oder hat ein Datum in der Zukunft. Angezeigt wird der Stand aus der Datei; für einen aktuellen Vergleich das Inventar auf dem Server neu erstellen.");
-    }
+    const staleInventories = inventories.filter(inv => {
+      if (inv.value.context_only) return false;
+      const stamp = Date.parse(inv.value.timestamp);
+      return !Number.isFinite(stamp) || stamp > now + 300000 || now - stamp > FRESH_HOURS * 3600000;
+    });
+    if (staleInventories.length) warnings.push((many ? staleInventories.length + " von " + inventories.length + " Inventaren sind" : "Das Inventar ist") + " undatiert, älter als 72 Stunden oder " + (many ? "haben" : "hat") + " ein Datum in der Zukunft. Angezeigt wird der Stand aus der Datei; für einen aktuellen Vergleich das Inventar auf dem Server neu erstellen.");
     $("refresh-catalog").hidden = badEntries.length === 0;
     $("freshness").hidden = !warnings.length;
     $("freshness-message").textContent = warnings.join(" ");
@@ -671,7 +683,7 @@ function startApp() {
     const sequence = ++importSequence;
     $("load-message").textContent = "Dateien werden geprüft …";
     try {
-      if (files.length > 2) throw Error("Bitte höchstens inventory.json und catalog.json gemeinsam ablegen.");
+      if (files.length > 21) throw Error("Bitte höchstens 20 Inventare und einen Katalog gemeinsam ablegen.");
       const payloads = await Promise.all(files.map(async file => {
         if (file.size > MAX_BYTES) throw Error("Jede JSON-Datei darf höchstens 10 MiB groß sein.");
         return {name:file.name, value:JSON.parse((await file.text()).replace(/^\uFEFF/, ""))};
@@ -695,7 +707,7 @@ function startApp() {
     $(kind + "-file").addEventListener("change", event => { importFiles([...event.target.files]); event.target.value = ""; });
   }
   $("clear-inventory").addEventListener("click", () => {
-    importSequence++; state = {...state, inventory:null, inventoryName:""};
+    importSequence++; state = {...state, inventories:[]};
     $("search").value = ""; $("status-filter").value = "all";
     $("error").hidden = true; $("load-message").textContent = "Inventar entfernt."; render();
   });

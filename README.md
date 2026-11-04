@@ -73,6 +73,7 @@ widerspräche der Offline-CSP und ist nicht vorgesehen.
 
 ## Die Übersicht bedienen
 
+- Mehrere Server: mehrere `inventory-SERVER.json` gemeinsam wählen oder ablegen; jede Zeile nennt ihren Server, die Suche findet auch Servernamen. Eine neue Auswahl ersetzt die bisherigen Inventare.
 - Inventar per Dateiauswahl laden oder `inventory.json` und `catalog.json` gemeinsam auf die Seite ziehen.
 - Die drei Ergebnisfelder filtern nach Updates, offenen Prüfungen oder übereinstimmendem Stand; ein zweiter Klick auf dieselbe Karte hebt den Filter auf. Strukturell nicht prüfbare Zustände (CM-Fix-Pack gleich, Daeja in ICN, ICCSAP-JRE gleich) zählen nicht als offene Prüfung und haben den Filter **Hinweise (nicht prüfbar)**.
 - **Ergebnis kopieren** erzeugt eine Markdown-Tabelle für Change-Tickets; **Bedeutung der Anzeigen** erklärt die Statusmeldungen.
@@ -108,7 +109,9 @@ geplant. Er kann auf GitHub auch über **Run workflow** gestartet werden und lä
 zusätzlich bei den im Workflow definierten Quellcode- und Release-Ereignissen.
 Er aktualisiert die Quelldatei `data/ibm/catalog.json` und baut danach den gesamten
 Ordner `output/`: HTML-Datei, JSON-Kopien, Collector und Kurzanleitung. Alle
-Ausgabedateien werden gemeinsam in `main` übernommen. Im Workflow-Lauf steht
+Ausgabedateien werden gemeinsam in `main` übernommen, aber nur wenn sich der Katalog
+inhaltlich ändert oder die eingecheckte Datei älter als 40 Stunden ist (das hält die
+72-Stunden-Anzeige der Seite aktuell, ohne täglich zu committen). Im Workflow-Lauf steht
 zusätzlich unter **Artifacts** das Artefakt **IBM-Patchwatch** als ZIP zum Download bereit.
 
 Für WAS werden veröffentlichte Download-Verweise ausgewertet. Ein separat vom
@@ -302,3 +305,7 @@ Die Ansible-Paketvorbereitung hat nun eigene Tasks je Produkt und erzeugt eine
 mit getrennten Basis-/Fix-Pack-, Java/JRE- und iFix-Gruppen. Der gemeinsame
 Downloadordner wird über `ibm_patch_directory` festgelegt. Die Dateien bleiben
 am ursprünglichen Ort; die Übersicht enthält ihre Pfade und SHA-256-Prüfsummen.
+
+## Lizenz
+
+[MIT](LICENSE)

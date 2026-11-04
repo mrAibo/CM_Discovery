@@ -170,3 +170,14 @@ test("N2/N3/N1/N4: card toggle, details open for print and restore, copy buttons
   await page.waitForFunction(() => document.querySelector("#load-message").textContent.includes("Befehl kopiert"));
   assert.match(await page.locator("#legend").textContent(), /Bedeutung der Anzeigen/);
 }));
+
+test("M4: two inventories dropped together show a server label per row", async () => withPage(async page => {
+  await page.locator("#catalog-file").setInputFiles(file("catalog.json", freshCatalog()));
+  await page.waitForFunction(() => document.querySelector("#load-message").textContent.includes("catalog.json geladen"));
+  await page.locator("#inventory-file").setInputFiles([file("a.json", inventory("srv-a")), file("b.json", inventory("srv-b"))]);
+  await page.waitForFunction(() => document.querySelector("#inventory-title").textContent.includes("2 Server"));
+  assert.equal(await page.locator("#products tr").count(), 16);
+  assert.equal(await page.locator("#products tr").filter({hasText:"Server: srv-b"}).count(), 8);
+  await page.locator("#search").fill("srv-a");
+  assert.equal(await page.locator("#products tr").count(), 8);
+}));

@@ -140,16 +140,33 @@ test("bundled Daeja never becomes a separate upgrade even across base versions",
 });
 
 test("JSON imports validate nested catalog data and commit batches atomically", () => {
-  const previous = {inventory:{schema_version:1,host:{hostname:"old"},products:[]},catalog:{schema_version:2,products:{}},inventoryName:"old.json",catalogName:"old-catalog.json"};
+  const previous = {inventories:[{name:"old.json",value:{schema_version:1,host:{hostname:"old"},products:[]}}],catalog:{schema_version:2,products:{}},catalogName:"old-catalog.json"};
   const incoming = {schema_version:1,host:{hostname:"new"},products:[]};
   for (const interim_fixes of [[null], [{fix_id:{bad:true}}], [{applies_to:[]}], "bad"]) {
     assert.throws(() => api.importPayloads([{name:"new.json",value:incoming},{name:"bad.json",value:{schema_version:2,products:{websphere:{interim_fixes}}}}], previous));
-    assert.equal(previous.inventory.host.hostname, "old");
+    assert.equal(previous.inventories[0].value.host.hostname, "old");
   }
   const next = api.importPayloads([{name:"new.json",value:incoming},{name:"catalog.json",value:{schema_version:2,products:{}}}], previous);
-  assert.equal(next.inventory.host.hostname, "new");
+  assert.equal(next.inventories[0].value.host.hostname, "new");
   assert.equal(next.catalogName, "catalog.json");
-  assert.throws(() => api.importPayloads([{name:"a",value:incoming},{name:"b",value:incoming}], previous));
+  const catalogFile = name => ({name, value:{schema_version:2,products:{}}});
+  assert.throws(() => api.importPayloads([catalogFile("a"), catalogFile("b")], previous));
+});
+
+test("M4: several inventories are accepted together and replace the previous set", () => {
+  const inv = host => ({name:host + ".json", value:{schema_version:1,host:{hostname:host},products:[]}});
+  const previous = {inventories:[inv("old")], catalog:{schema_version:2,products:{}}};
+  const next = api.importPayloads([inv("a"), inv("b")], previous);
+  assert.deepEqual(next.inventories.map(i => i.value.host.hostname), ["a", "b"]);
+  assert.equal(next.catalog, previous.catalog);
+  assert.deepEqual(api.importPayloads([{name:"c.json",value:{schema_version:2,products:{}}}], previous).inventories, previous.inventories);
+  assert.throws(() => api.importPayloads([inv("a"), {name:"bad.json",value:{schema_version:1}}], previous));
+});
+
+test("M4: result markdown gets a Server column only for several servers", () => {
+  const row = server => ({id:"db2", server, installed:{version:"1"}, entry:null, status:{label:"x"}});
+  assert.equal(api.resultMarkdown([row("")]).split("\n")[0], "| Produkt | Installiert | Zielstand | Ergebnis |");
+  assert.equal(api.resultMarkdown([row("srv1")]).split("\n")[2], "| srv1 | IBM Db2 | 1 | — | x |");
 });
 
 test("filters preserve distinct installations and search their paths", () => {
