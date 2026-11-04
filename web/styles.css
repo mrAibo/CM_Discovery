@@ -61,6 +61,7 @@ td strong {font-weight:600}
 .status {display:inline-block;font-size:.85rem;font-weight:600;line-height:1.35;border-radius:4px;padding:.35rem .55rem;background:#f0f3f7;color:#495467}
 .status.update {background:#fff0d3;color:#794200}
 .status.review,.status.stale,.status.error {background:#fff1ee;color:#9a3423}
+.status.info {background:#f0f3f7;color:#495467}
 .status.match {background:#e7f4ec;color:#1a613c}
 .status.level,.status.different {background:#e9f0fa;color:#28568d}
 .reason {font-size:.8rem;color:var(--muted);margin-top:.5rem}

@@ -134,3 +134,18 @@ test("mobile layout has no horizontal overflow and all product actions remain vi
     await page.screenshot({path:path.join(process.env.PATCHWATCH_SCREENSHOTS,"mobile-product.png")});
   }
 }, {width:390,height:844}));
+
+test("M2: notes for another catalog state are announced instead of vanishing; M3 info rows leave the review count", async () => withPage(async page => {
+  const cat = freshCatalog(); cat.products.content_navigator.available.interim_fix = 14;
+  cat.products.content_manager = {available:{version:"8.7.00.500"}};
+  const inv = inventory("drift"); inv.discovery.content_manager.status = "ok"; inv.products.push({id:"content_manager", version:"8.7.00.500"});
+  await page.locator("#catalog-file").setInputFiles(file("catalog.json", cat));
+  await page.waitForFunction(() => document.querySelector("#load-message").textContent.includes("catalog.json geladen"));
+  await page.locator("#inventory-file").setInputFiles(file("inventory.json", inv));
+  await page.waitForFunction(() => document.querySelector("#inventory-title").textContent.includes("Server:"));
+  const nav = page.locator("#products tr").filter({hasText:"IBM Content Navigator"}).first();
+  assert.match(await nav.textContent(), /Hinweise liegen nur für .*interim_fix 12 vor und passen nicht zum aktuellen Katalogstand/);
+  assert.equal(await page.locator("#count-review").textContent(), "0");
+  await page.locator("#status-filter").selectOption("info");
+  assert.equal(await page.locator("#products tr").count(), 1);
+}));

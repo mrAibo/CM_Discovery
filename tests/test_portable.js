@@ -206,3 +206,24 @@ test("H3: interim fixes for the installed base only form their own group", () =>
   assert.deepEqual(api.visibleFixAssociations(e, "9.0.5.25", "9.0.5.29").map(a => a.fix.fix_id), ["both", "current", "unknown"]);
   assert.deepEqual(api.installedOnlyFixAssociations(e, null, "9.0.5.29"), []);
 });
+
+test("M1: notes age is measured in days with a 90 day banner threshold", () => {
+  assert.equal(api.NOTES_BANNER_DAYS, 90);
+  assert.equal(api.daysSince("2026-09-07", Date.parse("2026-11-04T10:00:00Z")), 58);
+  assert.equal(api.daysSince("2026-06-01", Date.parse("2026-11-04T10:00:00Z")) > api.NOTES_BANNER_DAYS, true);
+});
+
+test("M3: structurally unverifiable states are info, still 'review', and leave the review filter", () => {
+  const cm = api.compareProduct("content_manager", {version:"8.7.00.400"}, entry({version:"8.7.00.400"}), catalog, now);
+  assert.equal(cm.code, "review"); assert.equal(cm.info, true);
+  const daeja = api.compareProduct("daeja_viewone_virtual", {version:"5.0.15", source:"ecmclient_version_txt"}, null, catalog, now);
+  assert.equal(daeja.code, "review"); assert.equal(daeja.info, true);
+  const sap = api.compareProduct("iccsap", {version:"4.0.0.4", jre_version:"8.0.8.70"}, entry({version:"4.0.0.4", jre_version:"8.0.8.70"}), catalog, now);
+  assert.equal(sap.info, true);
+  const real = api.compareProduct("websphere", {version:"8.5.5.1"}, entry({version:"9.0.5.28"}), catalog, now);
+  assert.equal(real.code, "different"); assert.equal(real.info, undefined);
+  const rows = [{id:"content_manager", status:cm}, {id:"websphere", status:real}];
+  assert.deepEqual(api.filteredRows(rows, "", "review").map(r => r.id), ["websphere"]);
+  assert.deepEqual(api.filteredRows(rows, "", "attention").map(r => r.id), ["websphere"]);
+  assert.deepEqual(api.filteredRows(rows, "", "info").map(r => r.id), ["content_manager"]);
+});

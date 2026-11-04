@@ -15,6 +15,8 @@ const NOTES_BANNER_DAYS = 90;
 const own = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
 const object = value => value !== null && typeof value === "object" && !Array.isArray(value);
 const result = (code, label, reason) => ({code, label, reason});
+// Structurally unverifiable states: still "review", but not counted as open checks.
+const notice = (code, label, reason) => ({...result(code, label, reason), info:true});
 
 function versionParts(value) {
   if (typeof value !== "string" || !/^\d+(?:\.\d+){1,5}$/.test(value.trim())) return null;
@@ -109,7 +111,7 @@ function compareProduct(id, installed, entry, catalog, now = Date.now()) {
 function compareBase(id, installed, entry, catalog, now) {
   if (!installed) return result("empty", "Keine Inventardaten", "Öffnen Sie die Datei vom Server. Ein fehlender Eintrag beweist nicht, dass das Produkt nicht installiert ist.");
   if (installed._discoveryError) return result("error", "Erfassung fehlgeschlagen", installed._discoveryError);
-  if (id === "daeja_viewone_virtual" && installed.source === "ecmclient_version_txt") return result("review", "In ICN enthalten", "Diese Komponente wird mit ICN geliefert. Den Stand im ICN-Paket prüfen.");
+  if (id === "daeja_viewone_virtual" && installed.source === "ecmclient_version_txt") return notice("review", "In ICN enthalten", "Diese Komponente wird mit ICN geliefert. Den Stand im ICN-Paket prüfen.");
   if (!entry || !object(entry.available) || !own(PRODUCTS, id)) return result("review", "Kein Katalogeintrag", "Für diesen Eintrag wird eine eigene IBM-Quelle benötigt.");
   const stale = freshness(entry, catalog, now);
   if (stale) return result("stale", "Katalog prüfen", stale);
@@ -124,7 +126,7 @@ function compareBase(id, installed, entry, catalog, now) {
   const base = compareVersions(installed.version, available.version);
   if (base > 0) return result("different", "Neuer als Katalog", "Der erfasste Stand ist neuer als der Katalogstand. Ein Downgrade wird nicht vorgeschlagen.");
   if (base < 0) return result("update", "Neuerer Stand verfügbar", "Prüfen Sie vor der Installation die Plattform und die IBM-Voraussetzungen.");
-  if (id === "content_manager") return result("review", "Fix Pack gleich · iFix prüfen", "Die Erfassung über cmlevel bestätigt keine einzelnen Interim Fixes.");
+  if (id === "content_manager") return notice("review", "Fix Pack gleich · iFix prüfen", "Die Erfassung über cmlevel bestätigt keine einzelnen Interim Fixes.");
   if (id === "websphere") return result("level", "Fix Pack stimmt überein", "Die Basis stimmt überein. Nicht kumulative iFixes unten einzeln prüfen; daraus folgt kein vollständig aktueller Patchstand.");
   if (id === "db2") {
     if (typeof installed.special_build === "string" && installed.special_build === available.special_build) return result("match", "Update stimmt überein", "Der Stand stimmt mit dem veröffentlichten Update überein. Individuelle APARs wurden nicht separat geprüft.");
@@ -133,7 +135,7 @@ function compareBase(id, installed, entry, catalog, now) {
   if (id === "iccsap") {
     const jre = compareVersions(installed.jre_version, available.jre_version);
     if (jre === null) return result("review", "Mitgelieferte JRE prüfen", "Das Inventar enthält keine gemessene JRE-Version. Datumsangaben in JRE_fix ersetzen keine Versionsnummer.");
-    return jre < 0 ? result("update", "JRE-Update verfügbar", "Verwenden Sie das ICCSAP-Paket aus dem IBM-Bulletin.") : jre > 0 ? result("different", "JRE neuer als Katalog", "Der Inhalt des installierten Pakets muss geprüft werden.") : result("review", "JRE gleich · Binaries-iFixes prüfen", "IF21 und weitere Binaries-iFixes werden unabhängig von der JRE geprüft. Ein höherer IF ersetzt andere nicht automatisch.");
+    return jre < 0 ? result("update", "JRE-Update verfügbar", "Verwenden Sie das ICCSAP-Paket aus dem IBM-Bulletin.") : jre > 0 ? result("different", "JRE neuer als Katalog", "Der Inhalt des installierten Pakets muss geprüft werden.") : notice("review", "JRE gleich · Binaries-iFixes prüfen", "IF21 und weitere Binaries-iFixes werden unabhängig von der JRE geprüft. Ein höherer IF ersetzt andere nicht automatisch.");
   }
   if (id === "content_navigator" || id === "daeja_viewone_virtual") {
     const ix = ifixLevel(installed), iy = integer(available.interim_fix);
@@ -195,6 +197,8 @@ function ibmUrl(value) {
     return url.href;
   } catch (error) { return null; }
 }
+
+const daysSince = (isoDate, now) => Math.floor((now - Date.parse(isoDate + "T00:00:00Z")) / 86400000);
 
 function matchingNote(id, entry, notes) {
   if (!entry || !object(entry.available) || !object(notes.products) || !own(notes.products, id)) return null;
@@ -265,13 +269,14 @@ function rowStatus(row, inventory, catalog, now = Date.now()) {
 }
 
 const REVIEW_CODES = new Set(["review", "stale", "error", "different"]);
+const needsReview = status => REVIEW_CODES.has(status.code) && !status.info;
 function filteredRows(rows, query = "", filter = "all") {
   const needle = query.trim().toLocaleLowerCase("de-DE");
   return rows.filter(row => {
     const p = row.installed || {};
     const text = [row.id, own(PRODUCTS, row.id) ? PRODUCTS[row.id][0] : p.name, p.version, p.installation_directory, row.entry && row.entry.available && row.entry.available.version].join(" ").toLocaleLowerCase("de-DE");
     const code = row.status.code;
-    return (!needle || text.includes(needle)) && (filter === "all" || filter === "attention" && (code === "update" || REVIEW_CODES.has(code)) || filter === "update" && code === "update" || filter === "review" && REVIEW_CODES.has(code) || filter === "match" && ["match", "level"].includes(code) || filter === "missing" && code === "empty");
+    return (!needle || text.includes(needle)) && (filter === "all" || filter === "attention" && (code === "update" || needsReview(row.status)) || filter === "update" && code === "update" || filter === "review" && needsReview(row.status) || filter === "info" && !!row.status.info || filter === "match" && ["match", "level"].includes(code) || filter === "missing" && code === "empty");
   });
 }
 
@@ -334,7 +339,8 @@ function startApp() {
     const shown = filteredRows(rows, $("search").value, $("status-filter").value);
     if (inventory) {
       const priority = {update:0,error:1,review:2,stale:2,different:3,match:4,level:4,empty:5};
-      shown.sort((a, b) => (priority[a.status.code] ?? 5) - (priority[b.status.code] ?? 5));
+      const rank = status => status.info ? 4 : priority[status.code] ?? 5;
+      shown.sort((a, b) => rank(a.status) - rank(b.status));
     }
     const fragment = document.createDocumentFragment();
     for (const row of shown) {
@@ -371,8 +377,12 @@ function startApp() {
         details.append(el("summary", "Voraussetzungen und Hinweise"));
         if (note.availability_note) details.append(el("p", note.availability_note));
         for (const text of note.notes) details.append(el("p", text));
-        details.append(el("p", "Hinweise geprüft: " + (note.checked_at || notes.checked_at), "muted"));
+        const checked = note.checked_at || notes.checked_at, age = daysSince(checked, now);
+        details.append(el("p", Number.isFinite(age) ? "Hinweise geprüft vor " + age + " Tagen (" + checked + ")" : "Hinweise geprüft: " + checked, "muted"));
         availableCell.append(details);
+      } else if (e && object(notes.products) && own(notes.products, id)) {
+        const wanted = Object.entries(notes.products[id].for_available || {}).map(([k, v]) => k + " " + v).join(", ");
+        availableCell.append(el("p", "Hinweise liegen nur für " + wanted + " vor und passen nicht zum aktuellen Katalogstand. Download über die IBM-Quelle prüfen.", "reason"));
       }
       const ifixGroup = (title, associations, className) => {
         if (!associations.length) return;
@@ -399,7 +409,7 @@ function startApp() {
       ifixGroup("Zwischenlösung für die installierte Basis (entfällt mit Update auf " + (target.version || "das Ziel") + ")", installedOnlyFixAssociations(e, p && p.version, target.version), "ifix-interim");
       cell(tr, "Bekannter Zielstand", availableCell);
       const statusCell = el("div", undefined, "cell-content");
-      statusCell.append(el("span", status.label, "status " + status.code));
+      statusCell.append(el("span", status.label, "status " + status.code + (status.info ? " info" : "")));
       if (inventory) statusCell.append(el("p", status.reason, "reason"));
       if (status.pinned) statusCell.append(el("p", "Zielstand fest hinterlegt – neue Releases werden nicht automatisch erkannt", "reason"));
       cell(tr, "Vergleich", statusCell);
@@ -415,7 +425,7 @@ function startApp() {
     const counts = {update:0, review:0, match:0};
     for (const row of rows) {
       if (row.status.code === "update") counts.update++;
-      else if (REVIEW_CODES.has(row.status.code)) counts.review++;
+      else if (needsReview(row.status)) counts.review++;
       else if (["match", "level"].includes(row.status.code)) counts.match++;
     }
     for (const name of Object.keys(counts)) $("count-" + name).textContent = inventory ? counts[name] : "—";
@@ -431,7 +441,7 @@ function startApp() {
     const warnings = [];
     const badEntries = Object.values(catalog.products).filter(e => freshness(e, catalog, now));
     if (badEntries.length) warnings.push(badEntries.length + " Katalogeinträge benötigen eine Quellenprüfung. Ältere Stände bleiben zur Orientierung sichtbar.");
-    if (now - Date.parse(notes.checked_at + "T00:00:00Z") > FRESH_HOURS * 3600000) warnings.push("Die ergänzenden IBM-Hinweise vom " + notes.checked_at + " sind älter als 72 Stunden. Für neuere Hinweise die aktuelle HTML-Datei öffnen.");
+    if (daysSince(notes.checked_at, now) > NOTES_BANNER_DAYS) warnings.push("Die ergänzenden IBM-Hinweise vom " + notes.checked_at + " sind älter als " + NOTES_BANNER_DAYS + " Tage. Für neuere Hinweise die aktuelle HTML-Datei öffnen.");
     if (inventory && !inventory.context_only) {
       const stamp = Date.parse(inventory.timestamp);
       if (!Number.isFinite(stamp) || stamp > now + 300000 || now - stamp > FRESH_HOURS * 3600000) warnings.push("Das Inventar ist undatiert, älter als 72 Stunden oder hat ein Datum in der Zukunft. Angezeigt wird der Stand aus der Datei; für einen aktuellen Vergleich das Inventar auf dem Server neu erstellen.");
@@ -486,7 +496,7 @@ function startApp() {
   render();
 }
 
-if (typeof module !== "undefined" && module.exports) module.exports = {versionParts, compareVersions, ifixLevel, freshness, compareProduct, validateInventory, validateCatalog, ibmUrl, matchingNote, iccsapFixes, rowsFor, fixAssociations, visibleFixAssociations, installedOnlyFixAssociations, fixPresence, downloadFor, rowStatus, filteredRows, linksFor, importPayloads};
+if (typeof module !== "undefined" && module.exports) module.exports = {versionParts, compareVersions, ifixLevel, freshness, compareProduct, validateInventory, validateCatalog, ibmUrl, matchingNote, daysSince, NOTES_BANNER_DAYS, iccsapFixes, rowsFor, fixAssociations, visibleFixAssociations, installedOnlyFixAssociations, fixPresence, downloadFor, rowStatus, filteredRows, linksFor, importPayloads};
 if (typeof document !== "undefined") {
   try { startApp(); } catch (error) {
     const target = document.getElementById("error");
