@@ -12,6 +12,7 @@
       },
       "cumulative": true,
       "scope": "8.7_fix_pack_level",
+      "target_mode": "pinned",
       "source_url": "https://www.ibm.com/docs/en/content-manager/8.7.0?topic=fp-content-manager-version-87-fix-pack-5-readme",
       "ifx_audit": "pending",
       "notes": [
@@ -23,12 +24,13 @@
     "content_navigator": {
       "available": {
         "version": "3.1.0",
-        "interim_fix": 12,
-        "build_level": "icn310.012.703"
+        "interim_fix": 14,
+        "build_level": "icn310.014.737"
       },
       "cumulative": null,
       "scope": "3.1.0_interim_fix_stream",
-      "source_url": "https://www.ibm.com/support/pages/ibm-content-navigator-version-310-interim-fix-12-readme",
+      "target_mode": "pinned",
+      "source_url": "https://www.ibm.com/support/pages/ibm-content-navigator-version-310-interim-fix-14-readme",
       "ifx_audit": null,
       "notes": [
         "The target is restricted to the installed 3.1.0 maintenance stream; no 3.2 major upgrade is inferred.",
@@ -44,6 +46,7 @@
       },
       "cumulative": true,
       "scope": "5.0.15_ifix_stream",
+      "target_mode": "pinned",
       "source_url": "https://delivery04.dhe.ibm.com/sar/CMA/OSA/0dx21/0/5.0.15_DAEJA_VIEWONE_IFIX006_Readme.htm",
       "ifx_audit": null,
       "notes": [
@@ -91,6 +94,7 @@
       },
       "cumulative": null,
       "scope": "4.0.0.4_base_jre_and_binary_ifixes",
+      "target_mode": "pinned",
       "source_url": "https://www.ibm.com/support/pages/security-bulletin-multiple-vulnerabilities-may-affect-ibm%C2%AE-sdk-java%E2%84%A2-technology-edition-ibm-content-collector-sap-applications-16",
       "ifx_audit": null,
       "notes": [

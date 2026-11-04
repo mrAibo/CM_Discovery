@@ -33,6 +33,7 @@ def check(installed: dict[str, Any]) -> dict[str, Any]:
         },
         "available": {"version": latest, "fix_pack": fp},
         "cumulative": True,
+        "target_mode": "pinned",
         "scope": "8.7_fix_pack_level",
         "source_url": SOURCE_URL,
         "ifx_audit": "pending",
