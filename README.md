@@ -22,9 +22,9 @@ sichtbar. Auf Windows genügt ein aktueller Browser mit aktiviertem JavaScript.
 
 ## Schnellstart: portable HTML-Datei
 
-1. Öffnen Sie [output/IBM-Patchwatch.html](output/IBM-Patchwatch.html) auf GitHub und
-   speichern Sie die Datei über **Download raw file** auf dem Windows-Rechner.
-   Öffnen Sie die heruntergeladene Datei im Browser.
+1. Auf GitHub **Code → Download ZIP** wählen (oder `git clone`), das ZIP entpacken und
+   `output/IBM-Patchwatch.html` per Doppelklick im Browser öffnen. Der Ordner `output/`
+   enthält alles Nötige und kann an einen beliebigen Ort kopiert werden.
 2. Erzeugen Sie auf dem CM-Server das Inventar. Aus dem Repository-Verzeichnis:
 
    ```bash
@@ -36,6 +36,17 @@ sichtbar. Auf Windows genügt ein aktueller Browser mit aktiviertem JavaScript.
    ```bash
    python3 /root/bin/ibm_discovery.py --json > inventory.json
    ```
+
+   Ohne den Collector auf dem Server abzulegen, genügt vom eigenen Rechner aus ein
+   SSH-Einzeiler (die Seite bietet beide Befehle unter **Hilfe** mit **Befehl kopieren** an):
+
+   ```bash
+   ssh SERVER 'python3 - --json' < ibm_discovery.py > inventory-SERVER.json
+   ```
+
+   Abweichende Installationspfade: `--path was=/pfad/versionInfo.sh` (mehrfach möglich;
+   Schlüssel: `cm`, `db2`, `icn`, `iccsap`, `imcl`, `was`), Ausgabe in eine Datei: `--output inventory.json`,
+   Version: `--version`. Der Collector liest nur und sollte nicht als root laufen (Warnung auf stderr).
 
 3. Übertragen Sie die JSON-Datei über einen vorhandenen Dateitransferweg nach
    Windows. Klicken Sie in der Seite auf **Inventar öffnen**.
@@ -50,10 +61,21 @@ selbst keine Netzwerkressourcen ab. IBM-Links öffnen sich in einem neuen Tab.
 Das Inventar bleibt nur im Arbeitsspeicher dieser Seite. **Inventar ausblenden**
 entfernt es aus dem Vergleich; beim Schließen der Seite wird es verworfen.
 
+### Verteilung: Varianten
+
+Der direkte Weg ist **ZIP von GitHub laden, entpacken, `IBM-Patchwatch.html` öffnen**.
+Als mögliche Variante (hier nicht umgesetzt) ließe sich `output/` als Release-Asset
+oder über GitHub Pages bereitstellen. Trade-off: Die lokal geöffnete Datei arbeitet
+offline mit strenger CSP (`connect-src 'none'`), ist dafür aber so alt wie der Download.
+Eine Pages-Variante wäre über die Adresse immer aktuell, würde aber einen Abruf der
+Seite voraussetzen; ein Live-Nachladen des Katalogs durch die Seite selbst
+widerspräche der Offline-CSP und ist nicht vorgesehen.
+
 ## Die Übersicht bedienen
 
 - Inventar per Dateiauswahl laden oder `inventory.json` und `catalog.json` gemeinsam auf die Seite ziehen.
-- Die drei Ergebnisfelder filtern nach Updates, offenen Prüfungen oder übereinstimmendem Stand.
+- Die drei Ergebnisfelder filtern nach Updates, offenen Prüfungen oder übereinstimmendem Stand; ein zweiter Klick auf dieselbe Karte hebt den Filter auf. Strukturell nicht prüfbare Zustände (CM-Fix-Pack gleich, Daeja in ICN, ICCSAP-JRE gleich) zählen nicht als offene Prüfung und haben den Filter **Hinweise (nicht prüfbar)**.
+- **Ergebnis kopieren** erzeugt eine Markdown-Tabelle für Change-Tickets; **Bedeutung der Anzeigen** erklärt die Statusmeldungen.
 - Updates und Erfassungsfehler stehen nach dem Import zuerst. Über die Suche Produkte, Versionen oder Installationspfade finden; mehrere Installationen bleiben getrennte Zeilen.
 - Voraussetzungen und relevante iFixes aufklappen. Der Link zum Zielpaket steht vor der Auswahl für die bisherige Basis.
 - Mit **Drucken / PDF** die aktuelle Ansicht ausgeben. **Filter zurücksetzen** zeigt wieder alle Zeilen.
@@ -158,6 +180,8 @@ diesen Parameter wird immer der vollständige Ordner erzeugt.
 | Andere Versionslinie / Neuer als Katalog | Kein automatischer Versionswechsel oder Downgrade wird abgeleitet |
 | Katalog prüfen / Fehler bei der Erfassung | Quelle oder Erfassung ist veraltet, unvollständig, widersprüchlich oder fehlgeschlagen |
 | Keine Inventardaten / Kein Katalogeintrag | Die jeweils andere Seite des Vergleichs fehlt |
+| „Zielstand fest hinterlegt“ (unter dem Status) | Der Zielstand (CM, ICN, Daeja, ICCSAP) ist von Hand gepflegt; neue Releases werden nicht automatisch erkannt (ICN: n+1-Probe auf die nächsten Readmes) |
+| „Installierte iFixes wurden nicht erfasst“ | Das Inventar enthält keine iFix-Liste; es wird weder „vorhanden“ noch „nicht gefunden“ behauptet |
 
 Der Vergleich bleibt innerhalb der angezeigten Versionslinie. Unbekannte oder
 widersprüchliche iFix- und Build-Angaben werden zur Prüfung markiert. Mehrere
@@ -171,9 +195,10 @@ mitgelieferte JRE von ICCSAP werden getrennt betrachtet.
 
 `web/verified-notes.json` enthält fachlich geprüfte, datierte Hinweise und
 Downloadlinks. Das Prüfdatum bleibt unabhängig vom Abrufdatum des Katalogs.
-Versionsgebundene Hinweise werden ausgeblendet, wenn ein importierter Katalog
-einen anderen Zielstand enthält. Auch die Hinweise werden nach 72 Stunden zur
-erneuten Prüfung markiert; der automatische Kataloglauf aktualisiert ihren
+Passt ein Hinweis nicht zum Zielstand des Katalogs, wird er nicht angezeigt; die
+Zeile nennt stattdessen, für welchen Stand Hinweise vorliegen. Der Katalog wird nach
+72 Stunden zur Prüfung markiert, die Hinweise zeigen ihr Alter in Tagen und lösen
+erst nach 90 Tagen einen Hinweis-Banner aus; der automatische Kataloglauf aktualisiert ihren
 Inhalt und ihr Prüfdatum nicht.
 
 **Bekannte Grenze der Quellen:** Einige Provider lesen die fest hinterlegte

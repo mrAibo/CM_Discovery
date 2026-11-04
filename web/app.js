@@ -11,9 +11,12 @@ const PRODUCTS = {
 };
 const MAX_BYTES = 10 * 1024 * 1024;
 const FRESH_HOURS = 72;
+const NOTES_BANNER_DAYS = 90;
 const own = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
 const object = value => value !== null && typeof value === "object" && !Array.isArray(value);
 const result = (code, label, reason) => ({code, label, reason});
+// Structurally unverifiable states: still "review", but not counted as open checks.
+const notice = (code, label, reason) => ({...result(code, label, reason), info:true});
 
 function versionParts(value) {
   if (typeof value !== "string" || !/^\d+(?:\.\d+){1,5}$/.test(value.trim())) return null;
@@ -80,6 +83,17 @@ function visibleFixAssociations(entry, installedVersion, targetVersion) {
   return fixAssociations(entry, installedVersion, targetVersion).filter(a => a.target !== false);
 }
 
+// iFixes applying to the installed base only; they lapse with the update to the target.
+function installedOnlyFixAssociations(entry, installedVersion, targetVersion) {
+  return fixAssociations(entry, installedVersion, targetVersion).filter(a => a.installed === true && a.target === false);
+}
+
+// Without a captured installed_fixes list nothing can be said about a package.
+function fixPresence(installed, fix) {
+  if (!installed || !Array.isArray(installed.installed_fixes)) return "Installierte iFixes wurden nicht erfasst";
+  return installed.installed_fixes.some(value => value === fix.fix_id || value === fix.apar) ? "vorhanden; Paketstand prüfen" : "nicht gefunden";
+}
+
 function downloadFor(id, entry, installed) {
   const base = ibmUrl(entry && entry.download_url);
   if (!base || id !== "websphere" || !installed || !/^9\.0\.5\.\d+$/.test(installed.version || "")) return base;
@@ -88,10 +102,16 @@ function downloadFor(id, entry, installed) {
   return url.href;
 }
 
+// Pinned targets are hand-maintained: a match says nothing about newer releases.
 function compareProduct(id, installed, entry, catalog, now = Date.now()) {
+  const outcome = compareBase(id, installed, entry, catalog, now);
+  return outcome.code === "match" && entry && entry.target_mode === "pinned" ? {...outcome, pinned:true} : outcome;
+}
+
+function compareBase(id, installed, entry, catalog, now) {
   if (!installed) return result("empty", "Keine Inventardaten", "Öffnen Sie die Datei vom Server. Ein fehlender Eintrag beweist nicht, dass das Produkt nicht installiert ist.");
   if (installed._discoveryError) return result("error", "Erfassung fehlgeschlagen", installed._discoveryError);
-  if (id === "daeja_viewone_virtual" && installed.source === "ecmclient_version_txt") return result("review", "In ICN enthalten", "Diese Komponente wird mit ICN geliefert. Den Stand im ICN-Paket prüfen.");
+  if (id === "daeja_viewone_virtual" && installed.source === "ecmclient_version_txt") return notice("review", "In ICN enthalten", "Diese Komponente wird mit ICN geliefert. Den Stand im ICN-Paket prüfen.");
   if (!entry || !object(entry.available) || !own(PRODUCTS, id)) return result("review", "Kein Katalogeintrag", "Für diesen Eintrag wird eine eigene IBM-Quelle benötigt.");
   const stale = freshness(entry, catalog, now);
   if (stale) return result("stale", "Katalog prüfen", stale);
@@ -106,7 +126,7 @@ function compareProduct(id, installed, entry, catalog, now = Date.now()) {
   const base = compareVersions(installed.version, available.version);
   if (base > 0) return result("different", "Neuer als Katalog", "Der erfasste Stand ist neuer als der Katalogstand. Ein Downgrade wird nicht vorgeschlagen.");
   if (base < 0) return result("update", "Neuerer Stand verfügbar", "Prüfen Sie vor der Installation die Plattform und die IBM-Voraussetzungen.");
-  if (id === "content_manager") return result("review", "Fix Pack gleich · iFix prüfen", "Die Erfassung über cmlevel bestätigt keine einzelnen Interim Fixes.");
+  if (id === "content_manager") return notice("review", "Fix Pack gleich · iFix prüfen", "Die Erfassung über cmlevel bestätigt keine einzelnen Interim Fixes.");
   if (id === "websphere") return result("level", "Fix Pack stimmt überein", "Die Basis stimmt überein. Nicht kumulative iFixes unten einzeln prüfen; daraus folgt kein vollständig aktueller Patchstand.");
   if (id === "db2") {
     if (typeof installed.special_build === "string" && installed.special_build === available.special_build) return result("match", "Update stimmt überein", "Der Stand stimmt mit dem veröffentlichten Update überein. Individuelle APARs wurden nicht separat geprüft.");
@@ -115,7 +135,7 @@ function compareProduct(id, installed, entry, catalog, now = Date.now()) {
   if (id === "iccsap") {
     const jre = compareVersions(installed.jre_version, available.jre_version);
     if (jre === null) return result("review", "Mitgelieferte JRE prüfen", "Das Inventar enthält keine gemessene JRE-Version. Datumsangaben in JRE_fix ersetzen keine Versionsnummer.");
-    return jre < 0 ? result("update", "JRE-Update verfügbar", "Verwenden Sie das ICCSAP-Paket aus dem IBM-Bulletin.") : jre > 0 ? result("different", "JRE neuer als Katalog", "Der Inhalt des installierten Pakets muss geprüft werden.") : result("review", "JRE gleich · Binaries-iFixes prüfen", "IF21 und weitere Binaries-iFixes werden unabhängig von der JRE geprüft. Ein höherer IF ersetzt andere nicht automatisch.");
+    return jre < 0 ? result("update", "JRE-Update verfügbar", "Verwenden Sie das ICCSAP-Paket aus dem IBM-Bulletin.") : jre > 0 ? result("different", "JRE neuer als Katalog", "Der Inhalt des installierten Pakets muss geprüft werden.") : notice("review", "JRE gleich · Binaries-iFixes prüfen", "IF21 und weitere Binaries-iFixes werden unabhängig von der JRE geprüft. Ein höherer IF ersetzt andere nicht automatisch.");
   }
   if (id === "content_navigator" || id === "daeja_viewone_virtual") {
     const ix = ifixLevel(installed), iy = integer(available.interim_fix);
@@ -153,6 +173,7 @@ function validateCatalog(value) {
       for (const field of ["build_level", "special_build", "jre_version"]) if (entry.available[field] != null && typeof entry.available[field] !== "string") throw Error("Katalogfeld " + field + " muss eine Zeichenkette sein.");
       for (const field of ["interim_fix", "fix_pack"]) if (entry.available[field] != null && integer(entry.available[field]) === null) throw Error("Katalogfeld " + field + " muss eine nicht negative Ganzzahl sein.");
     }
+    if (entry.target_mode != null && !["pinned", "index"].includes(entry.target_mode)) throw Error("Katalogfeld target_mode muss \"pinned\" oder \"index\" sein.");
     if (entry.availability_evidence != null && !object(entry.availability_evidence)) throw Error("Ungültiger Herkunftsnachweis im Katalog.");
     if (entry.interim_fixes != null) {
       if (!Array.isArray(entry.interim_fixes) || entry.interim_fixes.length > 1000) throw Error("interim_fixes muss eine Liste mit höchstens 1000 Einträgen sein.");
@@ -177,6 +198,8 @@ function ibmUrl(value) {
   } catch (error) { return null; }
 }
 
+const daysSince = (isoDate, now) => Math.floor((now - Date.parse(isoDate + "T00:00:00Z")) / 86400000);
+
 function matchingNote(id, entry, notes) {
   if (!entry || !object(entry.available) || !object(notes.products) || !own(notes.products, id)) return null;
   const note = notes.products[id];
@@ -184,16 +207,17 @@ function matchingNote(id, entry, notes) {
   return same ? note : null;
 }
 
-// Display ICCSAP fix identifiers only from its own package's Fixes section.
-// Never infer a Java version from a date, another package, or rollback history.
-function iccsapFixes(inventory) {
+// Fix identifiers come only from the matching package's own Fixes section of the
+// Installation Manager output. Never infer a Java version from a date, another
+// package, or rollback history. Returns null unless exactly one package matches.
+function imFixes(inventory, matchesId) {
   const im = inventory.installation_manager;
-  if (!object(im)) return [];
+  if (!object(im)) return null;
   if (Array.isArray(im.packages)) {
-    const packages = im.packages.filter(p => object(p) && p.package_id === "com.ibm.im.iccsap.offering");
-    return packages.length === 1 && Array.isArray(packages[0].fixes) ? packages[0].fixes.filter(v => typeof v === "string") : [];
+    const packages = im.packages.filter(p => object(p) && matchesId(p.package_id));
+    return packages.length === 1 && Array.isArray(packages[0].fixes) ? packages[0].fixes.filter(v => typeof v === "string") : null;
   }
-  if (!Array.isArray(im.packages_raw)) return [];
+  if (!Array.isArray(im.packages_raw)) return null;
   let current = null, section = "", groups = [];
   for (const raw of im.packages_raw) {
     const line = String(raw).trim(), low = line.toLowerCase();
@@ -209,8 +233,22 @@ function iccsapFixes(inventory) {
     else if (current && section === "fixes" && line && !line.includes(":") && !["none", "keine"].includes(low)) current.fixes.push(line);
   }
   if (current) groups.push(current);
-  groups = groups.filter(p => p.id === "com.ibm.im.iccsap.offering");
-  return groups.length === 1 ? groups[0].fixes : [];
+  groups = groups.filter(p => matchesId(p.id));
+  return groups.length === 1 ? groups[0].fixes : null;
+}
+const iccsapFixes = inventory => imFixes(inventory, id => id === "com.ibm.im.iccsap.offering") || [];
+const wasFixes = inventory => imFixes(inventory, id => /^com\.ibm\.websphere\.(?:BASE|ND|EXPRESS|DEVELOPERS|NDDMZ)\.v\d+$/i.test(id));
+
+// Markdown table of the shown rows, for change tickets.
+function resultMarkdown(rows) {
+  const cell = value => String(value == null || value === "" ? "—" : value).replace(/\|/g, "\\|").replace(/\s+/g, " ");
+  const lines = ["| Produkt | Installiert | Zielstand | Ergebnis |", "| --- | --- | --- | --- |"];
+  for (const row of rows) {
+    const p = row.installed, a = row.entry && row.entry.available || {};
+    const target = [a.version, a.interim_fix != null ? "iFix " + a.interim_fix : "", a.special_build].filter(Boolean).join(" ");
+    lines.push("| " + [own(PRODUCTS, row.id) ? PRODUCTS[row.id][0] : p && p.name || row.id, p && p.version, target, row.status.label + (row.status.pinned ? " (Zielstand fest hinterlegt)" : "")].map(cell).join(" | ") + " |");
+  }
+  return lines.join("\n");
 }
 
 function rowsFor(inventory, catalog) {
@@ -226,6 +264,10 @@ function rowsFor(inventory, catalog) {
     const discovery = inventory && inventory.discovery && inventory.discovery[discoveryId];
     const matches = grouped.get(id) || [];
     if (id === "iccsap" && matches.length === 1 && !matches[0].installed_fixes) matches[0].installed_fixes = iccsapFixes(inventory);
+    if (id === "websphere" && matches.length === 1 && !matches[0].installed_fixes) {
+      const fixes = wasFixes(inventory);
+      if (fixes) matches[0].installed_fixes = fixes;
+    }
     for (const p of matches.length ? matches : [null]) {
       if (p && object(discovery) && discovery.status && !["ok", "skipped"].includes(discovery.status)) p._discoveryError = "Collector-Status: " + discovery.status + ". Die Erfassung ist unvollständig.";
       rows.push({id, installed:p, entry:own(catalog.products, id) ? catalog.products[id] : null, discovery});
@@ -246,13 +288,14 @@ function rowStatus(row, inventory, catalog, now = Date.now()) {
 }
 
 const REVIEW_CODES = new Set(["review", "stale", "error", "different"]);
+const needsReview = status => REVIEW_CODES.has(status.code) && !status.info;
 function filteredRows(rows, query = "", filter = "all") {
   const needle = query.trim().toLocaleLowerCase("de-DE");
   return rows.filter(row => {
     const p = row.installed || {};
     const text = [row.id, own(PRODUCTS, row.id) ? PRODUCTS[row.id][0] : p.name, p.version, p.installation_directory, row.entry && row.entry.available && row.entry.available.version].join(" ").toLocaleLowerCase("de-DE");
     const code = row.status.code;
-    return (!needle || text.includes(needle)) && (filter === "all" || filter === "attention" && (code === "update" || REVIEW_CODES.has(code)) || filter === "update" && code === "update" || filter === "review" && REVIEW_CODES.has(code) || filter === "match" && ["match", "level"].includes(code) || filter === "missing" && code === "empty");
+    return (!needle || text.includes(needle)) && (filter === "all" || filter === "attention" && (code === "update" || needsReview(row.status)) || filter === "update" && code === "update" || filter === "review" && needsReview(row.status) || filter === "info" && !!row.status.info || filter === "match" && ["match", "level"].includes(code) || filter === "missing" && code === "empty");
   });
 }
 
@@ -296,7 +339,7 @@ function startApp() {
   };
   if (state.inventory !== null) validateInventory(state.inventory);
   const notes = JSON.parse($("notes-data").textContent);
-  let importSequence = 0;
+  let importSequence = 0, currentRows = [];
   const el = (tag, text, className) => { const node = document.createElement(tag); if (text !== undefined) node.textContent = String(text); if (className) node.className = className; return node; };
   const date = value => { const stamp = Date.parse(value); return Number.isFinite(stamp) ? new Date(stamp).toLocaleString("de-DE", {timeZone:"UTC", year:"numeric", month:"2-digit", day:"2-digit", hour:"2-digit", minute:"2-digit"}) + " UTC" : "kein Datum angegeben"; };
   function link(label, url, primary) {
@@ -313,9 +356,11 @@ function startApp() {
     const now = Date.now();
     const rows = rowsFor(inventory, catalog).map(row => ({...row, status:rowStatus(row, inventory, catalog, now)}));
     const shown = filteredRows(rows, $("search").value, $("status-filter").value);
+    currentRows = shown;
     if (inventory) {
       const priority = {update:0,error:1,review:2,stale:2,different:3,match:4,level:4,empty:5};
-      shown.sort((a, b) => (priority[a.status.code] ?? 5) - (priority[b.status.code] ?? 5));
+      const rank = status => status.info ? 4 : priority[status.code] ?? 5;
+      shown.sort((a, b) => rank(a.status) - rank(b.status));
     }
     const fragment = document.createDocumentFragment();
     for (const row of shown) {
@@ -352,34 +397,41 @@ function startApp() {
         details.append(el("summary", "Voraussetzungen und Hinweise"));
         if (note.availability_note) details.append(el("p", note.availability_note));
         for (const text of note.notes) details.append(el("p", text));
-        details.append(el("p", "Hinweise geprüft: " + (note.checked_at || notes.checked_at), "muted"));
+        const checked = note.checked_at || notes.checked_at, age = daysSince(checked, now);
+        details.append(el("p", Number.isFinite(age) ? "Hinweise geprüft vor " + age + " Tagen (" + checked + ")" : "Hinweise geprüft: " + checked, "muted"));
         availableCell.append(details);
+      } else if (e && object(notes.products) && own(notes.products, id)) {
+        const wanted = Object.entries(notes.products[id].for_available || {}).map(([k, v]) => k + " " + v).join(", ");
+        availableCell.append(el("p", "Hinweise liegen nur für " + wanted + " vor und passen nicht zum aktuellen Katalogstand. Download über die IBM-Quelle prüfen.", "reason"));
       }
-      const associations = visibleFixAssociations(e, p && p.version, target.version);
-      if (associations.length) {
-        const group = el("details", undefined, "product-notes ifix-group");
-        group.append(el("summary", "iFixes zur Zielbasis (" + associations.length + ")"));
+      const ifixGroup = (title, associations, className) => {
+        if (!associations.length) return;
+        const group = el("details", undefined, "product-notes ifix-group" + (className ? " " + className : ""));
+        group.append(el("summary", title + " (" + associations.length + ")"));
         for (const association of associations) {
           const f = association.fix, range = f.applies_to || {};
           const block = el("div", undefined, "ifix-item");
           block.append(el("strong", f.fix_id || "Unbekannter iFix"));
           metadata(block, "Nicht kumulativ · " + (f.filename || ""));
           metadata(block, "Basisbereich: " + (range.min || "unbekannt") + " bis " + (range.max || "unbekannt"));
-          metadata(block, association.target === null ? "Anwendbarkeit ungeprüft" : "Zielbasis im Versionsbereich");
-          metadata(block, "Kennung im Inventar: " + (p && (p.installed_fixes || []).some(value => value === f.fix_id || value === f.apar) ? "vorhanden; Paketstand prüfen" : "nicht nachgewiesen"));
+          metadata(block, association.target === null ? "Anwendbarkeit ungeprüft" : association.target ? "Zielbasis im Versionsbereich" : "Nur installierte Basis im Versionsbereich");
+          metadata(block, "Kennung im Inventar: " + fixPresence(p, f));
           metadata(block, "Quelle geprüft: " + (f.checked_at || "unbekannt"));
-          if (!f.checked_at || now - Date.parse(f.checked_at + "T00:00:00Z") > FRESH_HOURS * 3600000) metadata(block, "iFix-Quelle erneut prüfen.");
+          if (!f.checked_at || now - Date.parse(f.checked_at + "T00:00:00Z") > NOTES_BANNER_DAYS * 86400000) metadata(block, "iFix-Quelle erneut prüfen.");
           if (f.note) metadata(block, f.note);
           const source = link("IBM-Paket und Voraussetzungen", f.source_url);
           if (source) block.append(source);
           group.append(block);
         }
         availableCell.append(group);
-      }
+      };
+      ifixGroup("iFixes zur Zielbasis", visibleFixAssociations(e, p && p.version, target.version));
+      ifixGroup("Zwischenlösung für die installierte Basis (entfällt mit Update auf " + (target.version || "das Ziel") + ")", installedOnlyFixAssociations(e, p && p.version, target.version), "ifix-interim");
       cell(tr, "Bekannter Zielstand", availableCell);
       const statusCell = el("div", undefined, "cell-content");
-      statusCell.append(el("span", status.label, "status " + status.code));
+      statusCell.append(el("span", status.label, "status " + status.code + (status.info ? " info" : "")));
       if (inventory) statusCell.append(el("p", status.reason, "reason"));
+      if (status.pinned) statusCell.append(el("p", "Zielstand fest hinterlegt – neue Releases werden nicht automatisch erkannt", "reason"));
       cell(tr, "Vergleich", statusCell);
       const actions = el("div", undefined, "cell-content links");
       for (const item of linksFor(id, e, p, note)) { const a = link(item.label, item.url, item.download); if (a) actions.append(a); }
@@ -393,7 +445,7 @@ function startApp() {
     const counts = {update:0, review:0, match:0};
     for (const row of rows) {
       if (row.status.code === "update") counts.update++;
-      else if (REVIEW_CODES.has(row.status.code)) counts.review++;
+      else if (needsReview(row.status)) counts.review++;
       else if (["match", "level"].includes(row.status.code)) counts.match++;
     }
     for (const name of Object.keys(counts)) $("count-" + name).textContent = inventory ? counts[name] : "—";
@@ -409,7 +461,7 @@ function startApp() {
     const warnings = [];
     const badEntries = Object.values(catalog.products).filter(e => freshness(e, catalog, now));
     if (badEntries.length) warnings.push(badEntries.length + " Katalogeinträge benötigen eine Quellenprüfung. Ältere Stände bleiben zur Orientierung sichtbar.");
-    if (now - Date.parse(notes.checked_at + "T00:00:00Z") > FRESH_HOURS * 3600000) warnings.push("Die ergänzenden IBM-Hinweise vom " + notes.checked_at + " sind älter als 72 Stunden. Für neuere Hinweise die aktuelle HTML-Datei öffnen.");
+    if (daysSince(notes.checked_at, now) > NOTES_BANNER_DAYS) warnings.push("Die ergänzenden IBM-Hinweise vom " + notes.checked_at + " sind älter als " + NOTES_BANNER_DAYS + " Tage. Für neuere Hinweise die aktuelle HTML-Datei öffnen.");
     if (inventory && !inventory.context_only) {
       const stamp = Date.parse(inventory.timestamp);
       if (!Number.isFinite(stamp) || stamp > now + 300000 || now - stamp > FRESH_HOURS * 3600000) warnings.push("Das Inventar ist undatiert, älter als 72 Stunden oder hat ein Datum in der Zukunft. Angezeigt wird der Stand aus der Datei; für einen aktuellen Vergleich das Inventar auf dem Server neu erstellen.");
@@ -454,8 +506,24 @@ function startApp() {
   $("search").addEventListener("input", render);
   $("status-filter").addEventListener("change", render);
   $("reset-filter").addEventListener("click", () => { $("search").value = ""; $("status-filter").value = "all"; render(); $("search").focus(); });
-  for (const card of document.querySelectorAll("[data-filter]")) card.addEventListener("click", () => { $("status-filter").value = card.dataset.filter; render(); });
+  // A second click on the active card clears the filter again.
+  for (const card of document.querySelectorAll("[data-filter]")) card.addEventListener("click", () => { $("status-filter").value = $("status-filter").value === card.dataset.filter ? "all" : card.dataset.filter; render(); });
   $("print").addEventListener("click", () => window.print());
+  // Print every folded detail, then restore the previous state.
+  let folded = [];
+  window.addEventListener("beforeprint", () => { folded = [...document.querySelectorAll("#products details:not([open])")]; folded.forEach(d => { d.open = true; }); });
+  window.addEventListener("afterprint", () => { folded.forEach(d => { d.open = false; }); folded = []; });
+  async function copyText(text, done) {
+    try { await navigator.clipboard.writeText(text); }
+    catch (error) {
+      const box = el("textarea", text); document.body.append(box); box.select();
+      try { document.execCommand("copy"); } catch (inner) { box.remove(); $("load-message").textContent = "Kopieren nicht möglich; bitte den Text manuell markieren."; return; }
+      box.remove();
+    }
+    $("load-message").textContent = done;
+  }
+  for (const button of document.querySelectorAll("[data-copy]")) button.addEventListener("click", () => copyText(button.dataset.copy, "Befehl kopiert."));
+  $("copy-result").addEventListener("click", () => copyText(resultMarkdown(currentRows), "Ergebnis als Markdown-Tabelle kopiert."));
   $("refresh-catalog").addEventListener("click", () => $("catalog-file").click());
   const zone = $("drop-zone");
   document.addEventListener("dragover", event => { event.preventDefault(); zone.classList.add("drag-active"); });
@@ -464,7 +532,7 @@ function startApp() {
   render();
 }
 
-if (typeof module !== "undefined" && module.exports) module.exports = {versionParts, compareVersions, ifixLevel, freshness, compareProduct, validateInventory, validateCatalog, ibmUrl, matchingNote, iccsapFixes, rowsFor, fixAssociations, visibleFixAssociations, downloadFor, rowStatus, filteredRows, linksFor, importPayloads};
+if (typeof module !== "undefined" && module.exports) module.exports = {versionParts, compareVersions, ifixLevel, freshness, compareProduct, validateInventory, validateCatalog, ibmUrl, matchingNote, daysSince, NOTES_BANNER_DAYS, iccsapFixes, imFixes, wasFixes, rowsFor, resultMarkdown, fixAssociations, visibleFixAssociations, installedOnlyFixAssociations, fixPresence, downloadFor, rowStatus, filteredRows, linksFor, importPayloads};
 if (typeof document !== "undefined") {
   try { startApp(); } catch (error) {
     const target = document.getElementById("error");

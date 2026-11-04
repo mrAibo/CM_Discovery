@@ -170,3 +170,82 @@ test("target package is first and equivalent IBM URLs are deduplicated", () => {
   assert.equal(links[0].download, true);
   assert.match(links[1].label, /installierten Basis/);
 });
+
+test("H1: pinned targets flag matches without changing status codes", () => {
+  const nav = {version:"3.1.0", interim_fix:12, build_level:"icn310.012.703"};
+  const inst = {version:"3.1.0", build_level:"icn310.012.703"};
+  const pinned = api.compareProduct("content_navigator", inst, entry(nav, {target_mode:"pinned"}), catalog, now);
+  assert.equal(pinned.code, "match");
+  assert.equal(pinned.pinned, true);
+  assert.equal(api.compareProduct("content_navigator", inst, entry(nav, {target_mode:"index"}), catalog, now).pinned, undefined);
+  assert.equal(api.compareProduct("content_navigator", {version:"3.1.0", build_level:"icn310.006.430"}, entry(nav, {target_mode:"pinned"}), catalog, now).pinned, undefined);
+});
+
+test("H1: target_mode accepts only pinned or index", () => {
+  const cat = mode => ({schema_version:2, products:{x:{available:{}, target_mode:mode}}});
+  for (const ok of ["pinned", "index", undefined]) assert.doesNotThrow(() => api.validateCatalog(cat(ok)));
+  for (const bad of ["fixed", 1, true, ""]) assert.throws(() => api.validateCatalog(cat(bad)), /target_mode/);
+});
+
+test("H2: uncaptured installed_fixes are reported honestly, not as 'not found'", () => {
+  const fix = {fix_id:"PH1", apar:"PH2"};
+  assert.equal(api.fixPresence({version:"9"}, fix), "Installierte iFixes wurden nicht erfasst");
+  assert.equal(api.fixPresence(null, fix), "Installierte iFixes wurden nicht erfasst");
+  assert.equal(api.fixPresence({installed_fixes:[]}, fix), "nicht gefunden");
+  assert.equal(api.fixPresence({installed_fixes:["PH2"]}, fix), "vorhanden; Paketstand prüfen");
+});
+
+test("H3: interim fixes for the installed base only form their own group", () => {
+  const e = {interim_fixes:[
+    {fix_id:"old", applies_to:{min:"9.0.5.20",max:"9.0.5.28"}},
+    {fix_id:"both", applies_to:{min:"9.0.5.20",max:"9.0.5.29"}},
+    {fix_id:"current", applies_to:{min:"9.0.5.29",max:"9.0.5.29"}},
+    {fix_id:"unknown"}
+  ]};
+  assert.deepEqual(api.installedOnlyFixAssociations(e, "9.0.5.25", "9.0.5.29").map(a => a.fix.fix_id), ["old"]);
+  assert.deepEqual(api.visibleFixAssociations(e, "9.0.5.25", "9.0.5.29").map(a => a.fix.fix_id), ["both", "current", "unknown"]);
+  assert.deepEqual(api.installedOnlyFixAssociations(e, null, "9.0.5.29"), []);
+});
+
+test("M1: notes age is measured in days with a 90 day banner threshold", () => {
+  assert.equal(api.NOTES_BANNER_DAYS, 90);
+  assert.equal(api.daysSince("2026-09-07", Date.parse("2026-11-04T10:00:00Z")), 58);
+  assert.equal(api.daysSince("2026-06-01", Date.parse("2026-11-04T10:00:00Z")) > api.NOTES_BANNER_DAYS, true);
+});
+
+test("M3: structurally unverifiable states are info, still 'review', and leave the review filter", () => {
+  const cm = api.compareProduct("content_manager", {version:"8.7.00.400"}, entry({version:"8.7.00.400"}), catalog, now);
+  assert.equal(cm.code, "review"); assert.equal(cm.info, true);
+  const daeja = api.compareProduct("daeja_viewone_virtual", {version:"5.0.15", source:"ecmclient_version_txt"}, null, catalog, now);
+  assert.equal(daeja.code, "review"); assert.equal(daeja.info, true);
+  const sap = api.compareProduct("iccsap", {version:"4.0.0.4", jre_version:"8.0.8.70"}, entry({version:"4.0.0.4", jre_version:"8.0.8.70"}), catalog, now);
+  assert.equal(sap.info, true);
+  const real = api.compareProduct("websphere", {version:"8.5.5.1"}, entry({version:"9.0.5.28"}), catalog, now);
+  assert.equal(real.code, "different"); assert.equal(real.info, undefined);
+  const rows = [{id:"content_manager", status:cm}, {id:"websphere", status:real}];
+  assert.deepEqual(api.filteredRows(rows, "", "review").map(r => r.id), ["websphere"]);
+  assert.deepEqual(api.filteredRows(rows, "", "attention").map(r => r.id), ["websphere"]);
+  assert.deepEqual(api.filteredRows(rows, "", "info").map(r => r.id), ["content_manager"]);
+});
+
+test("H2: WAS fixes come from exactly one WAS package of the IM output, otherwise stay uncaptured", () => {
+  const raw = (...pkgs) => ({installation_manager:{packages_raw:pkgs.flat()}});
+  const was = ["[Package]", "Name: WAS ND (com.ibm.websphere.ND.v90)", "Fixes:", "9.0.5.29-WS-WAS-IFPH12345", "Features:", "x"];
+  assert.deepEqual(api.wasFixes(raw(was)), ["9.0.5.29-WS-WAS-IFPH12345"]);
+  assert.deepEqual(api.wasFixes(raw(["[Package]", "Name: WAS ND (com.ibm.websphere.ND.v90)", "Fixes:", "None"])), []);
+  assert.equal(api.wasFixes(raw(was, was)), null);
+  assert.equal(api.wasFixes(raw(["[Package]", "Name: Java (com.ibm.java.jdk.v8)", "Fixes:", "a"])), null);
+  assert.equal(api.wasFixes({}), null);
+  const inv = {schema_version:1, host:{}, products:[{id:"websphere", version:"9.0.5.29"}], ...raw(was)};
+  const rows = api.rowsFor(inv, {products:{}});
+  assert.deepEqual(rows.find(r => r.id === "websphere").installed.installed_fixes, ["9.0.5.29-WS-WAS-IFPH12345"]);
+  const none = api.rowsFor({...inv, installation_manager:{}}, {products:{}});
+  assert.equal(none.find(r => r.id === "websphere").installed.installed_fixes, undefined);
+});
+
+test("N4: result markdown escapes pipes and marks pinned targets", () => {
+  const rows = [{id:"db2", installed:{version:"11.5|9"}, entry:{available:{version:"11.5.9.0", special_build:"special_1"}}, status:{label:"Update stimmt überein", pinned:true}}];
+  const md = api.resultMarkdown(rows).split("\n");
+  assert.equal(md.length, 3);
+  assert.equal(md[2], "| IBM Db2 | 11.5\\|9 | 11.5.9.0 special_1 | Update stimmt überein (Zielstand fest hinterlegt) |");
+});

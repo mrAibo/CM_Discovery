@@ -41,6 +41,7 @@ def check(installed: dict[str, Any]) -> dict[str, Any]:
             "interim_fix": latest_ifix,
         },
         "cumulative": True,
+        "target_mode": "pinned",
         "scope": "5.0.15_ifix_stream",
         "source_url": SOURCE_URL,
         "notes": [

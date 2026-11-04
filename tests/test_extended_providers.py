@@ -1,4 +1,5 @@
 from ibm_patchwatch.providers import content_manager, content_navigator, daeja, iccsap
+from ibm_patchwatch.http import HTTPError
 
 
 def test_content_manager_fixpack(monkeypatch):
@@ -75,3 +76,43 @@ def test_iccsap_keeps_base_jre_and_binary_if_separate(monkeypatch):
     assert result['interim_fixes'][0]['fix_id'] == '4004-ICCSAP-FP4-IF21'
     assert result['interim_fixes'][0]['cumulative'] is False
     assert 'platform=Linux+64-bit,x86_64' in result['download_url']
+
+
+def _readme_pages(monkeypatch, last, bogus_after=None):
+    """IFs 12..last exist; others answer HTTP 200 with a search page (as IBM does)."""
+    def fake(url):
+        number = int(url.rsplit("interim-fix-", 1)[1].split("-")[0])
+        if number <= last:
+            return f"<h1>Interim Fix {number}</h1><p>Update name: Interim Fix {number}</p><p>Build number: icn310.{number:03d}.7{number}</p>"
+        if bogus_after:
+            return "<p>No results were found for your search query.</p>"
+        raise HTTPError("404")
+    monkeypatch.setattr(content_navigator, "fetch_text", fake)
+
+
+def test_content_navigator_probe_finds_latest_ifix(monkeypatch):
+    _readme_pages(monkeypatch, 14)
+    result = content_navigator.check({"version": "3.1.0", "build_level": "icn310.012.703"})
+    assert result["available"]["interim_fix"] == 14
+    assert result["available"]["build_level"] == "icn310.014.714"
+    assert result["source_url"].endswith("interim-fix-14-readme")
+    assert result["status"] == "update_available"
+    assert result["target_mode"] == "pinned"
+
+
+def test_content_navigator_probe_rejects_soft_404(monkeypatch):
+    _readme_pages(monkeypatch, 13, bogus_after=True)
+    assert content_navigator.check({"version": "3.1.0"})["available"]["interim_fix"] == 13
+
+
+def test_content_navigator_probe_rejects_mismatched_number(monkeypatch):
+    html = "<p>Update name: Interim Fix 12</p><p>Build number: icn310.012.703</p>"
+    monkeypatch.setattr(content_navigator, "fetch_text", lambda url: html)
+    assert content_navigator.check({"version": "3.1.0"})["available"]["interim_fix"] == 12
+
+
+def test_pinned_providers_flag_target_mode():
+    import json, pathlib
+    products = json.loads((pathlib.Path(__file__).parents[1] / "data/ibm/catalog.json").read_text())["products"]
+    pinned = {k for k, v in products.items() if v.get("target_mode") == "pinned"}
+    assert pinned == {"content_manager", "content_navigator", "daeja_viewone_virtual", "iccsap"}

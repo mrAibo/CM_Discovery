@@ -57,6 +57,7 @@ def check(installed: dict[str, Any]) -> dict[str, Any]:
         },
         **references("iccsap"),
         "cumulative": None,
+        "target_mode": "pinned",
         "scope": "4.0.0.4_base_jre_and_binary_ifixes",
         "source_url": SOURCE_URL,
         "notes": [
