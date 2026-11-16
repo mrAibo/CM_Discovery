@@ -119,9 +119,9 @@
     "iccsap": {
       "for_available": {
         "version": "4.0.0.4",
-        "jre_version": "8.0.8.70"
+        "jre_version": "8.0.8.71"
       },
-      "availability_note": "Basis 4.0.0.4 · JRE 8.0.8.70 · separater Binaries-iFix IF21",
+      "availability_note": "Basis 4.0.0.4 · JRE 8.0.8.71 · separater Binaries-iFix IF21",
       "notes": [
         "Basisprodukt, JRE-Paket und Binaries IF21 sind getrennte Stände. Das Base-JRE-Paket ist kein Nachweis, dass IF21 installiert ist.",
         "Eine Kennung JRE_fix_YYYYMMDD und das Veröffentlichungsdatum eines Bulletins belegen keine genaue JRE-Version. Fehlen eine gemessene Version oder eine bestätigte Paketkennung im Inventar, ist eine manuelle Prüfung erforderlich."
@@ -133,8 +133,8 @@
           "download": true
         },
         {
-          "label": "Basispaket · JRE 8.0.8.70",
-          "url": "https://www.ibm.com/support/fixcentral/swg/doSelectFixes?options.selectedFixes=4.0.0.4-ICCSAP-Base-JRE-8.0.8.70&continue=1",
+          "label": "Basispaket · JRE 8.0.8.71",
+          "url": "https://www.ibm.com/support/fixcentral/swg/doSelectFixes?options.selectedFixes=4.0.0.4-ICCSAP-Base-JRE-8.0.8.71&continue=1",
           "download": true
         },
         {

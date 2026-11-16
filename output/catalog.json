@@ -88,13 +88,13 @@
     "iccsap": {
       "available": {
         "version": "4.0.0.4",
-        "jre_version": "8.0.8.70",
-        "jre_fix_date": "20260812",
-        "fix_name": "4.0.0.4-ICCSAP-Base-JRE-8.0.8.70"
+        "jre_version": "8.0.8.71",
+        "jre_fix_date": "20260915",
+        "fix_name": "4.0.0.4-ICCSAP-Base-JRE-8.0.8.71"
       },
       "cumulative": null,
       "scope": "4.0.0.4_base_jre_and_binary_ifixes",
-      "source_url": "https://www.ibm.com/support/pages/security-bulletin-multiple-vulnerabilities-may-affect-ibm%C2%AE-sdk-java%E2%84%A2-technology-edition-ibm-content-collector-sap-applications-16",
+      "source_url": "https://www.ibm.com/support/pages/security-bulletin-multiple-vulnerabilities-may-affect-ibm%C2%AE-sdk-java%E2%84%A2-technology-edition-ibm-content-collector-sap-applications-17",
       "ifx_audit": null,
       "notes": [
         "This check targets the currently published ICCSAP embedded-JRE security remediation, not every ICCSAP component fix.",

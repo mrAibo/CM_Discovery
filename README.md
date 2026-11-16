@@ -300,7 +300,7 @@ benannte Paketdateien ausdrücklich und enthält den ICN-3.1.0/Linux-Auswahllink
 
 ### Basis und einzelne iFixes
 
-ICCSAP zeigt Basis 4.0.0.4, JRE 8.0.8.70 und Binaries IF21 getrennt, mit den
+ICCSAP zeigt Basis 4.0.0.4, JRE 8.0.8.71 und Binaries IF21 getrennt, mit den
 zugehörigen Fix-Central-Auswahllinks. WebSphere zeigt einzelne iFix-Pakete mit
 IBM-Versionsbereichen für installierte Basis und Katalog-Zielbasis. Der Fix-Central-Link
 verwendet bei vorhandenem Inventar dessen WAS-Version und Linux x86_64.

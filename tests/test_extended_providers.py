@@ -116,3 +116,33 @@ def test_pinned_providers_flag_target_mode():
     products = json.loads((pathlib.Path(__file__).parents[1] / "data/ibm/catalog.json").read_text())["products"]
     pinned = {k for k, v in products.items() if v.get("target_mode") == "pinned"}
     assert pinned == {"content_manager", "content_navigator", "daeja_viewone_virtual", "iccsap"}
+
+
+def test_iccsap_follows_newest_bulletin(monkeypatch):
+    pages = {
+        iccsap.BULLETIN_URL.format(16): "<p>4.0.0.4-ICCSAP-Base-JRE-8.0.8.70</p><p>12 Aug 2026: Initial Publication</p>",
+        iccsap.BULLETIN_URL.format(17): "<p>4.0.0.4-ICCSAP-Base-JRE-8.0.8.71</p><p>15 Sep 2026: Initial Publication</p>",
+    }
+
+    def fake(url):
+        if url in pages:
+            return pages[url]
+        raise HTTPError("404")
+
+    monkeypatch.setattr(iccsap, "fetch_text", fake)
+    result = iccsap.check({"version": "4.0.0.4"})
+    assert result["available"]["jre_version"] == "8.0.8.71"
+    assert result["available"]["jre_fix_date"] == "20260915"
+    assert result["source_url"].endswith("-17")
+
+
+def test_iccsap_first_bulletin_missing_is_an_error(monkeypatch):
+    def fail(url):
+        raise HTTPError("404")
+
+    monkeypatch.setattr(iccsap, "fetch_text", fail)
+    try:
+        iccsap.check({"version": "4.0.0.4"})
+    except HTTPError:
+        return
+    raise AssertionError("expected HTTPError")
